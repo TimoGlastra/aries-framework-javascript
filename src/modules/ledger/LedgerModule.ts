@@ -16,6 +16,10 @@ export class LedgerModule {
     this.wallet = wallet
   }
 
+  public async connect() {
+    await this.ledgerService.connect()
+  }
+
   public async registerPublicDid() {
     throw new AriesFrameworkError('registerPublicDid not implemented.')
   }
