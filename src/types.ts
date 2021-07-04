@@ -5,10 +5,7 @@ import type { ConnectionRecord } from './modules/connections'
 import type { FileSystem } from './storage/fs/FileSystem'
 import type { default as Indy, WalletConfig, WalletCredentials, Verkey } from 'indy-sdk'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type $FixMe = any
-
-export type WireMessage = $FixMe
+export type WireMessage = JsonWebKey
 
 export enum DidCommMimeType {
   V0 = 'application/ssi-agent-wire',

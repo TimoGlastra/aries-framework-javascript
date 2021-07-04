@@ -10,6 +10,7 @@ import { Logger } from '../logger'
 
 import { EnvelopeService } from './EnvelopeService'
 import { TransportService } from './TransportService'
+import { isUnpackedPackedMessage } from './helpers'
 
 @scoped(Lifecycle.ContainerScoped)
 export class MessageSender {
@@ -42,16 +43,14 @@ export class MessageSender {
     return { connection, payload: wireMessage }
   }
 
-  public async sendMessage(outboundMessage: OutboundMessage): Promise<void> {
+  public async sendMessage(outboundMessage: OutboundMessage | OutboundPackage): Promise<void> {
     if (!this.outboundTransporter) {
       throw new AriesFrameworkError('Agent has no outbound transporter!')
     }
 
-    const { connection, payload } = outboundMessage
+    const { connection } = outboundMessage
     const { id, verkey, theirKey } = connection
-    const message = payload.toJSON()
     this.logger.debug('Send outbound message', {
-      messageId: message.id,
       connection: { id, verkey, theirKey },
     })
 
@@ -61,17 +60,28 @@ export class MessageSender {
     }
 
     for await (const service of services) {
-      this.logger.debug(`Sending outbound message to service:`, { messageId: message.id, service })
-      try {
+      this.logger.debug(`Sending outbound message to service:`, { connectionId: connection.id, service })
+
+      let outboundPackage: OutboundPackage
+
+      // If outboundPackage is instance of AgentMessage we still need to pack
+      if (isUnpackedPackedMessage(outboundMessage)) {
         const keys = {
           recipientKeys: service.recipientKeys,
           routingKeys: service.routingKeys || [],
           senderKey: connection.verkey,
         }
-        const outboundPackage = await this.packMessage(outboundMessage, keys)
+        outboundPackage = await this.packMessage(outboundMessage, keys)
+        outboundPackage.responseRequested = outboundMessage.payload.hasReturnRouting()
+      }
+      // Otherwise we use the message is already packed. This is often not the case
+      else {
+        outboundPackage = outboundMessage
+      }
+
+      try {
         outboundPackage.session = this.transportService.findSession(connection.id)
         outboundPackage.endpoint = service.serviceEndpoint
-        outboundPackage.responseRequested = outboundMessage.payload.hasReturnRouting()
 
         await this.outboundTransporter.sendMessage(outboundPackage)
         break

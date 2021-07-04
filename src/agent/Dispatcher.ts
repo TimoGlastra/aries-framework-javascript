@@ -1,4 +1,4 @@
-import type { OutboundMessage, OutboundPackage } from '../types'
+import type { OutboundPackage } from '../types'
 import type { AgentMessage } from './AgentMessage'
 import type { Handler } from './Handler'
 import type { InboundMessageContext } from './models/InboundMessageContext'
@@ -26,7 +26,7 @@ class Dispatcher {
     this.handlers.push(handler)
   }
 
-  public async dispatch(messageContext: InboundMessageContext): Promise<OutboundMessage | OutboundPackage | undefined> {
+  public async dispatch(messageContext: InboundMessageContext): Promise<OutboundPackage | undefined> {
     const message = messageContext.message
     const handler = this.getHandlerForType(message.type)
 

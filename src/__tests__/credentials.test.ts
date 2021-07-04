@@ -58,8 +58,8 @@ describe('credentials', () => {
   let aliceCredentialRecord: CredentialRecord
 
   beforeAll(async () => {
-    const faberMessages = new Subject()
-    const aliceMessages = new Subject()
+    const faberMessages = new Subject<JsonWebKey>()
+    const aliceMessages = new Subject<JsonWebKey>()
 
     faberAgent = new Agent(faberConfig)
     faberAgent.setInboundTransporter(new SubjectInboundTransporter(faberMessages, aliceMessages))

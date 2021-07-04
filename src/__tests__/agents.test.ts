@@ -21,8 +21,8 @@ describe('agents', () => {
   })
 
   test('make a connection between agents', async () => {
-    const aliceMessages = new Subject()
-    const bobMessages = new Subject()
+    const aliceMessages = new Subject<JsonWebKey>()
+    const bobMessages = new Subject<JsonWebKey>()
 
     aliceAgent = new Agent(aliceConfig)
     aliceAgent.setInboundTransporter(new SubjectInboundTransporter(aliceMessages, bobMessages))

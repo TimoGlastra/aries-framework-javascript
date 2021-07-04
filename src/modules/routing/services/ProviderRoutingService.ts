@@ -1,12 +1,11 @@
 import type { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
-import type { OutboundMessage } from '../../../types'
 import type { ConnectionRecord } from '../../connections'
 import type { KeylistUpdateMessage, ForwardMessage } from '../messages'
 import type { Verkey } from 'indy-sdk'
 
 import { Lifecycle, scoped } from 'tsyringe'
 
-import { createOutboundMessage } from '../../../agent/helpers'
+import { MessageSender } from '../../../agent/MessageSender'
 import { AriesFrameworkError } from '../../../error'
 import { KeylistUpdateAction, KeylistUpdated, KeylistUpdateResponseMessage, KeylistUpdateResult } from '../messages'
 
@@ -17,6 +16,11 @@ export interface RoutingTable {
 @scoped(Lifecycle.ContainerScoped)
 class ProviderRoutingService {
   private routingTable: RoutingTable = {}
+  private messageSender: MessageSender
+
+  public constructor(messageSender: MessageSender) {
+    this.messageSender = messageSender
+  }
 
   public updateRoutes(messageContext: InboundMessageContext<KeylistUpdateMessage>): KeylistUpdateResponseMessage {
     const { connection, message } = messageContext
@@ -50,7 +54,7 @@ class ProviderRoutingService {
     return new KeylistUpdateResponseMessage({ updated })
   }
 
-  public forward(messageContext: InboundMessageContext<ForwardMessage>): OutboundMessage<ForwardMessage> {
+  public async forward(messageContext: InboundMessageContext<ForwardMessage>) {
     const { message, recipientVerkey } = messageContext
 
     // TODO: update to class-validator validation
@@ -68,7 +72,7 @@ class ProviderRoutingService {
       throw new AriesFrameworkError(`Connection with verkey ${connection.verkey} has no recipient keys.`)
     }
 
-    return createOutboundMessage(connection, message)
+    await this.messageSender.sendMessage({ payload: message.message, connection })
   }
 
   public getRoutes() {
