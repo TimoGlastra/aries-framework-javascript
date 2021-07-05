@@ -8,7 +8,7 @@ import { ProvisioningRecord } from './ProvisioningRecord'
 
 @scoped(Lifecycle.ContainerScoped)
 export class ProvisioningRepository extends Repository<ProvisioningRecord> {
-  public constructor(@inject(InjectionSymbols.StorageService) storageService: StorageService<ProvisioningRecord>) {
+  public constructor(@inject(InjectionSymbols.StorageService) storageService: StorageService) {
     super(ProvisioningRecord, storageService)
   }
 }

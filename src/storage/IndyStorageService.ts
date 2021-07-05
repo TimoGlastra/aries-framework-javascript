@@ -12,7 +12,7 @@ import { isBoolean } from '../utils/type'
 import { Wallet } from '../wallet/Wallet'
 
 @scoped(Lifecycle.ContainerScoped)
-export class IndyStorageService<T extends BaseRecord> implements StorageService<T> {
+export class IndyStorageService implements StorageService {
   private wallet: Wallet
   private static DEFAULT_QUERY_OPTIONS = {
     retrieveType: true,
@@ -59,7 +59,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
     return transformedTags
   }
 
-  private recordToInstance(record: WalletRecord, recordClass: BaseRecordConstructor<T>): T {
+  private recordToInstance<T extends BaseRecord>(record: WalletRecord, recordClass: BaseRecordConstructor<T>): T {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const instance = JsonTransformer.deserialize<T>(record.value!, recordClass)
     instance.id = record.id
@@ -71,7 +71,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
   }
 
   /** @inheritDoc {StorageService#save} */
-  public async save(record: T) {
+  public async save<T extends BaseRecord>(record: T) {
     const value = JsonTransformer.serialize(record)
     const tags = this.transformFromRecordTagValues(record.getTags())
 
@@ -91,7 +91,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
   }
 
   /** @inheritDoc {StorageService#update} */
-  public async update(record: T): Promise<void> {
+  public async update<T extends BaseRecord>(record: T): Promise<void> {
     const value = JsonTransformer.serialize(record)
     const tags = this.transformFromRecordTagValues(record.getTags())
 
@@ -115,7 +115,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
   }
 
   /** @inheritDoc {StorageService#delete} */
-  public async delete(record: T) {
+  public async delete<T extends BaseRecord>(record: T) {
     try {
       await this.wallet.deleteWalletRecord(record.type, record.id)
     } catch (error) {
@@ -135,7 +135,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
   }
 
   /** @inheritDoc {StorageService#getById} */
-  public async getById(recordClass: BaseRecordConstructor<T>, id: string): Promise<T> {
+  public async getById<T extends BaseRecord>(recordClass: BaseRecordConstructor<T>, id: string): Promise<T> {
     try {
       const record = await this.wallet.getWalletRecord(recordClass.type, id, IndyStorageService.DEFAULT_QUERY_OPTIONS)
       return this.recordToInstance(record, recordClass)
@@ -154,7 +154,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
   }
 
   /** @inheritDoc {StorageService#getAll} */
-  public async getAll(recordClass: BaseRecordConstructor<T>): Promise<T[]> {
+  public async getAll<T extends BaseRecord>(recordClass: BaseRecordConstructor<T>): Promise<T[]> {
     const recordIterator = await this.wallet.search(recordClass.type, {}, IndyStorageService.DEFAULT_QUERY_OPTIONS)
     const records = []
     for await (const record of recordIterator) {
@@ -164,7 +164,10 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
   }
 
   /** @inheritDoc {StorageService#findByQuery} */
-  public async findByQuery(recordClass: BaseRecordConstructor<T>, query: WalletQuery): Promise<T[]> {
+  public async findByQuery<T extends BaseRecord>(
+    recordClass: BaseRecordConstructor<T>,
+    query: WalletQuery
+  ): Promise<T[]> {
     const recordIterator = await this.wallet.search(recordClass.type, query, IndyStorageService.DEFAULT_QUERY_OPTIONS)
     const records = []
     for await (const record of recordIterator) {

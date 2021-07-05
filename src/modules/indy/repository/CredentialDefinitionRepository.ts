@@ -4,11 +4,11 @@ import { InjectionSymbols } from '../../../constants'
 import { Repository } from '../../../storage/Repository'
 import { StorageService } from '../../../storage/StorageService'
 
-import { BasicMessageRecord } from './BasicMessageRecord'
+import { CredentialDefinitionRecord } from './CredentialDefinitionRecord'
 
 @scoped(Lifecycle.ContainerScoped)
-export class BasicMessageRepository extends Repository<BasicMessageRecord> {
+export class CredentialDefinitionRepository extends Repository<CredentialDefinitionRecord> {
   public constructor(@inject(InjectionSymbols.StorageService) storageService: StorageService) {
-    super(BasicMessageRecord, storageService)
+    super(CredentialDefinitionRecord, storageService)
   }
 }

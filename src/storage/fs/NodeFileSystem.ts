@@ -2,21 +2,14 @@ import type { FileSystem } from './FileSystem'
 
 import { promises } from 'fs'
 import { tmpdir } from 'os'
-import { dirname } from 'path'
+import { dirname, join } from 'path'
+import { cwd } from 'process'
 
 const { access, readFile, writeFile } = promises
 
 export class NodeFileSystem implements FileSystem {
-  public readonly basePath
-
-  /**
-   * Create new NodeFileSystem class instance.
-   *
-   * @param basePath The base path to use for reading and writing files. process.cwd() if not specified
-   */
-  public constructor(basePath?: string) {
-    this.basePath = basePath ?? tmpdir()
-  }
+  public readonly baseDir = join(cwd(), 'afj')
+  public readonly tmpDir = tmpdir()
 
   public async exists(path: string) {
     try {

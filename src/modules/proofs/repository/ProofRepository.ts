@@ -8,7 +8,7 @@ import { ProofRecord } from './ProofRecord'
 
 @scoped(Lifecycle.ContainerScoped)
 export class ProofRepository extends Repository<ProofRecord> {
-  public constructor(@inject(InjectionSymbols.StorageService) storageService: StorageService<ProofRecord>) {
+  public constructor(@inject(InjectionSymbols.StorageService) storageService: StorageService) {
     super(ProofRecord, storageService)
   }
 }

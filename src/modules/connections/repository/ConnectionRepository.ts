@@ -8,7 +8,7 @@ import { ConnectionRecord } from './ConnectionRecord'
 
 @scoped(Lifecycle.ContainerScoped)
 export class ConnectionRepository extends Repository<ConnectionRecord> {
-  public constructor(@inject(InjectionSymbols.StorageService) storageService: StorageService<ConnectionRecord>) {
+  public constructor(@inject(InjectionSymbols.StorageService) storageService: StorageService) {
     super(ConnectionRecord, storageService)
   }
 }

@@ -793,10 +793,10 @@
   resolved "https://registry.yarnpkg.com/@types/http-cache-semantics/-/http-cache-semantics-4.0.0.tgz#9140779736aa2655635ee756e2467d787cfe8a2a"
   integrity sha512-c3Xy026kOF7QOTn00hbIllV1dLR9hG9NkSrLQgCVs8NF6sBU+VGWjD3wLPhmh1TYAc7ugCFsvHYMN4VcBN1U1A==
 
-"@types/indy-sdk@^1.15.3":
-  version "1.15.3"
-  resolved "https://registry.yarnpkg.com/@types/indy-sdk/-/indy-sdk-1.15.3.tgz#bce7cef595f4a17f774c1840470969e554851dec"
-  integrity sha512-/9G3dCeiOm03xv606UgFDkFnbg6oknGMp9Eou56dQknAJXhpvwOljBglgFuXG16mpmQrRQPoCVkApHQG6D0ywQ==
+"@types/indy-sdk@^1.16.1":
+  version "1.16.1"
+  resolved "https://registry.yarnpkg.com/@types/indy-sdk/-/indy-sdk-1.16.1.tgz#cfb1216d5a3361eb981f83b6ae614d567aa028cd"
+  integrity sha512-Y84hePLKymeGxUvAmNgl7viKFRyEtL1/5Ih9EUr7mPeKDyBHEcX6n0DMecr5GINXq4ePUa47ZFKxPolW4eyNIA==
   dependencies:
     "@types/node" "*"
 

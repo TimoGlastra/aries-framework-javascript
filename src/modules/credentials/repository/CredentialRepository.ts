@@ -8,7 +8,7 @@ import { CredentialRecord } from './CredentialRecord'
 
 @scoped(Lifecycle.ContainerScoped)
 export class CredentialRepository extends Repository<CredentialRecord> {
-  public constructor(@inject(InjectionSymbols.StorageService) storageService: StorageService<CredentialRecord>) {
+  public constructor(@inject(InjectionSymbols.StorageService) storageService: StorageService) {
     super(CredentialRecord, storageService)
   }
 }

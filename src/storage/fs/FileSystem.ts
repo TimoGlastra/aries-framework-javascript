@@ -1,5 +1,6 @@
 export interface FileSystem {
-  readonly basePath: string
+  readonly baseDir: string
+  readonly tmpDir: string
 
   exists(path: string): Promise<boolean>
   write(path: string, data: string): Promise<void>

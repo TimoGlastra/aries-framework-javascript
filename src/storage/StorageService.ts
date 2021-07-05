@@ -6,15 +6,14 @@ export interface BaseRecordConstructor<T> extends Constructor<T> {
   type: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface StorageService<T extends BaseRecord<any, any>> {
+export interface StorageService {
   /**
    * Save record in storage
    *
    * @param record the record to store
    * @throws {RecordDuplicateError} if a record with this id already exists
    */
-  save(record: T): Promise<void>
+  save<T extends BaseRecord>(record: T): Promise<void>
 
   /**
    * Update record in storage
@@ -22,7 +21,7 @@ export interface StorageService<T extends BaseRecord<any, any>> {
    * @param record the record to update
    * @throws {RecordNotFoundError} if a record with this id and type does not exist
    */
-  update(record: T): Promise<void>
+  update<T extends BaseRecord>(record: T): Promise<void>
 
   /**
    * Delete record from storage
@@ -30,7 +29,7 @@ export interface StorageService<T extends BaseRecord<any, any>> {
    * @param record the record to delete
    * @throws {RecordNotFoundError} if a record with this id and type does not exist
    */
-  delete(record: T): Promise<void>
+  delete<T extends BaseRecord>(record: T): Promise<void>
 
   /**
    * Get record by id.
@@ -39,14 +38,14 @@ export interface StorageService<T extends BaseRecord<any, any>> {
    * @param id the id of the record to retrieve from storage
    * @throws {RecordNotFoundError} if a record with this id and type does not exist
    */
-  getById(recordClass: BaseRecordConstructor<T>, id: string): Promise<T>
+  getById<T extends BaseRecord>(recordClass: BaseRecordConstructor<T>, id: string): Promise<T>
 
   /**
    * Get all records by specified record class.
    *
    * @param recordClass the record class to get records for
    */
-  getAll(recordClass: BaseRecordConstructor<T>): Promise<T[]>
+  getAll<T extends BaseRecord>(recordClass: BaseRecordConstructor<T>): Promise<T[]>
 
   /**
    * Find all records by specified record class and query.
@@ -54,5 +53,5 @@ export interface StorageService<T extends BaseRecord<any, any>> {
    * @param recordClass the record class to find records for
    * @param query the query to use for finding records
    */
-  findByQuery(recordClass: BaseRecordConstructor<T>, query: WalletQuery): Promise<T[]>
+  findByQuery<T extends BaseRecord>(recordClass: BaseRecordConstructor<T>, query: WalletQuery): Promise<T[]>
 }

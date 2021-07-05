@@ -1,7 +1,6 @@
 import type { Logger } from '../../../logger'
 import type {
   default as Indy,
-  CredDef,
   CredDefId,
   Did,
   LedgerRequest,
@@ -10,6 +9,7 @@ import type {
   SchemaId,
   LedgerReadReplyResponse,
   LedgerWriteReplyResponse,
+  RevocRegDef,
 } from 'indy-sdk'
 
 import { inject, scoped, Lifecycle } from 'tsyringe'
@@ -19,7 +19,6 @@ import { InjectionSymbols } from '../../../constants'
 import { FileSystem } from '../../../storage/fs/FileSystem'
 import { isIndyError } from '../../../utils/indyError'
 import { Wallet } from '../../../wallet/Wallet'
-import { IndyIssuerService } from '../../indy'
 
 @scoped(Lifecycle.ContainerScoped)
 export class LedgerService {
@@ -28,21 +27,18 @@ export class LedgerService {
   private logger: Logger
   private _poolHandle?: PoolHandle
   private authorAgreement?: AuthorAgreement | null
-  private indyIssuer: IndyIssuerService
   private agentConfig: AgentConfig
   private fileSystem: FileSystem
 
   public constructor(
     @inject(InjectionSymbols.Wallet) wallet: Wallet,
     agentConfig: AgentConfig,
-    indyIssuer: IndyIssuerService,
     @inject(InjectionSymbols.FileSystem) fileSystem: FileSystem
   ) {
     this.wallet = wallet
     this.agentConfig = agentConfig
     this.indy = agentConfig.indy
     this.logger = agentConfig.logger
-    this.indyIssuer = indyIssuer
     this.fileSystem = fileSystem
   }
 
@@ -107,11 +103,16 @@ export class LedgerService {
     }
   }
 
-  public async registerSchema(did: Did, schemaTemplate: SchemaTemplate): Promise<Schema> {
+  /**
+   * Register a schema on the ledger
+   *
+   * @param did The did to use to register the schema
+   * @param schema The schema to register
+   * @returns The schema with updated `seqNo`
+   */
+  public async registerSchema(did: Did, schema: Indy.Schema): Promise<Schema> {
     try {
-      this.logger.debug(`Register schema on ledger with did '${did}'`, schemaTemplate)
-      const { name, attributes, version } = schemaTemplate
-      const schema = await this.indyIssuer.createSchema({ originDid: did, name, version, attributes })
+      this.logger.debug(`Register schema '${schema.id}' on ledger with did '${did}'`, schema)
 
       const request = await this.indy.buildSchemaRequest(did, schema)
 
@@ -129,7 +130,7 @@ export class LedgerService {
         error,
         did,
         poolHandle: await this.getPoolHandle(),
-        schemaTemplate,
+        schema,
       })
 
       throw error
@@ -163,21 +164,12 @@ export class LedgerService {
     }
   }
 
-  public async registerCredentialDefinition(
-    did: Did,
-    credentialDefinitionTemplate: CredentialDefinitionTemplate
-  ): Promise<CredDef> {
+  public async registerCredentialDefinition(did: Did, credentialDefinition: Indy.CredDef): Promise<void> {
     try {
-      this.logger.debug(`Register credential definition on ledger with did '${did}'`, credentialDefinitionTemplate)
-      const { schema, tag, signatureType, supportRevocation } = credentialDefinitionTemplate
-
-      const credentialDefinition = await this.indyIssuer.createCredentialDefinition({
-        issuerDid: did,
-        schema,
-        tag,
-        signatureType,
-        supportRevocation,
-      })
+      this.logger.debug(
+        `Register credential definition '${credentialDefinition.id}' on ledger with did '${did}'`,
+        credentialDefinition
+      )
 
       const request = await this.indy.buildCredDefRequest(did, credentialDefinition)
 
@@ -185,20 +177,15 @@ export class LedgerService {
 
       this.logger.debug(`Registered credential definition '${credentialDefinition.id}' on ledger`, {
         response,
-        credentialDefinition: credentialDefinition,
+        credentialDefinition,
       })
-
-      return credentialDefinition
     } catch (error) {
-      this.logger.error(
-        `Error registering credential definition for schema '${credentialDefinitionTemplate.schema.id}' on ledger`,
-        {
-          error,
-          did,
-          poolHandle: await this.getPoolHandle(),
-          credentialDefinitionTemplate,
-        }
-      )
+      this.logger.error(`Error registering credential definition for schema '${credentialDefinition.id}' on ledger`, {
+        error,
+        did,
+        poolHandle: await this.getPoolHandle(),
+        credentialDefinition,
+      })
 
       throw error
     }
@@ -225,7 +212,63 @@ export class LedgerService {
     } catch (error) {
       this.logger.error(`Error retrieving credential definition '${credentialDefinitionId}' from ledger`, {
         error,
-        credentialDefinitionId: credentialDefinitionId,
+        credentialDefinitionId,
+        poolHandle: await this.getPoolHandle(),
+      })
+      throw error
+    }
+  }
+
+  public async registerRevocationRegistry(did: Did, revocationRegistry: RevocRegDef): Promise<void> {
+    try {
+      this.logger.debug(
+        `Register revocation registry '${revocationRegistry.id}' on ledger with did '${did}'`,
+        revocationRegistry
+      )
+
+      const request = await this.indy.buildRevocRegDefRequest(did, revocationRegistry)
+
+      const response = await this.submitWriteRequest(request, did)
+
+      this.logger.debug(`Registered revocation registry '${revocationRegistry.id}' on ledger`, {
+        response,
+        revocationRegistry,
+      })
+    } catch (error) {
+      this.logger.error(
+        `Error registering revocation registry '${revocationRegistry.id}' on ledger with did '${did}'`,
+        {
+          error,
+          did,
+          poolHandle: await this.getPoolHandle(),
+          revocationRegistry,
+        }
+      )
+
+      throw error
+    }
+  }
+
+  public async getRevocationRegistryDefinition(revocationRegistryId: string): Promise<Indy.RevocRegDef> {
+    try {
+      this.logger.debug(`Get revocation registry definition '${revocationRegistryId}' from ledger`)
+
+      const request = await this.indy.buildGetRevocRegDefRequest(null, revocationRegistryId)
+
+      this.logger.debug(`Submitting get revocation registry definition request for '${revocationRegistryId}' to ledger`)
+      const response = await this.submitReadRequest(request)
+
+      const [, revocationRegistryDefinition] = await this.indy.parseGetRevocRegDefResponse(response)
+      this.logger.debug(`Got revocation registry definition '${revocationRegistryId}' from ledger`, {
+        response,
+        revocationRegistryDefinition,
+      })
+
+      return revocationRegistryDefinition
+    } catch (error) {
+      this.logger.error(`Error retrieving revocation registry definition '${revocationRegistryId}' from ledger`, {
+        error,
+        revocationRegistryId,
         poolHandle: await this.getPoolHandle(),
       })
       throw error
@@ -314,7 +357,7 @@ export class LedgerService {
     if (this.agentConfig.genesisPath) return this.agentConfig.genesisPath
 
     // Determine the genesisPath
-    const genesisPath = this.fileSystem.basePath + `/afj/genesis-${this.agentConfig.poolName}.txn`
+    const genesisPath = `${this.fileSystem.tmpDir}/genesis/genesis-${this.agentConfig.poolName}.txn`
     // Store genesis data if provided
     if (this.agentConfig.genesisTransactions) {
       await this.fileSystem.write(genesisPath, this.agentConfig.genesisTransactions)
@@ -337,6 +380,12 @@ export interface CredentialDefinitionTemplate {
   tag: string
   signatureType: 'CL'
   supportRevocation: boolean
+}
+
+export interface RevocationRegistryTemplate {
+  tag: string
+  maxNumberOfCreds?: number
+  credentialDefinitionId: string
 }
 
 interface AuthorAgreement {

@@ -23,7 +23,7 @@ describe('BasicMessageService', () => {
   })
 
   let wallet: Wallet
-  let storageService: StorageService<BasicMessageRecord>
+  let storageService: StorageService
 
   beforeAll(async () => {
     wallet = new IndyWallet(new AgentConfig(getBaseConfig('BasicMessageServiceTest')))
