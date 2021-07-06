@@ -7,6 +7,8 @@ export { InitConfig, OutboundPackage, DidCommMimeType } from './types'
 export { FileSystem } from './storage/FileSystem'
 export { InMemoryMessageRepository } from './storage/InMemoryMessageRepository'
 export { getDirFromFilePath } from './utils/path'
+export { InjectionSymbols } from './constants'
+export type { Wallet } from './wallet/Wallet'
 
 export * from './transport'
 export * from './modules/basic-messages'

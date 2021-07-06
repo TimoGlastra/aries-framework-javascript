@@ -1,11 +1,11 @@
-import type { InboundTransporter } from '@aries-framework/core'
 
-import { getBaseConfig, sleep, waitForBasicMessage } from '../packages/core/tests/helpers'
+
+import { getBaseConfig, waitForBasicMessage } from '../packages/core/tests/helpers'
 import logger from '../packages/core/tests/logger'
 
 import { get } from './http'
 
-import { Agent, AriesFrameworkError, HttpOutboundTransporter } from '@aries-framework/core'
+import { Agent, HttpOutboundTransporter, PollingInboundTransporter } from '@aries-framework/core'
 
 const aliceConfig = getBaseConfig('E2E Alice', { mediatorUrl: 'http://localhost:3001' })
 const bobConfig = getBaseConfig('E2E Bob', { mediatorUrl: 'http://localhost:3002' })
@@ -95,39 +95,3 @@ describe('with mediator', () => {
     expect(basicMessage.content).toBe(message)
   })
 })
-
-class PollingInboundTransporter implements InboundTransporter {
-  public stop: boolean
-
-  public constructor() {
-    this.stop = false
-  }
-  public async start(agent: Agent) {
-    await this.registerMediator(agent)
-  }
-
-  public async registerMediator(agent: Agent) {
-    const mediatorUrl = agent.getMediatorUrl()
-
-    if (!mediatorUrl) {
-      throw new AriesFrameworkError(
-        'Agent has no mediator URL. Make sure to provide the `mediatorUrl` in the agent config.'
-      )
-    }
-
-    const mediatorInvitationUrl = await get(`${mediatorUrl}/invitation`)
-    const { verkey: mediatorVerkey } = JSON.parse(await get(`${mediatorUrl}/`))
-    await agent.routing.provision({
-      verkey: mediatorVerkey,
-      invitationUrl: mediatorInvitationUrl,
-    })
-    this.pollDownloadMessages(agent)
-  }
-
-  private async pollDownloadMessages(agent: Agent) {
-    while (!this.stop) {
-      await agent.routing.downloadMessages()
-      await sleep(5000)
-    }
-  }
-}

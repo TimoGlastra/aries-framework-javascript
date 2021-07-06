@@ -4,8 +4,6 @@ import { Equals, IsString } from 'class-validator'
 import { AgentMessage } from '../../../agent/AgentMessage'
 import { JsonWebKey } from '../../../types'
 
-import { RoutingMessageType as MessageType } from './RoutingMessageType'
-
 export interface ForwardMessageOptions {
   id?: string
   to: string
@@ -33,7 +31,7 @@ export class ForwardMessage extends AgentMessage {
 
   @Equals(ForwardMessage.type)
   public readonly type = ForwardMessage.type
-  public static readonly type = MessageType.ForwardMessage
+  public static readonly type = 'https://didcomm.org/routing/1.0/forward'
 
   @IsString()
   public to!: string

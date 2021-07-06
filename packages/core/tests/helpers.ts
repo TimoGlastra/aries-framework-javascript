@@ -1,7 +1,7 @@
 import type { Agent } from '../src/agent/Agent'
 import type { AgentDependencies } from '../src/agent/AgentDependencies'
 import type { BasicMessage, BasicMessageReceivedEvent } from '../src/modules/basic-messages'
-import type { ConnectionStorageProps } from '../src/modules/connections'
+
 import type { CredentialRecord, CredentialOfferTemplate, CredentialStateChangedEvent } from '../src/modules/credentials'
 import type { SchemaTemplate, CredentialDefinitionTemplate } from '../src/modules/ledger'
 import type { ProofRecord, ProofState, ProofStateChangedEvent } from '../src/modules/proofs'
@@ -17,6 +17,7 @@ import { BasicMessageEventTypes } from '../src/modules/basic-messages'
 import {
   ConnectionInvitationMessage,
   ConnectionRecord,
+  ConnectionRecordProps,
   ConnectionRole,
   ConnectionState,
   DidCommService,
@@ -32,8 +33,6 @@ export const genesisPath = process.env.GENESIS_TXN_PATH
   : path.join(__dirname, '../../../network/genesis/local-genesis.txn')
 
 export const publicDidSeed = process.env.TEST_AGENT_PUBLIC_DID_SEED ?? '000000000000000000000000Trustee9'
-
-export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
 export function getBaseConfig(name: string, extraConfig: Partial<InitConfig> = {}) {
   const config: InitConfig = {
@@ -74,7 +73,7 @@ export async function waitForProofRecord(
   return new Promise((resolve) => {
     const listener = (event: ProofStateChangedEvent) => {
       const previousStateMatches = previousState === undefined || event.payload.previousState === previousState
-      const threadIdMatches = threadId === undefined || event.payload.proofRecord.tags.threadId === threadId
+      const threadIdMatches = threadId === undefined || event.payload.proofRecord.threadId === threadId
       const stateMatches = state === undefined || event.payload.proofRecord.state === state
 
       if (previousStateMatches && threadIdMatches && stateMatches) {
@@ -103,7 +102,7 @@ export async function waitForCredentialRecord(
   return new Promise((resolve) => {
     const listener = (event: CredentialStateChangedEvent) => {
       const previousStateMatches = previousState === undefined || event.payload.previousState === previousState
-      const threadIdMatches = threadId === undefined || event.payload.credentialRecord.tags.threadId === threadId
+      const threadIdMatches = threadId === undefined || event.payload.credentialRecord.threadId === threadId
       const stateMatches = state === undefined || event.payload.credentialRecord.state === state
 
       if (previousStateMatches && threadIdMatches && stateMatches) {
@@ -117,16 +116,12 @@ export async function waitForCredentialRecord(
   })
 }
 
-export async function waitForBasicMessage(
-  agent: Agent,
-  { verkey, content }: { verkey?: string; content?: string }
-): Promise<BasicMessage> {
+export async function waitForBasicMessage(agent: Agent, { content }: { content?: string }): Promise<BasicMessage> {
   return new Promise((resolve) => {
     const listener = (event: BasicMessageReceivedEvent) => {
-      const verkeyMatches = verkey === undefined || event.payload.verkey === verkey
       const contentMatches = content === undefined || event.payload.message.content === content
 
-      if (verkeyMatches && contentMatches) {
+      if (contentMatches) {
         agent.events.off<BasicMessageReceivedEvent>(BasicMessageEventTypes.BasicMessageReceived, listener)
 
         resolve(event.payload.message)
@@ -191,6 +186,7 @@ export function getMockConnection({
   role = ConnectionRole.Invitee,
   id = 'test',
   did = 'test-did',
+  threadId = 'threadId',
   verkey = 'key-1',
   didDoc = new DidDoc({
     id: did,
@@ -223,10 +219,11 @@ export function getMockConnection({
       }),
     ],
   }),
-}: Partial<ConnectionStorageProps> = {}) {
+}: Partial<ConnectionRecordProps> = {}) {
   return new ConnectionRecord({
     did,
     didDoc,
+    threadId,
     theirDid,
     theirDidDoc,
     id,
@@ -292,28 +289,28 @@ export async function issueCredential({
   let issuerCredentialRecord = await issuerAgent.credentials.offerCredential(issuerConnectionId, credentialTemplate)
 
   let holderCredentialRecord = await waitForCredentialRecord(holderAgent, {
-    threadId: issuerCredentialRecord.tags.threadId,
+    threadId: issuerCredentialRecord.threadId,
     state: CredentialState.OfferReceived,
   })
 
   holderCredentialRecord = await holderAgent.credentials.acceptOffer(holderCredentialRecord.id)
 
   issuerCredentialRecord = await waitForCredentialRecord(issuerAgent, {
-    threadId: holderCredentialRecord.tags.threadId,
+    threadId: holderCredentialRecord.threadId,
     state: CredentialState.RequestReceived,
   })
 
   issuerCredentialRecord = await issuerAgent.credentials.acceptRequest(issuerCredentialRecord.id)
 
   holderCredentialRecord = await waitForCredentialRecord(holderAgent, {
-    threadId: issuerCredentialRecord.tags.threadId,
+    threadId: issuerCredentialRecord.threadId,
     state: CredentialState.CredentialReceived,
   })
 
   holderCredentialRecord = await holderAgent.credentials.acceptCredential(holderCredentialRecord.id)
 
   issuerCredentialRecord = await waitForCredentialRecord(issuerAgent, {
-    threadId: issuerCredentialRecord.tags.threadId,
+    threadId: issuerCredentialRecord.threadId,
     state: CredentialState.Done,
   })
 

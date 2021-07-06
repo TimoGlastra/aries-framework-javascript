@@ -5,8 +5,9 @@ import * as indy from 'indy-sdk'
 
 import { Agent } from '../src/agent/Agent'
 import { DID_IDENTIFIER_REGEX, VERKEY_REGEX, isFullVerkey, isAbbreviatedVerkey } from '../src/utils/did'
+import { sleep } from '../src/utils/sleep'
 
-import { genesisPath, getBaseConfig, sleep } from './helpers'
+import { genesisPath, getBaseConfig } from './helpers'
 import testLogger from './logger'
 
 const faberConfig = getBaseConfig('Faber Ledger', { genesisPath })

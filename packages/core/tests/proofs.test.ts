@@ -135,7 +135,7 @@ describe('Present Proof', () => {
 
     testLogger.test('Faber waits for presentation proposal from Alice')
     let faberProofRecord = await waitForProofRecord(faberAgent, {
-      threadId: aliceProofRecord.tags.threadId,
+      threadId: aliceProofRecord.threadId,
       state: ProofState.ProposalReceived,
     })
 
@@ -144,21 +144,22 @@ describe('Present Proof', () => {
 
     testLogger.test('Alice waits for presentation request from Faber')
     aliceProofRecord = await waitForProofRecord(aliceAgent, {
-      threadId: aliceProofRecord.tags.threadId,
+      threadId: aliceProofRecord.threadId,
       state: ProofState.RequestReceived,
     })
 
     testLogger.test('Alice accepts presentation request from Faber')
     const indyProofRequest = aliceProofRecord.requestMessage?.indyProofRequest
-    const requestedCredentials = await aliceAgent.proofs.getRequestedCredentialsForProofRequest(
+    const retrievedCredentials = await aliceAgent.proofs.getRequestedCredentialsForProofRequest(
       indyProofRequest!,
       presentationPreview
     )
+    const requestedCredentials = aliceAgent.proofs.autoSelectCredentialsForProofRequest(retrievedCredentials)
     await aliceAgent.proofs.acceptRequest(aliceProofRecord.id, requestedCredentials)
 
     testLogger.test('Faber waits for presentation from Alice')
     faberProofRecord = await waitForProofRecord(faberAgent, {
-      threadId: aliceProofRecord.tags.threadId,
+      threadId: aliceProofRecord.threadId,
       state: ProofState.PresentationReceived,
     })
 
@@ -170,7 +171,7 @@ describe('Present Proof', () => {
 
     // Alice waits till it receives presentation ack
     aliceProofRecord = await waitForProofRecord(aliceAgent, {
-      threadId: aliceProofRecord.tags.threadId,
+      threadId: aliceProofRecord.threadId,
       state: ProofState.Done,
     })
   })
@@ -210,21 +211,22 @@ describe('Present Proof', () => {
 
     testLogger.test('Alice waits for presentation request from Faber')
     let aliceProofRecord = await waitForProofRecord(aliceAgent, {
-      threadId: faberProofRecord.tags.threadId,
+      threadId: faberProofRecord.threadId,
       state: ProofState.RequestReceived,
     })
 
     testLogger.test('Alice accepts presentation request from Faber')
     const indyProofRequest = aliceProofRecord.requestMessage?.indyProofRequest
-    const requestedCredentials = await aliceAgent.proofs.getRequestedCredentialsForProofRequest(
+    const retrievedCredentials = await aliceAgent.proofs.getRequestedCredentialsForProofRequest(
       indyProofRequest!,
       presentationPreview
     )
+    const requestedCredentials = aliceAgent.proofs.autoSelectCredentialsForProofRequest(retrievedCredentials)
     await aliceAgent.proofs.acceptRequest(aliceProofRecord.id, requestedCredentials)
 
     testLogger.test('Faber waits for presentation from Alice')
     faberProofRecord = await waitForProofRecord(faberAgent, {
-      threadId: aliceProofRecord.tags.threadId,
+      threadId: aliceProofRecord.threadId,
       state: ProofState.PresentationReceived,
     })
 
@@ -236,7 +238,7 @@ describe('Present Proof', () => {
 
     // Alice waits till it receives presentation ack
     aliceProofRecord = await waitForProofRecord(aliceAgent, {
-      threadId: aliceProofRecord.tags.threadId,
+      threadId: aliceProofRecord.threadId,
       state: ProofState.Done,
     })
   })

@@ -1,7 +1,7 @@
 import type { ConnectionService } from '../../connections'
-import type { StoreCredentialOptions } from '../../indy'
+import type { StoreCredentialOptions } from '../../indy/services/IndyHolderService'
 import type { CredentialStateChangedEvent } from '../CredentialEvents'
-import type { CredentialRecordMetadata, CredentialRecordTags } from '../repository/CredentialRecord'
+import type { CredentialRecordMetadata, CustomCredentialTags } from '../repository/CredentialRecord'
 import type { CredentialOfferTemplate } from '../services'
 
 import { EventEmitter as NativeEventEmitter } from 'events'
@@ -103,6 +103,8 @@ const mockCredentialRecord = ({
   state,
   requestMessage,
   metadata,
+  threadId,
+  connectionId,
   tags,
   id,
   credentialAttributes,
@@ -110,7 +112,9 @@ const mockCredentialRecord = ({
   state?: CredentialState
   requestMessage?: RequestCredentialMessage
   metadata?: CredentialRecordMetadata
-  tags?: CredentialRecordTags
+  tags?: CustomCredentialTags
+  threadId?: string
+  connectionId?: string
   id?: string
   credentialAttributes?: CredentialPreviewAttribute[]
 } = {}) => {
@@ -127,11 +131,9 @@ const mockCredentialRecord = ({
     requestMessage,
     metadata,
     state: state || CredentialState.OfferSent,
-    tags: tags ?? {
-      threadId: offerMessage.id,
-      connectionId: '123',
-    },
-    connectionId: '123',
+    threadId: threadId ?? offerMessage.id,
+    connectionId: connectionId ?? '123',
+    tags,
   })
 }
 
@@ -189,7 +191,8 @@ describe('CredentialService', () => {
         id: expect.any(String),
         createdAt: expect.any(Date),
         offerMessage: credentialOffer,
-        tags: { threadId: createdCredentialRecord.offerMessage?.id, connectionId: connection.id },
+        threadId: createdCredentialRecord.offerMessage?.id,
+        connectionId: connection.id,
         state: CredentialState.OfferSent,
       })
     })
@@ -274,7 +277,8 @@ describe('CredentialService', () => {
         id: expect.any(String),
         createdAt: expect.any(Date),
         offerMessage: credentialOfferMessage,
-        tags: { threadId: credentialOfferMessage.id, connectionId: connection.id },
+        threadId: credentialOfferMessage.id,
+        connectionId: connection.id,
         state: CredentialState.OfferReceived,
       }
       expect(repositorySaveSpy).toHaveBeenCalledTimes(1)
@@ -309,10 +313,8 @@ describe('CredentialService', () => {
     beforeEach(() => {
       credentialRecord = mockCredentialRecord({
         state: CredentialState.OfferReceived,
-        tags: {
-          threadId: 'fd9c5ddb-ec11-4acd-bc32-540736249746',
-          connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
-        },
+        threadId: 'fd9c5ddb-ec11-4acd-bc32-540736249746',
+        connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
       })
     })
 
@@ -364,7 +366,7 @@ describe('CredentialService', () => {
         '@id': expect.any(String),
         '@type': 'https://didcomm.org/issue-credential/1.0/request-credential',
         '~thread': {
-          thid: 'fd9c5ddb-ec11-4acd-bc32-540736249746',
+          thid: credentialRecord.threadId,
         },
         comment,
         'requests~attach': [
@@ -478,7 +480,8 @@ describe('CredentialService', () => {
           comment: 'abcd',
           requestAttachments: [requestAttachment],
         }),
-        tags: { threadId, connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190' },
+        threadId,
+        connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
       })
     })
 
@@ -531,7 +534,7 @@ describe('CredentialService', () => {
         '@id': expect.any(String),
         '@type': 'https://didcomm.org/issue-credential/1.0/issue-credential',
         '~thread': {
-          thid: 'fd9c5ddb-ec11-4acd-bc32-540736249746',
+          thid: credential.threadId,
         },
         comment,
         'credentials~attach': [
@@ -563,7 +566,8 @@ describe('CredentialService', () => {
         credentialService.createCredential(
           mockCredentialRecord({
             state: CredentialState.RequestReceived,
-            tags: { threadId, connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190' },
+            threadId,
+            connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
           })
         )
       ).rejects.toThrowError(
@@ -580,7 +584,8 @@ describe('CredentialService', () => {
             credentialService.createCredential(
               mockCredentialRecord({
                 state,
-                tags: { threadId, connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190' },
+                threadId,
+                connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
                 requestMessage: new RequestCredentialMessage({
                   requestAttachments: [requestAttachment],
                 }),
@@ -743,7 +748,8 @@ describe('CredentialService', () => {
     beforeEach(() => {
       credential = mockCredentialRecord({
         state: CredentialState.CredentialReceived,
-        tags: { threadId, connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190' },
+        threadId,
+        connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
       })
     })
 
@@ -805,7 +811,7 @@ describe('CredentialService', () => {
         invalidCredentialStates.map(async (state) => {
           await expect(
             credentialService.createAck(
-              mockCredentialRecord({ state, tags: { threadId, connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190' } })
+              mockCredentialRecord({ state, threadId, connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190' })
             )
           ).rejects.toThrowError(`Credential record is in invalid state ${state}. Valid states are: ${validState}.`)
         })

@@ -1,9 +1,10 @@
 import type { BaseEvent } from './Events'
 import type { EventEmitter as NativeEventEmitter } from 'events'
 
-import { inject, Lifecycle, scoped } from 'tsyringe'
-
 import { InjectionSymbols } from '../constants'
+
+import { fromEventPattern } from 'rxjs'
+import { inject, Lifecycle, scoped } from 'tsyringe'
 
 @scoped(Lifecycle.ContainerScoped)
 export class EventEmitter {
@@ -23,5 +24,12 @@ export class EventEmitter {
 
   public off<T extends BaseEvent>(event: T['type'], listener: (data: T) => void | Promise<void>) {
     this.eventEmitter.off(event, listener)
+  }
+
+  public observable<T extends BaseEvent>(event: T['type']) {
+    return fromEventPattern<T>(
+      (handler) => this.on(event, handler),
+      (handler) => this.off(event, handler)
+    )
   }
 }
