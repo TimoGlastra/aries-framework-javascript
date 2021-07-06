@@ -8,7 +8,7 @@
     "paths": {
       "@aries-framework/*": ["packages/*/src"]
     },
-    "types": ["jest"]
+    "types": ["jest", "node"]
   },
   "exclude": ["node_modules", "build"]
 }
