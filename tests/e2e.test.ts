@@ -1,5 +1,3 @@
-
-
 import { getBaseConfig, waitForBasicMessage } from '../packages/core/tests/helpers'
 import logger from '../packages/core/tests/logger'
 

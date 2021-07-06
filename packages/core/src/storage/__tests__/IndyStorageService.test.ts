@@ -1,5 +1,6 @@
-import { getBaseConfig } from '../../../tests/helpers'
 import type { TagsBase } from '../BaseRecord'
+
+import { getBaseConfig } from '../../../tests/helpers'
 import { AgentConfig } from '../../agent/AgentConfig'
 import { RecordDuplicateError, RecordNotFoundError } from '../../error'
 import { IndyWallet } from '../../wallet/IndyWallet'

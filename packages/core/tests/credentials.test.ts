@@ -90,6 +90,7 @@ describe('credentials', () => {
 
     const publicDid = faberAgent.publicDid?.did
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await ensurePublicDidIsOnLedger(faberAgent, publicDid!)
     const { agentAConnection, agentBConnection } = await makeConnection(faberAgent, aliceAgent)
     faberConnection = agentAConnection

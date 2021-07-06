@@ -87,6 +87,7 @@ describe('Present Proof', () => {
     credDefId = credentialDefinition.id
 
     const publicDid = faberAgent.publicDid?.did
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await ensurePublicDidIsOnLedger(faberAgent, publicDid!)
     const { agentAConnection, agentBConnection } = await makeConnection(faberAgent, aliceAgent)
 
@@ -151,6 +152,7 @@ describe('Present Proof', () => {
     testLogger.test('Alice accepts presentation request from Faber')
     const indyProofRequest = aliceProofRecord.requestMessage?.indyProofRequest
     const retrievedCredentials = await aliceAgent.proofs.getRequestedCredentialsForProofRequest(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       indyProofRequest!,
       presentationPreview
     )
@@ -218,6 +220,7 @@ describe('Present Proof', () => {
     testLogger.test('Alice accepts presentation request from Faber')
     const indyProofRequest = aliceProofRecord.requestMessage?.indyProofRequest
     const retrievedCredentials = await aliceAgent.proofs.getRequestedCredentialsForProofRequest(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       indyProofRequest!,
       presentationPreview
     )

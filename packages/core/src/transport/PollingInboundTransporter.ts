@@ -1,8 +1,9 @@
 import type { Agent } from '../agent/Agent'
 import type { InboundTransporter } from './InboundTransporter'
+import type Fetch from 'node-fetch'
 
+import { InjectionSymbols } from '../constants'
 import { AriesFrameworkError } from '../error/AriesFrameworkError'
-import { fetch } from '../utils/fetch'
 import { sleep } from '../utils/sleep'
 
 export class PollingInboundTransporter implements InboundTransporter {
@@ -20,6 +21,7 @@ export class PollingInboundTransporter implements InboundTransporter {
 
   public async registerMediator(agent: Agent) {
     const mediatorUrl = agent.getMediatorUrl()
+    const fetch = agent.injectionContainer.resolve<typeof Fetch>(InjectionSymbols.Fetch)
 
     if (!mediatorUrl) {
       throw new AriesFrameworkError(

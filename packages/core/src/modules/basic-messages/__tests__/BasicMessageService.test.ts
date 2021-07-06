@@ -4,7 +4,7 @@ import type { BasicMessageReceivedEvent } from '../BasicMessageEvents'
 
 import { EventEmitter as NativeEventEmitter } from 'events'
 
-import { getBaseConfig , getMockConnection} from '../../../../tests/helpers'
+import { getBaseConfig, getMockConnection } from '../../../../tests/helpers'
 import { AgentConfig } from '../../../agent/AgentConfig'
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { InboundMessageContext } from '../../../agent/models/InboundMessageContext'

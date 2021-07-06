@@ -1,10 +1,10 @@
 import type { BaseEvent } from './Events'
 import type { EventEmitter as NativeEventEmitter } from 'events'
 
-import { InjectionSymbols } from '../constants'
-
 import { fromEventPattern } from 'rxjs'
 import { inject, Lifecycle, scoped } from 'tsyringe'
+
+import { InjectionSymbols } from '../constants'
 
 @scoped(Lifecycle.ContainerScoped)
 export class EventEmitter {

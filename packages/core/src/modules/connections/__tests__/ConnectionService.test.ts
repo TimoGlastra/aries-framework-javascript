@@ -469,7 +469,9 @@ describe('ConnectionService', () => {
 
       const messageContext = new InboundMessageContext(connectionResponse, {
         connection: connectionRecord,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         senderVerkey: connectionRecord.theirKey!,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         recipientVerkey: connectionRecord.myKey!,
       })
 
@@ -537,7 +539,9 @@ describe('ConnectionService', () => {
 
       const messageContext = new InboundMessageContext(connectionResponse, {
         connection: connectionRecord,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         senderVerkey: connectionRecord.theirKey!,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         recipientVerkey: connectionRecord.myKey!,
       })
 

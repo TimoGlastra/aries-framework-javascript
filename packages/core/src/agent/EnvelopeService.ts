@@ -1,5 +1,4 @@
 import type { Logger } from '../logger'
-
 import type { JsonWebKey, UnpackedMessageContext } from '../types'
 import type { AgentMessage } from './AgentMessage'
 import type { Verkey } from 'indy-sdk'

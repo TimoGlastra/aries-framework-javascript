@@ -1,7 +1,7 @@
 import type { Agent } from '../src/agent/Agent'
 import type { AgentDependencies } from '../src/agent/AgentDependencies'
 import type { BasicMessage, BasicMessageReceivedEvent } from '../src/modules/basic-messages'
-
+import type { ConnectionRecordProps } from '../src/modules/connections'
 import type { CredentialRecord, CredentialOfferTemplate, CredentialStateChangedEvent } from '../src/modules/credentials'
 import type { SchemaTemplate, CredentialDefinitionTemplate } from '../src/modules/ledger'
 import type { ProofRecord, ProofState, ProofStateChangedEvent } from '../src/modules/proofs'
@@ -17,7 +17,6 @@ import { BasicMessageEventTypes } from '../src/modules/basic-messages'
 import {
   ConnectionInvitationMessage,
   ConnectionRecord,
-  ConnectionRecordProps,
   ConnectionRole,
   ConnectionState,
   DidCommService,
