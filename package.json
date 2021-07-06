@@ -16,7 +16,7 @@
     "check-format": "yarn prettier --list-different",
     "clean": "lerna run clean",
     "build": "lerna run build",
-    "pub": "lerna publish",
+    "publish": "lerna publish",
     "test": "jest",
     "lint": "eslint --ignore-path .gitignore .",
     "validate": "yarn lint && yarn check-types && yarn check-format",
