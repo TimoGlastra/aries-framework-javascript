@@ -1,6 +1,6 @@
 {
   "name": "@aries-framework/react-native",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "main": "build/index",
   "types": "build/index",
   "files": [
@@ -22,12 +22,11 @@
     "@aries-framework/core": "*",
     "events": "^3.3.0",
     "react-native-fs": "^2.18.0",
-    "rn-indy-sdk": "^0.1.10"
+    "rn-indy-sdk": "^0.1.11"
   },
   "devDependencies": {
-    "@types/node": "*",
     "@types/react-native": "^0.64.10",
-    "@types/rn-indy-sdk": "npm:@types/indy-sdk@^1.15.3",
+    "@types/rn-indy-sdk": "npm:@types/indy-sdk@^1.16.1",
     "react": "17.0.1",
     "react-native": "0.64.2",
     "rimraf": "~3.0.2",

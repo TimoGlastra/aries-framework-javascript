@@ -2158,7 +2158,7 @@
   dependencies:
     "@types/node" "*"
 
-"@types/indy-sdk@^1.15.3", "@types/rn-indy-sdk@npm:@types/indy-sdk@^1.15.3":
+"@types/indy-sdk@^1.15.3":
   version "1.15.3"
   resolved "https://registry.yarnpkg.com/@types/indy-sdk/-/indy-sdk-1.15.3.tgz#bce7cef595f4a17f774c1840470969e554851dec"
   integrity sha512-/9G3dCeiOm03xv606UgFDkFnbg6oknGMp9Eou56dQknAJXhpvwOljBglgFuXG16mpmQrRQPoCVkApHQG6D0ywQ==
@@ -2285,6 +2285,13 @@
     "@types/prop-types" "*"
     "@types/scheduler" "*"
     csstype "^3.0.2"
+
+"@types/rn-indy-sdk@npm:@types/indy-sdk@^1.16.1":
+  version "1.16.1"
+  resolved "https://registry.yarnpkg.com/@types/indy-sdk/-/indy-sdk-1.16.1.tgz#cfb1216d5a3361eb981f83b6ae614d567aa028cd"
+  integrity sha512-Y84hePLKymeGxUvAmNgl7viKFRyEtL1/5Ih9EUr7mPeKDyBHEcX6n0DMecr5GINXq4ePUa47ZFKxPolW4eyNIA==
+  dependencies:
+    "@types/node" "*"
 
 "@types/scheduler@*":
   version "0.16.1"
@@ -8934,10 +8941,10 @@ rimraf@~2.6.2:
   dependencies:
     glob "^7.1.3"
 
-rn-indy-sdk@^0.1.10:
-  version "0.1.10"
-  resolved "https://registry.yarnpkg.com/rn-indy-sdk/-/rn-indy-sdk-0.1.10.tgz#adf48574fec8d86cf74ea93e30916f7a8aac0210"
-  integrity sha512-DFdsPHtjy2hc08NRa8Pht5C9Ytromg/w1TJ8M4Fk+OPbAm7V2B9+lrNGrosgMGe2DrIIl9Q2cZkxVnWSfLgiNA==
+rn-indy-sdk@^0.1.11:
+  version "0.1.11"
+  resolved "https://registry.yarnpkg.com/rn-indy-sdk/-/rn-indy-sdk-0.1.11.tgz#9047529220af64d93b6c8e865a1a6710d1d12e1f"
+  integrity sha512-PR3CoLcNG3vBUNRfmgRLwTXO7OMtXAtagRqdB1057uL2ycjstWgKuDY0naI1A3yOV+5VWGhmnbnL6HqYqtR7Kw==
   dependencies:
     buffer "^6.0.2"
 
