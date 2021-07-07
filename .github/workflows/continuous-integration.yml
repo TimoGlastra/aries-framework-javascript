@@ -127,8 +127,8 @@ jobs:
     runs-on: ubuntu-20.04
     name: Release Canary
     needs: [integration-test, validate]
-    # Only run on push to main branch
-    if: github.ref == 'refs/heads/main' && github.repository == 'hyperledger/aries-framework-javascript' && github.event_name == 'push'
+    # Only run on push to main branch (FIXME: change to hyperledger)
+    if: github.ref == 'refs/heads/main' && github.repository == 'TimoGlastra/aries-framework-javascript' && github.event_name == 'push'
     steps:
       - name: Checkout aries-framework-javascript
         uses: actions/checkout@v2
