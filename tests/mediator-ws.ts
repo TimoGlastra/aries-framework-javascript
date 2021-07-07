@@ -1,4 +1,4 @@
-import type { InboundTransporter } from '@aries-framework/core-test'
+import type { InboundTransporter } from '@aries-framework/core'
 import type WebSocket from 'ws'
 
 import cors from 'cors'
@@ -16,7 +16,7 @@ import {
   WsOutboundTransporter,
   DidCommMimeType,
   InMemoryMessageRepository,
-} from '@aries-framework/core-test'
+} from '@aries-framework/core'
 
 const logger = testLogger
 

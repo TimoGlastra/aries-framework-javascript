@@ -1,10 +1,10 @@
-import type { InitConfig, AgentDependencies } from '@aries-framework/core-test'
+import type { InitConfig, AgentDependencies } from '@aries-framework/core'
 
 import * as dotenv from 'dotenv'
 
 import { TestLogger } from '../packages/core/tests/logger'
 
-import { LogLevel } from '@aries-framework/core-test'
+import { LogLevel } from '@aries-framework/core'
 import { fetch, NodeFileSystem, EventEmitter, WebSocket, indy } from '@aries-framework/node'
 dotenv.config()
 

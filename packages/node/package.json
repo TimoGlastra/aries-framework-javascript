@@ -1,5 +1,5 @@
 {
-  "name": "@aries-framework/node-test",
+  "name": "@aries-framework/node",
   "main": "build/index",
   "types": "build/index",
   "version": "0.0.0",
@@ -23,7 +23,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@aries-framework/core-test": "*",
+    "@aries-framework/core": "*",
     "indy-sdk": "^1.16.0-dev-1634",
     "node-fetch": "^2.6.1",
     "ws": "^7.4.6"

@@ -1,5 +1,5 @@
 {
-  "name": "@aries-framework/core-test",
+  "name": "@aries-framework/core",
   "main": "build/index",
   "types": "build/index",
   "version": "0.0.0",

@@ -1,5 +1,5 @@
 import type { MessageRepository } from '../packages/core/src/storage/MessageRepository'
-import type { InboundTransporter, OutboundTransporter, OutboundPackage } from '@aries-framework/core-test'
+import type { InboundTransporter, OutboundTransporter, OutboundPackage } from '@aries-framework/core'
 import type { Express } from 'express'
 
 import cors from 'cors'
@@ -9,7 +9,7 @@ import testLogger from '../packages/core/tests/logger'
 
 import config, { dependencies } from './config'
 
-import { DidCommMimeType, AriesFrameworkError, Agent, InMemoryMessageRepository } from '@aries-framework/core-test'
+import { DidCommMimeType, AriesFrameworkError, Agent, InMemoryMessageRepository } from '@aries-framework/core'
 
 class HttpInboundTransporter implements InboundTransporter {
   private app: Express

@@ -1,11 +1,11 @@
-import type { InboundTransporter } from '@aries-framework/core-test'
+import type { InboundTransporter } from '@aries-framework/core'
 
 import { getBaseConfig, waitForBasicMessage } from '../packages/core/tests/helpers'
 import testLogger from '../packages/core/tests/logger'
 
 import { get } from './http'
 
-import { Agent, WsOutboundTransporter } from '@aries-framework/core-test'
+import { Agent, WsOutboundTransporter } from '@aries-framework/core'
 
 const logger = testLogger
 

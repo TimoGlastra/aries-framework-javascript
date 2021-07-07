@@ -1,6 +1,6 @@
-import type { FileSystem } from '@aries-framework/core-test'
+import type { FileSystem } from '@aries-framework/core'
 
-import { getDirFromFilePath } from '@aries-framework/core-test'
+import { getDirFromFilePath } from '@aries-framework/core'
 import * as RNFS from 'react-native-fs'
 
 export class ReactNativeFileSystem implements FileSystem {
