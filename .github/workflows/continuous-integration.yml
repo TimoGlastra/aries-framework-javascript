@@ -160,7 +160,7 @@ jobs:
 
       # On push to main, release unstable version
       - name: Release Unstable
-        run: yarn lerna publish --loglevel=verbose --canary --preid unstable --exact --force-publish --yes --no-verify-access
+        run: yarn lerna publish --loglevel=verbose --canary minor --exact --force-publish --yes --no-verify-access --dist-tag latest
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
