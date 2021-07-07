@@ -1,6 +1,5 @@
 {
   "name": "@aries-framework/react-native",
-  "version": "0.0.0",
   "main": "build/index",
   "types": "build/index",
   "files": [
