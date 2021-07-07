@@ -1,5 +1,5 @@
 {
-  "name": "@aries-framework/react-native",
+  "name": "@aries-framework/react-native-test",
   "main": "build/index",
   "types": "build/index",
   "version": "0.0.0",
@@ -23,7 +23,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@aries-framework/core": "*",
+    "@aries-framework/core-test": "*",
     "events": "^3.3.0",
     "react-native-fs": "^2.18.0",
     "rn-indy-sdk": "^0.1.11"
