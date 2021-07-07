@@ -12,6 +12,9 @@ const config: Config.InitialOptions = {
       '<rootDir>/../../packages/$1/src',
       '<rootDir>/../packages/$1/src',
       '<rootDir>/packages/$1/src',
+      '<rootDir>/../../packages/$1-test/src',
+      '<rootDir>/../packages/$1-test/src',
+      '<rootDir>/packages/$1-test/src',
     ],
   },
 }
