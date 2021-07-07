@@ -1,4 +1,4 @@
-import type { FileSystem } from '@aries-framework/core'
+import type { FileSystem } from '@aries-framework/core-test'
 
 import { promises } from 'fs'
 import { tmpdir } from 'os'

@@ -1,6 +1,13 @@
-import type { InboundTransporter } from '@aries-framework/core'
+import type { InboundTransporter } from '@aries-framework/core-test'
 import type WebSocket from 'ws'
 
+import {
+  Agent,
+  WebSocketTransportSession,
+  WsOutboundTransporter,
+  DidCommMimeType,
+  InMemoryMessageRepository,
+} from '@aries-framework/core-test'
 import cors from 'cors'
 import express, { text } from 'express'
 import { v4 as uuid } from 'uuid'
@@ -9,14 +16,6 @@ import { Server } from 'ws'
 import testLogger from '../packages/core/tests/logger'
 
 import config, { dependencies } from './config'
-
-import {
-  Agent,
-  WebSocketTransportSession,
-  WsOutboundTransporter,
-  DidCommMimeType,
-  InMemoryMessageRepository,
-} from '@aries-framework/core'
 
 const logger = testLogger
 

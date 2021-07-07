@@ -1,9 +1,9 @@
+import { Agent, HttpOutboundTransporter, PollingInboundTransporter } from '@aries-framework/core-test'
+
 import { getBaseConfig, waitForBasicMessage } from '../packages/core/tests/helpers'
 import logger from '../packages/core/tests/logger'
 
 import { get } from './http'
-
-import { Agent, HttpOutboundTransporter, PollingInboundTransporter } from '@aries-framework/core'
 
 const aliceConfig = getBaseConfig('E2E Alice', { mediatorUrl: 'http://localhost:3001' })
 const bobConfig = getBaseConfig('E2E Bob', { mediatorUrl: 'http://localhost:3002' })
