@@ -8,7 +8,7 @@ export interface AgentDependencies {
   FileSystem: {
     new (): FileSystem
   }
-  indy: typeof Indy
+  indy?: typeof Indy
   EventEmitterClass: typeof EventEmitter
   fetch: typeof fetch
   WebSocketClass: typeof WebSocket
