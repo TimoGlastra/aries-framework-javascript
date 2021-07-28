@@ -1,5 +1,5 @@
 import type { Logger } from '../logger'
-import type { PackedMessage, UnpackedMessageContext } from '../types'
+import type { UnpackedMessageContext, WireMessage } from '../types'
 import type { AgentMessage } from './AgentMessage'
 
 import { inject, scoped, Lifecycle } from 'tsyringe'
@@ -26,13 +26,13 @@ class EnvelopeService {
     this.logger = agentConfig.logger
   }
 
-  public async packMessage(payload: AgentMessage, keys: EnvelopeKeys): Promise<PackedMessage> {
-    const { routingKeys, recipientKeys, senderKey: senderVerkey } = keys
+  public async packMessage(payload: AgentMessage, keys: EnvelopeKeys): Promise<WireMessage> {
+    const { routingKeys, recipientKeys, senderKey } = keys
     const message = payload.toJSON()
 
     this.logger.debug(`Pack outbound message ${payload.type}`)
 
-    let wireMessage = await this.wallet.pack(message, recipientKeys, senderVerkey)
+    let wireMessage = await this.wallet.pack(message, recipientKeys, senderKey ?? undefined)
 
     if (routingKeys && routingKeys.length > 0) {
       for (const routingKey of routingKeys) {
@@ -43,13 +43,13 @@ class EnvelopeService {
           message: wireMessage,
         })
         this.logger.debug('Forward message created', forwardMessage)
-        wireMessage = await this.wallet.pack(forwardMessage.toJSON(), [routingKey], senderVerkey)
+        wireMessage = await this.wallet.pack(forwardMessage.toJSON(), [routingKey], senderKey ?? undefined)
       }
     }
     return wireMessage
   }
 
-  public async unpackMessage(packedMessage: PackedMessage): Promise<UnpackedMessageContext> {
+  public async unpackMessage(packedMessage: WireMessage): Promise<UnpackedMessageContext> {
     return this.wallet.unpack(packedMessage)
   }
 }

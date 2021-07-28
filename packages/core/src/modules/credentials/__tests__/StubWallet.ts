@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import type { PackedMessage, UnpackedMessageContext, WalletConfig } from '../../../types'
+import type { WireMessage, UnpackedMessageContext, WalletConfig } from '../../../types'
 import type { Buffer } from '../../../utils/buffer'
 import type { DidConfig, DidInfo, Wallet } from '../../../wallet/Wallet'
 
@@ -32,14 +32,10 @@ export class StubWallet implements Wallet {
     throw new Error('Method not implemented.')
   }
 
-  public pack(
-    payload: Record<string, unknown>,
-    recipientKeys: string[],
-    senderVerkey?: string | null
-  ): Promise<PackedMessage> {
+  public pack(payload: Record<string, unknown>, recipientKeys: string[], senderVerkey?: string): Promise<WireMessage> {
     throw new Error('Method not implemented.')
   }
-  public unpack(messagePackage: PackedMessage): Promise<UnpackedMessageContext> {
+  public unpack(messagePackage: WireMessage): Promise<UnpackedMessageContext> {
     throw new Error('Method not implemented.')
   }
   public sign(data: Buffer, verkey: string): Promise<Buffer> {

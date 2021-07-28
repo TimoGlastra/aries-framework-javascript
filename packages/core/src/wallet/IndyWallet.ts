@@ -1,5 +1,5 @@
 import type { Logger } from '../logger'
-import type { PackedMessage, UnpackedMessageContext, WalletConfig } from '../types'
+import type { WireMessage, UnpackedMessageContext, WalletConfig } from '../types'
 import type { Buffer } from '../utils/buffer'
 import type { Wallet, DidInfo, DidConfig } from './Wallet'
 import type { default as Indy } from 'indy-sdk'
@@ -284,8 +284,8 @@ export class IndyWallet implements Wallet {
   public async pack(
     payload: Record<string, unknown>,
     recipientKeys: string[],
-    senderVerkey?: string | null
-  ): Promise<PackedMessage> {
+    senderVerkey?: string
+  ): Promise<WireMessage> {
     try {
       const messageRaw = JsonEncoder.toBuffer(payload)
       const packedMessage = await this.indy.packMessage(
@@ -300,7 +300,7 @@ export class IndyWallet implements Wallet {
     }
   }
 
-  public async unpack(messagePackage: PackedMessage): Promise<UnpackedMessageContext> {
+  public async unpack(messagePackage: WireMessage): Promise<UnpackedMessageContext> {
     try {
       const unpackedMessageBuffer = await this.indy.unpackMessage(
         this.walletHandle,
@@ -319,9 +319,7 @@ export class IndyWallet implements Wallet {
 
   public async sign(data: Buffer, verkey: string): Promise<Buffer> {
     try {
-      const signatureBuffer = await this.indy.cryptoSign(this.walletHandle, verkey, data)
-
-      return signatureBuffer
+      return await this.indy.cryptoSign(this.walletHandle, verkey, data)
     } catch (error) {
       throw new WalletError(`Error signing data with verkey ${verkey}`, { cause: error })
     }
