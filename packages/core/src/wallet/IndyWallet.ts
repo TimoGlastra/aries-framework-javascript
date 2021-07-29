@@ -9,7 +9,7 @@ import { Lifecycle, scoped } from 'tsyringe'
 import { AgentConfig } from '../agent/AgentConfig'
 import { AriesFrameworkError } from '../error'
 import { JsonEncoder } from '../utils/JsonEncoder'
-import { isIndyError } from '../utils/indyError'
+import { assertIndy, isIndyError } from '../utils/indyError'
 
 import { WalletDuplicateError, WalletNotFoundError, WalletError } from './error'
 
@@ -30,7 +30,7 @@ export class IndyWallet implements Wallet {
 
   public constructor(agentConfig: AgentConfig) {
     this.logger = agentConfig.logger
-    this.indy = agentConfig.agentDependencies.indy
+    this.indy = assertIndy(agentConfig.agentDependencies.indy)
   }
 
   public get isInitialized() {

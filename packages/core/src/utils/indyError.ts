@@ -1,3 +1,5 @@
+import type { default as Indy } from 'indy-sdk'
+
 import { AriesFrameworkError } from '../error'
 
 export const indyErrors = {
@@ -97,4 +99,12 @@ export function isIndyError(error: any, errorName?: IndyErrorValues): error is I
   }
 
   return error.indyName === errorName
+}
+
+export function assertIndy(indy?: typeof Indy): typeof Indy {
+  if (!indy) {
+    throw new AriesFrameworkError('Indy wallet is required')
+  }
+
+  return indy
 }

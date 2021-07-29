@@ -4,16 +4,21 @@ import 'reflect-metadata'
 export { Agent } from './agent/Agent'
 export { AgentConfig } from './agent/AgentConfig'
 export type { AgentDependencies } from './agent/AgentDependencies'
-export type { InitConfig, OutboundPackage, WireMessage } from './types'
+export type { InitConfig, OutboundPackage, WireMessage, WalletConfig, UnpackedMessageContext } from './types'
 export { DidCommMimeType } from './types'
 export type { FileSystem } from './storage/FileSystem'
 export { InMemoryMessageRepository } from './storage/InMemoryMessageRepository'
+export { BaseRecord, TagsBase } from './storage/BaseRecord'
+export { StorageService, BaseRecordConstructor } from './storage/StorageService'
 export { getDirFromFilePath } from './utils/path'
 export { InjectionSymbols } from './constants'
-export type { Wallet } from './wallet/Wallet'
+export { WalletError, WalletDuplicateError, WalletNotFoundError } from './wallet/error'
+export type { Wallet, DidInfo, DidConfig } from './wallet/Wallet'
 export type { TransportSession } from './agent/TransportService'
 export { TransportService } from './agent/TransportService'
 
+import { JsonEncoder } from './utils/JsonEncoder'
+export { Buffer } from './utils/buffer'
 import { uuid } from './utils/uuid'
 
 export * from './transport'
@@ -29,6 +34,7 @@ export * from './error'
 
 const utils = {
   uuid,
+  JsonEncoder,
 }
 
 export { utils }

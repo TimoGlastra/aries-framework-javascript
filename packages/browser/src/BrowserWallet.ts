@@ -1,23 +1,23 @@
 /* eslint-disable import/no-named-as-default-member */
-import type { Logger } from '../logger'
-import type { WireMessage, UnpackedMessageContext, WalletConfig } from '../types'
-import type { Wallet, DidInfo, DidConfig } from './Wallet'
+import type {
+  Logger,
+  AgentConfig,
+  WireMessage,
+  UnpackedMessageContext,
+  WalletConfig,
+  Wallet,
+  DidConfig,
+  DidInfo,
+} from '@aries-framework/core'
 
+import { WalletError, AriesFrameworkError, utils } from '@aries-framework/core'
+import { Buffer } from 'buffer/'
 import { DIDComm } from 'encryption-envelope-js'
 // eslint-disable-next-line import/default
 import sodium from 'libsodium-wrappers'
 import * as base58 from 'micro-base58'
-import { Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../agent/AgentConfig'
-import { AriesFrameworkError } from '../error'
-import { JsonEncoder } from '../utils/JsonEncoder'
-import { Buffer } from '../utils/buffer'
-
-import { WalletError } from './error'
-
-@scoped(Lifecycle.ContainerScoped)
-export class InMemoryWallet implements Wallet {
+export class BrowserWallet implements Wallet {
   private logger: Logger
   private publicDidInfo: DidInfo | undefined
   private _didcomm?: DIDComm
@@ -145,13 +145,13 @@ export class InMemoryWallet implements Wallet {
     senderVerkey?: string | null
   ): Promise<WireMessage> {
     try {
-      const messageRaw = JsonEncoder.toString(payload)
+      const messageRaw = utils.JsonEncoder.toString(payload)
       const packedMessage = await this.didcomm.packMessage(
         messageRaw,
         recipientKeys.map((r) => base58.decode(r)),
         senderVerkey ? this.keyPairs[senderVerkey] : null
       )
-      return JsonEncoder.fromString(packedMessage)
+      return utils.JsonEncoder.fromString(packedMessage)
     } catch (error) {
       throw new WalletError('Error packing message', { cause: error })
     }
@@ -159,7 +159,7 @@ export class InMemoryWallet implements Wallet {
 
   public async unpack(messagePackage: WireMessage): Promise<UnpackedMessageContext> {
     try {
-      const recipientsOuter = JsonEncoder.fromBase64(messagePackage.protected as string)
+      const recipientsOuter = utils.JsonEncoder.fromBase64(messagePackage.protected as string)
       const recipientKeys = recipientsOuter.recipients.map((r: any) => r.header.kid) as string[]
 
       const foundRecipientKey = recipientKeys.find((r) => this.keyPairs[r] !== undefined)
@@ -176,7 +176,7 @@ export class InMemoryWallet implements Wallet {
       return {
         senderVerkey: senderKey,
         recipientVerkey: recipientKey,
-        message: JsonEncoder.fromString(message),
+        message: utils.JsonEncoder.fromString(message),
       }
     } catch (error) {
       throw new WalletError('Error unpacking message', { cause: error })

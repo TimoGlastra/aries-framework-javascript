@@ -48,13 +48,14 @@ export class Agent {
   public messageSubscription: Subscription
 
   public readonly connections!: ConnectionsModule
-  public readonly proofs!: ProofsModule
   public readonly basicMessages!: BasicMessagesModule
   public readonly ledger!: LedgerModule
-  public readonly credentials!: CredentialsModule
   public readonly mediationRecipient!: RecipientModule
   public readonly mediator!: MediatorModule
   public readonly discovery!: DiscoverFeaturesModule
+
+  public readonly credentials?: CredentialsModule
+  public readonly proofs?: ProofsModule
 
   public constructor(initialConfig: InitConfig, dependencies: AgentDependencies) {
     // Create child container so we don't interfere with anything outside of this agent
@@ -63,14 +64,32 @@ export class Agent {
     this.agentConfig = new AgentConfig(initialConfig, dependencies)
     this.logger = this.agentConfig.logger
 
+    const hasIndy = this.agentConfig.agentDependencies.indy !== undefined
+
     // Bind class based instances
     this.container.registerInstance(AgentConfig, this.agentConfig)
 
     // Based on interfaces. Need to register which class to use
     this.container.registerInstance(InjectionSymbols.Logger, this.logger)
-    this.container.register(InjectionSymbols.Wallet, { useToken: IndyWallet })
-    this.container.registerSingleton(InjectionSymbols.StorageService, IndyStorageService)
+
     this.container.registerSingleton(InjectionSymbols.MessageRepository, InMemoryMessageRepository)
+
+    const { storageService, wallet } = this.agentConfig.agentDependencies
+    if (storageService) {
+      this.container.registerInstance(InjectionSymbols.StorageService, storageService)
+    } else if (hasIndy) {
+      this.container.register(InjectionSymbols.StorageService, { useToken: IndyStorageService })
+    } else {
+      throw new AriesFrameworkError('Indy is not available and no storage service provided in agent dependencies')
+    }
+
+    if (wallet) {
+      this.container.registerInstance(InjectionSymbols.Wallet, wallet)
+    } else if (hasIndy) {
+      this.container.register(InjectionSymbols.Wallet, { useToken: IndyWallet })
+    } else {
+      throw new AriesFrameworkError('Indy is not available and no wallet provided in agent dependencies')
+    }
 
     this.logger.info('Creating agent with config', {
       ...initialConfig,
@@ -96,13 +115,20 @@ export class Agent {
 
     // We set the modules in the constructor because that allows to set them as read-only
     this.connections = this.container.resolve(ConnectionsModule)
-    this.credentials = this.container.resolve(CredentialsModule)
-    this.proofs = this.container.resolve(ProofsModule)
     this.mediator = this.container.resolve(MediatorModule)
     this.mediationRecipient = this.container.resolve(RecipientModule)
     this.basicMessages = this.container.resolve(BasicMessagesModule)
     this.ledger = this.container.resolve(LedgerModule)
     this.discovery = this.container.resolve(DiscoverFeaturesModule)
+
+    if (hasIndy) {
+      this.credentials = this.container.resolve(CredentialsModule)
+      this.proofs = this.container.resolve(ProofsModule)
+    } else {
+      this.logger.warn(
+        'No Indy dependency is provided in the agent config. Credentials and Proofs modules will not be initialized.'
+      )
+    }
 
     // Listen for new messages (either from transports or somewhere else in the framework / extensions)
     this.messageSubscription = this.eventEmitter

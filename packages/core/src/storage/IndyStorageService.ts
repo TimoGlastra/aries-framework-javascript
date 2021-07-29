@@ -7,7 +7,7 @@ import { scoped, Lifecycle } from 'tsyringe'
 import { AgentConfig } from '../agent/AgentConfig'
 import { RecordNotFoundError, RecordDuplicateError, IndySdkError } from '../error'
 import { JsonTransformer } from '../utils/JsonTransformer'
-import { isIndyError } from '../utils/indyError'
+import { assertIndy, isIndyError } from '../utils/indyError'
 import { isBoolean } from '../utils/type'
 import { IndyWallet } from '../wallet/IndyWallet'
 
@@ -23,7 +23,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
 
   public constructor(wallet: IndyWallet, agentConfig: AgentConfig) {
     this.wallet = wallet
-    this.indy = agentConfig.agentDependencies.indy
+    this.indy = assertIndy(agentConfig.agentDependencies.indy)
   }
 
   private transformToRecordTagValues(tags: { [key: number]: string | undefined }): TagsBase {
