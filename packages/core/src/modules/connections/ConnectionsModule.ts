@@ -47,6 +47,7 @@ export class ConnectionsModule {
     autoAcceptConnection?: boolean
     alias?: string
     mediatorId?: string
+    multiUseInvitation?: boolean
   }): Promise<{
     invitation: ConnectionInvitationMessage
     connectionRecord: ConnectionRecord
@@ -58,6 +59,7 @@ export class ConnectionsModule {
       autoAcceptConnection: config?.autoAcceptConnection,
       alias: config?.alias,
       routing: myRouting,
+      multiUseInvitation: config?.multiUseInvitation,
     })
 
     return { connectionRecord, invitation }
@@ -200,6 +202,15 @@ export class ConnectionsModule {
   }
 
   /**
+   * Delete a connection record by id
+   *
+   * @param connectionId the connection record id
+   */
+  public async deleteById(connectionId: string) {
+    return this.connectionService.deleteById(connectionId)
+  }
+
+  /**
    * Find connection by verkey.
    *
    * @param verkey the verkey to search for
@@ -222,6 +233,17 @@ export class ConnectionsModule {
   }
 
   /**
+   * Find connection by Invitation key.
+   *
+   * @param key the invitation key to search for
+   * @returns the connection record, or null if not found
+   * @throws {RecordDuplicateError} if multiple connections are found for the given verkey
+   */
+  public findByInvitationKey(key: string): Promise<ConnectionRecord | null> {
+    return this.connectionService.findByInvitationKey(key)
+  }
+
+  /**
    * Retrieve a connection record by thread id
    *
    * @param threadId The thread id
@@ -234,7 +256,9 @@ export class ConnectionsModule {
   }
 
   private registerHandlers(dispatcher: Dispatcher) {
-    dispatcher.registerHandler(new ConnectionRequestHandler(this.connectionService, this.agentConfig))
+    dispatcher.registerHandler(
+      new ConnectionRequestHandler(this.connectionService, this.agentConfig, this.mediationRecipientService)
+    )
     dispatcher.registerHandler(new ConnectionResponseHandler(this.connectionService, this.agentConfig))
     dispatcher.registerHandler(new AckMessageHandler(this.connectionService))
     dispatcher.registerHandler(new TrustPingMessageHandler(this.trustPingService, this.connectionService))

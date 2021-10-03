@@ -1,5 +1,5 @@
 import type { TagsBase } from '../BaseRecord'
-import type { default as Indy } from 'indy-sdk'
+import type * as Indy from 'indy-sdk'
 
 import { getAgentConfig } from '../../../tests/helpers'
 import { RecordDuplicateError, RecordNotFoundError } from '../../error'
@@ -48,7 +48,7 @@ describe('IndyStorageService', () => {
         },
       })
 
-      const retrieveRecord = await indy.getWalletRecord(wallet.walletHandle, record.type, record.id, {
+      const retrieveRecord = await indy.getWalletRecord(wallet.handle, record.type, record.id, {
         retrieveType: true,
         retrieveTags: true,
       })
@@ -61,7 +61,7 @@ describe('IndyStorageService', () => {
     })
 
     it('should correctly transform tag values from string after retrieving', async () => {
-      await indy.addWalletRecord(wallet.walletHandle, TestRecord.type, 'some-id', '{}', {
+      await indy.addWalletRecord(wallet.handle, TestRecord.type, 'some-id', '{}', {
         someBoolean: '1',
         someOtherBoolean: '0',
         someStringValue: 'string',

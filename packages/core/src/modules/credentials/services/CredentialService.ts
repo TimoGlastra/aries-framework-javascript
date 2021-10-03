@@ -654,6 +654,18 @@ export class CredentialService {
   }
 
   /**
+   * Decline a credential offer
+   * @param credentialRecord The credential to be declined
+   */
+  public async declineOffer(credentialRecord: CredentialRecord): Promise<CredentialRecord> {
+    credentialRecord.assertState(CredentialState.OfferReceived)
+
+    await this.updateState(credentialRecord, CredentialState.Declined)
+
+    return credentialRecord
+  }
+
+  /**
    * Process a received {@link CredentialAckMessage}.
    *
    * @param messageContext The message context containing a credential acknowledgement message
@@ -709,6 +721,16 @@ export class CredentialService {
    */
   public findById(connectionId: string): Promise<CredentialRecord | null> {
     return this.credentialRepository.findById(connectionId)
+  }
+
+  /**
+   * Delete a credential record by id
+   *
+   * @param credentialId the credential record id
+   */
+  public async deleteById(credentialId: string) {
+    const credentialRecord = await this.getById(credentialId)
+    return this.credentialRepository.delete(credentialRecord)
   }
 
   /**

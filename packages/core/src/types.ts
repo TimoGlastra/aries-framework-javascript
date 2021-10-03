@@ -6,8 +6,8 @@ import type { AutoAcceptProof } from './modules/proofs'
 import type { MediatorPickupStrategy } from './modules/routing'
 
 export interface WalletConfig {
-  walletId: string
-  walletKey: string
+  id: string
+  key: string
 }
 
 export type WireMessage = {
@@ -23,7 +23,7 @@ export enum DidCommMimeType {
 }
 
 export interface InitConfig {
-  endpoint?: string
+  endpoints?: string[]
   label: string
   publicDidSeed?: string
   mediatorRecordId?: string
@@ -45,6 +45,8 @@ export interface InitConfig {
   clearDefaultMediator?: boolean
   mediatorPollingInterval?: number
   mediatorPickupStrategy?: MediatorPickupStrategy
+
+  useLegacyDidSovPrefix?: boolean
 }
 
 export interface UnpackedMessage {
@@ -73,4 +75,5 @@ export interface OutboundPackage {
   payload: WireMessage
   responseRequested?: boolean
   endpoint?: string
+  connectionId?: string
 }

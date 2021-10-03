@@ -1,7 +1,29 @@
 import { Expose, Type } from 'class-transformer'
-import { Equals, IsArray, ValidateNested, IsString, IsEnum } from 'class-validator'
+import { Equals, IsArray, ValidateNested, IsString, IsEnum, IsInstance } from 'class-validator'
+import { Verkey } from 'indy-sdk'
 
 import { AgentMessage } from '../../../agent/AgentMessage'
+
+export enum KeylistUpdateAction {
+  add = 'add',
+  remove = 'remove',
+}
+
+export class KeylistUpdate {
+  public constructor(options: { recipientKey: Verkey; action: KeylistUpdateAction }) {
+    if (options) {
+      this.recipientKey = options.recipientKey
+      this.action = options.action
+    }
+  }
+
+  @IsString()
+  @Expose({ name: 'recipient_key' })
+  public recipientKey!: Verkey
+
+  @IsEnum(KeylistUpdateAction)
+  public action!: KeylistUpdateAction
+}
 
 export interface KeylistUpdateMessageOptions {
   id?: string
@@ -25,31 +47,11 @@ export class KeylistUpdateMessage extends AgentMessage {
 
   @Equals(KeylistUpdateMessage.type)
   public readonly type = KeylistUpdateMessage.type
-  public static readonly type = 'https://didcomm.org/coordinatemediation/1.0/keylist-update'
+  public static readonly type = 'https://didcomm.org/coordinate-mediation/1.0/keylist-update'
 
   @Type(() => KeylistUpdate)
   @IsArray()
   @ValidateNested()
+  @IsInstance(KeylistUpdate, { each: true })
   public updates!: KeylistUpdate[]
-}
-
-export enum KeylistUpdateAction {
-  add = 'add',
-  remove = 'remove',
-}
-
-export class KeylistUpdate {
-  public constructor(options: { recipientKey: string; action: KeylistUpdateAction }) {
-    if (options) {
-      this.recipientKey = options.recipientKey
-      this.action = options.action
-    }
-  }
-
-  @IsString()
-  @Expose({ name: 'recipient_key' })
-  public recipientKey!: string
-
-  @IsEnum(KeylistUpdateAction)
-  public action!: KeylistUpdateAction
 }

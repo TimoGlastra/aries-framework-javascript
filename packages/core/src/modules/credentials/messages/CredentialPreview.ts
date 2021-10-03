@@ -1,7 +1,38 @@
 import { Expose, Type } from 'class-transformer'
-import { Equals, ValidateNested } from 'class-validator'
+import { Equals, IsInstance, IsMimeType, IsOptional, IsString, ValidateNested } from 'class-validator'
 
 import { JsonTransformer } from '../../../utils/JsonTransformer'
+
+interface CredentialPreviewAttributeOptions {
+  name: string
+  mimeType?: string
+  value: string
+}
+
+export class CredentialPreviewAttribute {
+  public constructor(options: CredentialPreviewAttributeOptions) {
+    if (options) {
+      this.name = options.name
+      this.mimeType = options.mimeType
+      this.value = options.value
+    }
+  }
+
+  @IsString()
+  public name!: string
+
+  @Expose({ name: 'mime-type' })
+  @IsOptional()
+  @IsMimeType()
+  public mimeType?: string = 'text/plain'
+
+  @IsString()
+  public value!: string
+
+  public toJSON(): Record<string, unknown> {
+    return JsonTransformer.toJSON(this)
+  }
+}
 
 export interface CredentialPreviewOptions {
   attributes: CredentialPreviewAttribute[]
@@ -28,36 +59,34 @@ export class CredentialPreview {
 
   @Type(() => CredentialPreviewAttribute)
   @ValidateNested({ each: true })
+  @IsInstance(CredentialPreviewAttribute, { each: true })
   public attributes!: CredentialPreviewAttribute[]
 
   public toJSON(): Record<string, unknown> {
     return JsonTransformer.toJSON(this)
   }
-}
 
-interface CredentialPreviewAttributeOptions {
-  name: string
-  mimeType?: string
-  value: string
-}
+  /**
+   * Create a credential preview from a record with name and value entries.
+   *
+   * @example
+   * const preview = CredentialPreview.fromRecord({
+   *   name: "Bob",
+   *   age: "20"
+   * })
+   */
+  public static fromRecord(record: Record<string, string>) {
+    const attributes = Object.entries(record).map(
+      ([name, value]) =>
+        new CredentialPreviewAttribute({
+          name,
+          mimeType: 'text/plain',
+          value,
+        })
+    )
 
-export class CredentialPreviewAttribute {
-  public constructor(options: CredentialPreviewAttributeOptions) {
-    if (options) {
-      this.name = options.name
-      this.mimeType = options.mimeType
-      this.value = options.value
-    }
-  }
-
-  public name!: string
-
-  @Expose({ name: 'mime-type' })
-  public mimeType?: string = 'text/plain'
-
-  public value!: string
-
-  public toJSON(): Record<string, unknown> {
-    return JsonTransformer.toJSON(this)
+    return new CredentialPreview({
+      attributes,
+    })
   }
 }

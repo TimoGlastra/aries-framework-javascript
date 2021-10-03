@@ -103,7 +103,7 @@ export function isIndyError(error: any, errorName?: IndyErrorValues): error is I
 
 export function assertIndy(indy?: typeof Indy): typeof Indy {
   if (!indy) {
-    throw new AriesFrameworkError('Indy wallet is required')
+    throw new AriesFrameworkError('Indy dependency is required for indy specific tasks')
   }
 
   return indy

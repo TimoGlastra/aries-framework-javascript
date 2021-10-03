@@ -3,19 +3,18 @@ import type { FileSystem } from '../../../storage/FileSystem'
 import type {
   default as Indy,
   CredDef,
-  LedgerRequest,
-  PoolHandle,
-  Schema,
   LedgerReadReplyResponse,
+  LedgerRequest,
   LedgerWriteReplyResponse,
   NymRole,
+  PoolHandle,
+  Schema,
 } from 'indy-sdk'
 
-import { scoped, Lifecycle } from 'tsyringe'
+import { Lifecycle, scoped } from 'tsyringe'
 
 import { AgentConfig } from '../../../agent/AgentConfig'
-import { AriesFrameworkError } from '../../../error/AriesFrameworkError'
-import { IndySdkError } from '../../../error/IndySdkError'
+import { AriesFrameworkError, IndySdkError } from '../../../error'
 import { isIndyError } from '../../../utils/indyError'
 import { IndyWallet } from '../../../wallet/IndyWallet'
 import { IndyIssuerService } from '../../indy'
@@ -325,7 +324,7 @@ export class IndyLedgerService {
 
   private async signRequest(did: string, request: LedgerRequest): Promise<LedgerRequest> {
     try {
-      return this.indy.signRequest(this.wallet.walletHandle, did, request)
+      return this.indy.signRequest(this.wallet.handle, did, request)
     } catch (error) {
       throw isIndyError(error) ? new IndySdkError(error) : error
     }

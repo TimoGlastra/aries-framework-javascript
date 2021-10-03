@@ -227,7 +227,7 @@ export class CredentialsModule {
     // Create and set ~service decorator
     const routing = await this.mediationRecipientService.getRouting()
     message.service = new ServiceDecorator({
-      serviceEndpoint: routing.endpoint,
+      serviceEndpoint: routing.endpoints[0],
       recipientKeys: [routing.verkey],
       routingKeys: routing.routingKeys,
     })
@@ -272,7 +272,7 @@ export class CredentialsModule {
       // Create ~service decorator
       const routing = await this.mediationRecipientService.getRouting()
       const ourService = new ServiceDecorator({
-        serviceEndpoint: routing.endpoint,
+        serviceEndpoint: routing.endpoints[0],
         recipientKeys: [routing.verkey],
         routingKeys: routing.routingKeys,
       })
@@ -303,6 +303,17 @@ export class CredentialsModule {
         `Cannot accept offer for credential record without connectionId or ~service decorator on credential offer.`
       )
     }
+  }
+
+  /**
+   * Declines an offer as holder
+   * @param credentialRecordId the id of the credential to be declined
+   * @returns credential record that was declined
+   */
+  public async declineOffer(credentialRecordId: string) {
+    const credentialRecord = await this.credentialService.getById(credentialRecordId)
+    await this.credentialService.declineOffer(credentialRecord)
+    return credentialRecord
   }
 
   /**
@@ -459,6 +470,15 @@ export class CredentialsModule {
    */
   public findById(connectionId: string): Promise<CredentialRecord | null> {
     return this.credentialService.findById(connectionId)
+  }
+
+  /**
+   * Delete a credential record by id
+   *
+   * @param credentialId the credential record id
+   */
+  public async deleteById(credentialId: string) {
+    return this.credentialService.deleteById(credentialId)
   }
 
   private registerHandlers(dispatcher: Dispatcher) {
