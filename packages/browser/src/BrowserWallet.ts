@@ -10,8 +10,7 @@ import type {
   DidInfo,
 } from '@aries-framework/core'
 
-import { WalletError, AriesFrameworkError, utils } from '@aries-framework/core'
-import { Buffer } from 'buffer/'
+import { WalletError, AriesFrameworkError, utils, Buffer } from '@aries-framework/core'
 import { DIDComm } from 'encryption-envelope-js'
 // eslint-disable-next-line import/default
 import sodium from 'libsodium-wrappers'
@@ -46,8 +45,34 @@ export class BrowserWallet implements Wallet {
   }
 
   public async initialize(walletConfig: WalletConfig) {
-    this.logger.info(`Initializing InMemoryWallet wallet '${walletConfig.walletId}'`, walletConfig)
+    this.logger.info(`Initializing BrowserWallet wallet '${walletConfig.id}'`, walletConfig)
 
+    if (this.isInitialized) {
+      throw new WalletError(
+        'Wallet instance already initialized. Close the currently opened wallet before re-initializing the wallet'
+      )
+    }
+
+    await this.create(walletConfig)
+    await this.open(walletConfig)
+
+    this.logger.debug(`Wallet '${walletConfig.id}' initialized with handle`)
+  }
+
+  /**
+   * @throws {WalletDuplicateError} if the wallet already exists
+   * @throws {WalletError} if another error occurs
+   */
+  public async create(walletConfig: WalletConfig): Promise<void> {
+    this.logger.debug(`Creating wallet '${walletConfig.id}'`)
+  }
+
+  /**
+   * @throws {WalletNotFoundError} if the wallet does not exist
+   * @throws {WalletError} if another error occurs
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async open(walletConfig: WalletConfig): Promise<void> {
     if (this.isInitialized) {
       throw new WalletError(
         'Wallet instance already initialized. Close the currently opened wallet before re-initializing the wallet'
@@ -58,34 +83,6 @@ export class BrowserWallet implements Wallet {
     await didcomm.Ready
     await sodium.ready
     this._didcomm = didcomm
-
-    // TODO: create/open wallet
-    // this.create(walletConfig)
-    // this.open(walletConfig)
-
-    this.logger.debug(`Wallet '${walletConfig.walletId}' initialized with handle`)
-  }
-
-  /**
-   * @throws {WalletDuplicateError} if the wallet already exists
-   * @throws {WalletError} if another error occurs
-   */
-  public async create(walletConfig: WalletConfig): Promise<void> {
-    this.logger.debug(`Creating wallet '${walletConfig.walletId}'`)
-  }
-
-  /**
-   * @throws {WalletNotFoundError} if the wallet does not exist
-   * @throws {WalletError} if another error occurs
-   */
-  public async open(walletConfig: WalletConfig): Promise<void> {
-    if (this.isInitialized) {
-      throw new WalletError(
-        'Wallet instance already initialized. Close the currently opened wallet before re-initializing the wallet'
-      )
-    }
-
-    // TODO: open wallet
   }
 
   /**
@@ -102,14 +99,13 @@ export class BrowserWallet implements Wallet {
     this.logger.info(`Deleting wallet`)
 
     await this.close()
-    // TODO: delete wallet
   }
 
   /**
    * @throws {WalletError} if the wallet is already closed or another error occurs
    */
   public async close(): Promise<void> {
-    // TODO: close wallet
+    this._didcomm = undefined
   }
 
   public async initPublicDid(didConfig: DidConfig) {
@@ -160,7 +156,7 @@ export class BrowserWallet implements Wallet {
   public async unpack(messagePackage: WireMessage): Promise<UnpackedMessageContext> {
     try {
       const recipientsOuter = utils.JsonEncoder.fromBase64(messagePackage.protected as string)
-      const recipientKeys = recipientsOuter.recipients.map((r: any) => r.header.kid) as string[]
+      const recipientKeys = recipientsOuter.recipients.map((r: { header: { kid: string } }) => r.header.kid) as string[]
 
       const foundRecipientKey = recipientKeys.find((r) => this.keyPairs[r] !== undefined)
 

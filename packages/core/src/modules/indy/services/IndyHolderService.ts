@@ -4,7 +4,7 @@ import { Lifecycle, scoped } from 'tsyringe'
 
 import { AgentConfig } from '../../../agent/AgentConfig'
 import { IndySdkError } from '../../../error'
-import { isIndyError } from '../../../utils/indyError'
+import { assertIndy, isIndyError } from '../../../utils/indyError'
 import { IndyWallet } from '../../../wallet/IndyWallet'
 
 @scoped(Lifecycle.ContainerScoped)
@@ -13,7 +13,7 @@ export class IndyHolderService {
   private wallet: IndyWallet
 
   public constructor(agentConfig: AgentConfig, wallet: IndyWallet) {
-    this.indy = agentConfig.agentDependencies.indy
+    this.indy = assertIndy(agentConfig.agentDependencies.indy)
     this.wallet = wallet
   }
 

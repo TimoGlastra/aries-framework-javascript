@@ -3,7 +3,11 @@ import 'reflect-metadata'
 
 export { Agent } from './agent/Agent'
 export { AgentConfig } from './agent/AgentConfig'
-export type { AgentDependencies } from './agent/AgentDependencies'
+export type {
+  AgentDependencies,
+  AgentDependenciesWithIndy,
+  AgentDependenciesWithoutIndy,
+} from './agent/AgentDependencies'
 export type { InitConfig, OutboundPackage, WireMessage, WalletConfig, UnpackedMessageContext } from './types'
 export { DidCommMimeType } from './types'
 export type { FileSystem } from './storage/FileSystem'
@@ -12,14 +16,13 @@ export { BaseRecord, TagsBase } from './storage/BaseRecord'
 export { StorageService, BaseRecordConstructor } from './storage/StorageService'
 export { getDirFromFilePath } from './utils/path'
 export { InjectionSymbols } from './constants'
-export { WalletError, WalletDuplicateError, WalletNotFoundError } from './wallet/error'
 export type { Wallet, DidInfo, DidConfig } from './wallet/Wallet'
 export type { TransportSession } from './agent/TransportService'
 export { TransportService } from './agent/TransportService'
 
 import { JsonEncoder } from './utils/JsonEncoder'
-export { Buffer } from './utils/buffer'
 import { uuid } from './utils/uuid'
+export { Buffer } from './utils/buffer'
 
 export * from './transport'
 export * from './modules/basic-messages'

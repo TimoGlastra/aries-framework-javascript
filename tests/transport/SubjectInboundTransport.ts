@@ -1,4 +1,4 @@
-import type { InboundTransport, Agent } from '../../packages/core/src'
+import type { InboundTransport, Agent, AgentDependencies } from '../../packages/core/src'
 import type { TransportSession } from '../../packages/core/src/agent/TransportService'
 import type { WireMessage } from '../../packages/core/src/types'
 import type { Subject, Subscription } from 'rxjs'

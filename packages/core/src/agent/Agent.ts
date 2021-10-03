@@ -3,11 +3,11 @@ import type { InboundTransport } from '../transport/InboundTransport'
 import type { OutboundTransport } from '../transport/OutboundTransport'
 import type { InitConfig } from '../types'
 import type { Wallet } from '../wallet/Wallet'
-import type { AgentDependencies } from './AgentDependencies'
+import type { AgentDependencies, AgentDependenciesWithIndy } from './AgentDependencies'
 import type { AgentMessageReceivedEvent } from './Events'
 import type { TransportSession } from './TransportService'
 import type { Subscription } from 'rxjs'
-import type { DependencyContainer } from 'tsyringe'
+import type { DependencyContainer, InjectionToken } from 'tsyringe'
 
 import { concatMap, takeUntil } from 'rxjs/operators'
 import { container as baseContainer } from 'tsyringe'
@@ -34,7 +34,7 @@ import { MessageReceiver } from './MessageReceiver'
 import { MessageSender } from './MessageSender'
 import { TransportService } from './TransportService'
 
-export class Agent {
+export class Agent<A extends AgentDependencies = AgentDependencies> {
   protected agentConfig: AgentConfig
   protected logger: Logger
   protected container: DependencyContainer
@@ -48,15 +48,15 @@ export class Agent {
 
   public readonly connections!: ConnectionsModule
   public readonly basicMessages!: BasicMessagesModule
-  public readonly ledger!: LedgerModule
   public readonly mediationRecipient!: RecipientModule
   public readonly mediator!: MediatorModule
   public readonly discovery!: DiscoverFeaturesModule
 
-  public readonly credentials?: CredentialsModule
-  public readonly proofs?: ProofsModule
+  public readonly credentials!: A extends AgentDependenciesWithIndy ? CredentialsModule : undefined
+  public readonly proofs!: A extends AgentDependenciesWithIndy ? ProofsModule : undefined
+  public readonly ledger!: A extends AgentDependenciesWithIndy ? LedgerModule : undefined
 
-  public constructor(initialConfig: InitConfig, dependencies: AgentDependencies) {
+  public constructor(initialConfig: InitConfig, dependencies: A) {
     // Create child container so we don't interfere with anything outside of this agent
     this.container = baseContainer.createChildContainer()
 
@@ -117,17 +117,23 @@ export class Agent {
     this.mediator = this.container.resolve(MediatorModule)
     this.mediationRecipient = this.container.resolve(RecipientModule)
     this.basicMessages = this.container.resolve(BasicMessagesModule)
-    this.ledger = this.container.resolve(LedgerModule)
     this.discovery = this.container.resolve(DiscoverFeaturesModule)
 
-    if (hasIndy) {
-      this.credentials = this.container.resolve(CredentialsModule)
-      this.proofs = this.container.resolve(ProofsModule)
-    } else {
+    const resolveIfIndy = <T>(token: InjectionToken<T>) => {
+      return (hasIndy ? this.container.resolve(token) : undefined) as A extends AgentDependenciesWithIndy
+        ? T
+        : undefined
+    }
+
+    if (!hasIndy) {
       this.logger.warn(
-        'No Indy dependency is provided in the agent config. Credentials and Proofs modules will not be initialized.'
+        'No Indy dependency is provided in the agent config. Credentials, Proofs and Ledger modules will not be initialized.'
       )
     }
+
+    this.ledger = resolveIfIndy(LedgerModule)
+    this.credentials = resolveIfIndy(CredentialsModule)
+    this.proofs = resolveIfIndy(ProofsModule)
 
     // Listen for new messages (either from transports or somewhere else in the framework / extensions)
     this.messageSubscription = this.eventEmitter

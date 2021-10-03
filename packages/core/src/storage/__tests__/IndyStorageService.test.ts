@@ -3,6 +3,7 @@ import type * as Indy from 'indy-sdk'
 
 import { getAgentConfig } from '../../../tests/helpers'
 import { RecordDuplicateError, RecordNotFoundError } from '../../error'
+import { assertIndy } from '../../utils/indyError'
 import { IndyWallet } from '../../wallet/IndyWallet'
 import { IndyStorageService } from '../IndyStorageService'
 
@@ -15,7 +16,7 @@ describe('IndyStorageService', () => {
 
   beforeEach(async () => {
     const config = getAgentConfig('IndyStorageServiceTest')
-    indy = config.agentDependencies.indy
+    indy = assertIndy(config.agentDependencies.indy)
     wallet = new IndyWallet(config)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await wallet.initialize(config.walletConfig!)

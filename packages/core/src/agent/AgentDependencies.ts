@@ -6,14 +6,23 @@ import type * as Indy from 'indy-sdk'
 import type fetch from 'node-fetch'
 import type WebSocket from 'ws'
 
-export interface AgentDependencies {
+export interface AgentDependenciesBase {
   FileSystem: {
     new (): FileSystem
   }
-  indy?: typeof Indy
   EventEmitterClass: typeof EventEmitter
   fetch: typeof fetch
   WebSocketClass: typeof WebSocket
   wallet?: Wallet
   storageService?: StorageService
 }
+
+export interface AgentDependenciesWithIndy extends AgentDependenciesBase {
+  indy: typeof Indy
+}
+
+export interface AgentDependenciesWithoutIndy extends AgentDependenciesBase {
+  indy: undefined
+}
+
+export type AgentDependencies = AgentDependenciesWithoutIndy | AgentDependenciesWithIndy

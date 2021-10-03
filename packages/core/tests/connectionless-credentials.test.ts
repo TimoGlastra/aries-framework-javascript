@@ -1,4 +1,5 @@
 import type { SubjectMessage } from '../../../tests/transport/SubjectInboundTransport'
+import type { AgentDependenciesWithIndy } from '../src/agent/AgentDependencies'
 import type { CredentialStateChangedEvent } from '../src/modules/credentials'
 
 import { ReplaySubject, Subject } from 'rxjs'
@@ -31,8 +32,8 @@ const credentialPreview = CredentialPreview.fromRecord({
 })
 
 describe('credentials', () => {
-  let faberAgent: Agent
-  let aliceAgent: Agent
+  let faberAgent: Agent<AgentDependenciesWithIndy>
+  let aliceAgent: Agent<AgentDependenciesWithIndy>
   let faberReplay: ReplaySubject<CredentialStateChangedEvent>
   let aliceReplay: ReplaySubject<CredentialStateChangedEvent>
   let credDefId: string

@@ -17,7 +17,7 @@ import { Lifecycle, scoped } from 'tsyringe'
 import { AgentConfig } from '../../../agent/AgentConfig'
 import { AriesFrameworkError } from '../../../error/AriesFrameworkError'
 import { IndySdkError } from '../../../error/IndySdkError'
-import { isIndyError } from '../../../utils/indyError'
+import { assertIndy, isIndyError } from '../../../utils/indyError'
 import { getDirFromFilePath } from '../../../utils/path'
 import { IndyWallet } from '../../../wallet/IndyWallet'
 
@@ -28,7 +28,7 @@ export class IndyIssuerService {
   private fileSystem: FileSystem
 
   public constructor(agentConfig: AgentConfig, wallet: IndyWallet) {
-    this.indy = agentConfig.agentDependencies.indy
+    this.indy = assertIndy(agentConfig.agentDependencies.indy)
     this.wallet = wallet
     this.fileSystem = agentConfig.fileSystem
   }

@@ -15,7 +15,7 @@ import { Lifecycle, scoped } from 'tsyringe'
 
 import { AgentConfig } from '../../../agent/AgentConfig'
 import { AriesFrameworkError, IndySdkError } from '../../../error'
-import { isIndyError } from '../../../utils/indyError'
+import { assertIndy, isIndyError } from '../../../utils/indyError'
 import { IndyWallet } from '../../../wallet/IndyWallet'
 import { IndyIssuerService } from '../../indy'
 
@@ -33,7 +33,7 @@ export class IndyLedgerService {
   public constructor(wallet: IndyWallet, agentConfig: AgentConfig, indyIssuer: IndyIssuerService) {
     this.wallet = wallet
     this.agentConfig = agentConfig
-    this.indy = agentConfig.agentDependencies.indy
+    this.indy = assertIndy(agentConfig.agentDependencies.indy)
     this.logger = agentConfig.logger
     this.indyIssuer = indyIssuer
     this.fileSystem = agentConfig.fileSystem

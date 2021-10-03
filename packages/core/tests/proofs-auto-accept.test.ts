@@ -1,4 +1,4 @@
-import type { Agent, ConnectionRecord, PresentationPreview } from '../src'
+import type { Agent, AgentDependenciesWithIndy, ConnectionRecord, PresentationPreview } from '../src'
 
 import {
   AutoAcceptProof,
@@ -13,8 +13,8 @@ import { setupProofsTest, waitForProofRecord } from './helpers'
 import testLogger from './logger'
 
 describe('Auto accept present proof', () => {
-  let faberAgent: Agent
-  let aliceAgent: Agent
+  let faberAgent: Agent<AgentDependenciesWithIndy>
+  let aliceAgent: Agent<AgentDependenciesWithIndy>
   let credDefId: string
   let faberConnection: ConnectionRecord
   let aliceConnection: ConnectionRecord

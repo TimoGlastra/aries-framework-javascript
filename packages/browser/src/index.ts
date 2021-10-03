@@ -1,17 +1,18 @@
-import type { AgentDependencies } from '@aries-framework/core'
+import type { AgentDependenciesWithoutIndy } from '@aries-framework/core'
 
 import { EventEmitter } from 'events'
 
 import { LocalStorageFileSystem } from './LocalStorageFileSystem'
 
-const fetch = window.fetch as unknown as AgentDependencies['fetch']
-const WebSocket = window.WebSocket as unknown as AgentDependencies['WebSocketClass']
+const fetch = window.fetch as unknown as AgentDependenciesWithoutIndy['fetch']
+const WebSocket = window.WebSocket as unknown as AgentDependenciesWithoutIndy['WebSocketClass']
 
-const agentDependencies: AgentDependencies = {
+const agentDependencies: AgentDependenciesWithoutIndy = {
   fetch,
   EventEmitterClass: EventEmitter,
   WebSocketClass: WebSocket,
   FileSystem: LocalStorageFileSystem,
+  indy: undefined,
 }
 
 export { agentDependencies }

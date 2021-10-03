@@ -1,4 +1,5 @@
 import type { Agent } from '../src/agent/Agent'
+import type { AgentDependenciesWithIndy } from '../src/agent/AgentDependencies'
 import type { ConnectionRecord } from '../src/modules/connections'
 
 import { Attachment, AttachmentData } from '../src/decorators/attachment/Attachment'
@@ -15,8 +16,8 @@ const credentialPreview = CredentialPreview.fromRecord({
 })
 
 describe('credentials', () => {
-  let faberAgent: Agent
-  let aliceAgent: Agent
+  let faberAgent: Agent<AgentDependenciesWithIndy>
+  let aliceAgent: Agent<AgentDependenciesWithIndy>
   let credDefId: string
   let schemaId: string
   let faberConnection: ConnectionRecord

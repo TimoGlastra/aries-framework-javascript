@@ -1,3 +1,5 @@
+import type { AgentDependenciesWithIndy } from '../src/agent/AgentDependencies'
+
 import { promises } from 'fs'
 import * as indy from 'indy-sdk'
 
@@ -11,7 +13,7 @@ import testLogger from './logger'
 const { config: faberConfig, agentDependencies: faberDependencies } = getBaseConfig('Faber Ledger')
 
 describe('ledger', () => {
-  let faberAgent: Agent
+  let faberAgent: Agent<AgentDependenciesWithIndy>
   let schemaId: indy.SchemaId
 
   beforeAll(async () => {

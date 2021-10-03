@@ -1,4 +1,5 @@
 import type { Agent } from '../src/agent/Agent'
+import type { AgentDependenciesWithIndy } from '../src/agent/AgentDependencies'
 import type { ConnectionRecord } from '../src/modules/connections'
 
 import { AutoAcceptCredential, CredentialPreview, CredentialRecord, CredentialState } from '../src/modules/credentials'
@@ -20,8 +21,8 @@ const newCredentialPreview = CredentialPreview.fromRecord({
 })
 
 describe('auto accept credentials', () => {
-  let faberAgent: Agent
-  let aliceAgent: Agent
+  let faberAgent: Agent<AgentDependenciesWithIndy>
+  let aliceAgent: Agent<AgentDependenciesWithIndy>
   let credDefId: string
   let schemaId: string
   let faberConnection: ConnectionRecord

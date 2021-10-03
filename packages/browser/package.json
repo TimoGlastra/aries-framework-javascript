@@ -24,7 +24,6 @@
   },
   "dependencies": {
     "@aries-framework/core": "*",
-    "buffer": "^6.0.3",
     "encryption-envelope-js": "^1.1.6",
     "events": "^3.3.0",
     "libsodium-wrappers": "^0.7.9",
@@ -34,6 +33,6 @@
   "devDependencies": {
     "@types/pouchdb": "^6.4.0",
     "rimraf": "~3.0.2",
-    "typescript": "~4.3.0"
+    "typescript": "~4.3.5"
   }
 }

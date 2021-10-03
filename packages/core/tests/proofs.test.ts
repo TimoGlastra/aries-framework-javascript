@@ -1,4 +1,4 @@
-import type { Agent, ConnectionRecord, PresentationPreview } from '../src'
+import type { Agent, AgentDependenciesWithIndy, ConnectionRecord, PresentationPreview } from '../src'
 import type { CredDefId } from 'indy-sdk'
 
 import { ProofState, ProofAttributeInfo, AttributeFilter, ProofPredicateInfo, PredicateType } from '../src'
@@ -7,8 +7,8 @@ import { setupProofsTest, waitForProofRecord } from './helpers'
 import testLogger from './logger'
 
 describe('Present Proof', () => {
-  let faberAgent: Agent
-  let aliceAgent: Agent
+  let faberAgent: Agent<AgentDependenciesWithIndy>
+  let aliceAgent: Agent<AgentDependenciesWithIndy>
   let credDefId: CredDefId
   let faberConnection: ConnectionRecord
   let aliceConnection: ConnectionRecord

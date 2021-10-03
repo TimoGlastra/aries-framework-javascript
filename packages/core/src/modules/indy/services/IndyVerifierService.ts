@@ -4,13 +4,14 @@ import { Lifecycle, scoped } from 'tsyringe'
 
 import { AgentConfig } from '../../../agent/AgentConfig'
 import { IndySdkError } from '../../../error'
+import { assertIndy } from '../../../utils/indyError'
 
 @scoped(Lifecycle.ContainerScoped)
 export class IndyVerifierService {
   private indy: typeof Indy
 
   public constructor(agentConfig: AgentConfig) {
-    this.indy = agentConfig.agentDependencies.indy
+    this.indy = assertIndy(agentConfig.agentDependencies.indy)
   }
 
   public async verifyProof({

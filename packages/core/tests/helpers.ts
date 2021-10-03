@@ -1,5 +1,6 @@
 import type { SubjectMessage } from '../../../tests/transport/SubjectInboundTransport'
 import type {
+  AgentDependenciesWithIndy,
   AutoAcceptProof,
   BasicMessage,
   BasicMessageReceivedEvent,
@@ -270,14 +271,17 @@ export async function makeConnection(
   return [agentAConnection, agentBConnection]
 }
 
-export async function registerSchema(agent: Agent, schemaTemplate: SchemaTemplate): Promise<Schema> {
+export async function registerSchema(
+  agent: Agent<AgentDependenciesWithIndy>,
+  schemaTemplate: SchemaTemplate
+): Promise<Schema> {
   const schema = await agent.ledger.registerSchema(schemaTemplate)
   testLogger.test(`created schema with id ${schema.id}`, schema)
   return schema
 }
 
 export async function registerDefinition(
-  agent: Agent,
+  agent: Agent<AgentDependenciesWithIndy>,
   definitionTemplate: CredentialDefinitionTemplate
 ): Promise<CredDef> {
   const credentialDefinition = await agent.ledger.registerCredentialDefinition(definitionTemplate)
@@ -314,7 +318,7 @@ export async function prepareForIssuance(agent: Agent, attributes: string[]) {
   }
 }
 
-export async function ensurePublicDidIsOnLedger(agent: Agent, publicDid: string) {
+export async function ensurePublicDidIsOnLedger(agent: Agent<AgentDependenciesWithIndy>, publicDid: string) {
   try {
     testLogger.test(`Ensure test DID ${publicDid} is written to ledger`)
     await agent.ledger.getPublicDid(publicDid)
@@ -334,9 +338,9 @@ export async function issueCredential({
   holderAgent,
   credentialTemplate,
 }: {
-  issuerAgent: Agent
+  issuerAgent: Agent<AgentDependenciesWithIndy>
   issuerConnectionId: string
-  holderAgent: Agent
+  holderAgent: Agent<AgentDependenciesWithIndy>
   credentialTemplate: Omit<CredentialOfferTemplate, 'autoAcceptCredential'>
 }) {
   const issuerReplay = new ReplaySubject<CredentialStateChangedEvent>()
@@ -386,8 +390,8 @@ export async function issueConnectionLessCredential({
   holderAgent,
   credentialTemplate,
 }: {
-  issuerAgent: Agent
-  holderAgent: Agent
+  issuerAgent: Agent<AgentDependenciesWithIndy>
+  holderAgent: Agent<AgentDependenciesWithIndy>
   credentialTemplate: Omit<CredentialOfferTemplate, 'autoAcceptCredential'>
 }) {
   const issuerReplay = new ReplaySubject<CredentialStateChangedEvent>()
@@ -439,9 +443,9 @@ export async function presentProof({
   holderAgent,
   presentationTemplate: { attributes, predicates },
 }: {
-  verifierAgent: Agent
+  verifierAgent: Agent<AgentDependenciesWithIndy>
   verifierConnectionId: string
-  holderAgent: Agent
+  holderAgent: Agent<AgentDependenciesWithIndy>
   presentationTemplate: {
     attributes?: Record<string, ProofAttributeInfo>
     predicates?: Record<string, ProofPredicateInfo>

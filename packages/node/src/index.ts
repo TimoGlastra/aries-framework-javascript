@@ -1,4 +1,4 @@
-import type { AgentDependencies } from '@aries-framework/core'
+import type { AgentDependenciesWithIndy } from '@aries-framework/core'
 
 import { EventEmitter } from 'events'
 import * as indy from 'indy-sdk'
@@ -9,7 +9,7 @@ import { NodeFileSystem } from './NodeFileSystem'
 import { HttpInboundTransport } from './transport/HttpInboundTransport'
 import { WsInboundTransport } from './transport/WsInboundTransport'
 
-const agentDependencies: AgentDependencies = {
+const agentDependencies: AgentDependenciesWithIndy = {
   FileSystem: NodeFileSystem,
   fetch,
   EventEmitterClass: EventEmitter,
