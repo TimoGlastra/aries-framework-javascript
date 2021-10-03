@@ -3,8 +3,6 @@
 
   "compilerOptions": {
     "outDir": "./build",
-    // FIXME https://github.com/hyperledger/aries-framework-javascript/pull/327
-    "skipLibCheck": true,
     "lib": ["DOM"],
     "types": []
   },
