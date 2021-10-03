@@ -1,7 +1,6 @@
 /* eslint-disable import/no-named-as-default-member */
 import type {
   Logger,
-  AgentConfig,
   WireMessage,
   UnpackedMessageContext,
   WalletConfig,
@@ -10,12 +9,14 @@ import type {
   DidInfo,
 } from '@aries-framework/core'
 
-import { WalletError, AriesFrameworkError, utils, Buffer } from '@aries-framework/core'
+import { WalletError, AriesFrameworkError, utils, Buffer, AgentConfig } from '@aries-framework/core'
 import { DIDComm } from 'encryption-envelope-js'
 // eslint-disable-next-line import/default
 import sodium from 'libsodium-wrappers'
 import * as base58 from 'micro-base58'
+import { Lifecycle, scoped } from 'tsyringe'
 
+@scoped(Lifecycle.ContainerScoped)
 export class BrowserWallet implements Wallet {
   private logger: Logger
   private publicDidInfo: DidInfo | undefined

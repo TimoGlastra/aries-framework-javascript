@@ -14,6 +14,7 @@
 
 import type { InitConfig } from '@aries-framework/core'
 
+import cors from 'cors'
 import express from 'express'
 import { Server } from 'ws'
 
@@ -68,6 +69,8 @@ agent.registerInboundTransport(httpInboundTransport)
 agent.registerOutboundTransport(httpOutboundTransport)
 agent.registerInboundTransport(wsInboundTransport)
 agent.registerOutboundTransport(wsOutboundTransport)
+
+httpInboundTransport.app.use(cors())
 
 // Allow to create invitation, no other way to ask for invitation yet
 httpInboundTransport.app.get('/invitation', async (req, res) => {

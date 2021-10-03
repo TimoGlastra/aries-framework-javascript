@@ -73,17 +73,17 @@ export class Agent<A extends AgentDependencies = AgentDependencies> {
 
     this.container.registerSingleton(InjectionSymbols.MessageRepository, InMemoryMessageRepository)
 
-    const { storageService, wallet } = this.agentConfig.agentDependencies
-    if (storageService) {
-      this.container.registerInstance(InjectionSymbols.StorageService, storageService)
+    const { StorageService, Wallet } = this.agentConfig.agentDependencies
+    if (StorageService) {
+      this.container.register(InjectionSymbols.StorageService, { useToken: StorageService })
     } else if (hasIndy) {
       this.container.register(InjectionSymbols.StorageService, { useToken: IndyStorageService })
     } else {
       throw new AriesFrameworkError('Indy is not available and no storage service provided in agent dependencies')
     }
 
-    if (wallet) {
-      this.container.registerInstance(InjectionSymbols.Wallet, wallet)
+    if (Wallet) {
+      this.container.register(InjectionSymbols.Wallet, { useToken: Wallet })
     } else if (hasIndy) {
       this.container.register(InjectionSymbols.Wallet, { useToken: IndyWallet })
     } else {

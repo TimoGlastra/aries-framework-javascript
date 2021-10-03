@@ -2,6 +2,8 @@ import type { BaseRecord, BaseRecordConstructor, StorageService, TagsBase } from
 
 import { JsonTransformer } from '@aries-framework/core'
 import PouchDB from 'pouchdb'
+import PouchDBFind from 'pouchdb-find'
+import { Lifecycle, scoped } from 'tsyringe'
 
 interface WalletRecord {
   _id: string
@@ -10,18 +12,18 @@ interface WalletRecord {
   tags: TagsBase
 }
 
+@scoped(Lifecycle.ContainerScoped)
 export class PouchStorageService<T extends BaseRecord> implements StorageService<T> {
   private db: PouchDB.Database<WalletRecord>
 
   public constructor() {
+    PouchDB.plugin(PouchDBFind)
     this.db = new PouchDB('aries-framework-javascript')
   }
 
   public async initialize() {
     const indexes = await this.db.getIndexes()
-
     const typeIndex = indexes.indexes.find((i) => i.name === 'type')
-
     if (!typeIndex) {
       await this.db.createIndex({
         index: {
@@ -60,7 +62,6 @@ export class PouchStorageService<T extends BaseRecord> implements StorageService
     const storageRecord = await this.db.get(record.id)
     storageRecord.value = JsonTransformer.serialize(record)
     storageRecord.tags = record.getTags()
-
     await this.db.put(storageRecord)
   }
 
@@ -92,14 +93,15 @@ export class PouchStorageService<T extends BaseRecord> implements StorageService
     const transformedTags: { [key: string]: unknown } = {}
 
     for (const [key, value] of Object.entries(query)) {
+      const pouchKey = `tags.${key}`
       if (Array.isArray(value)) {
-        transformedTags[key] = {
+        transformedTags[pouchKey] = {
           $all: value,
         }
       }
       // Otherwise just use the value
       else {
-        transformedTags[key] = value
+        transformedTags[pouchKey] = value
       }
     }
 
