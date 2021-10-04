@@ -24,7 +24,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@aries-framework/core": "*",
+    "@aries-framework/core": "link:../core",
     "encryption-envelope-js": "^1.1.6",
     "events": "^3.3.0",
     "libsodium-wrappers": "^0.7.9",

@@ -4,7 +4,7 @@ import type { OutboundPackage } from '../types'
 import type { OutboundTransport } from './OutboundTransport'
 import type fetch from 'node-fetch'
 
-import { AbortController } from 'abort-controller'
+// import { AbortController } from 'abort-controller'
 
 import { AgentConfig } from '../agent/AgentConfig'
 import { AriesFrameworkError } from '../error/AriesFrameworkError'
@@ -50,6 +50,7 @@ export class HttpOutboundTransport implements OutboundTransport {
         method: 'POST',
         body: JSON.stringify(payload),
         headers: { 'Content-Type': this.agentConfig.didCommMimeType },
+        // @ts-ignore
         signal: abortController.signal,
       })
       clearTimeout(id)
