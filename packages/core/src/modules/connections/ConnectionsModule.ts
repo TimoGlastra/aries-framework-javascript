@@ -265,7 +265,7 @@ export class ConnectionsModule {
     )
     dispatcher.registerHandler(new ConnectionResponseHandler(this.connectionService, this.agentConfig))
     dispatcher.registerHandler(new AckMessageHandler(this.connectionService))
-    dispatcher.registerHandler(new TrustPingMessageHandler(this.trustPingService, this.connectionService))
-    dispatcher.registerHandler(new TrustPingResponseMessageHandler(this.trustPingService))
+    dispatcher.registerHandler(new TrustPingMessageHandler(this.trustPingService))
+    dispatcher.registerHandler(new TrustPingResponseMessageHandler())
   }
 }

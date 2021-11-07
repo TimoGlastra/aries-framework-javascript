@@ -1,6 +1,6 @@
 # Framework Developers
 
-This file is intended for developers working on the internals of the framework. If you're just looking how to get started with the framework, see the [docs](./docs)
+This file is intended for developers working on the internals of the framework. If you're just looking how to get started with the framework, see the [Getting Started Docs](../getting-started)
 
 ## Running tests
 

@@ -1,33 +1,23 @@
 import type { Handler, HandlerInboundMessage } from '../../../agent/Handler'
-import type { ConnectionService } from '../services/ConnectionService'
 import type { TrustPingService } from '../services/TrustPingService'
 
-import { AriesFrameworkError } from '../../../error'
+import { createOutboundMessage } from '../../../agent/helpers'
 import { TrustPingMessage } from '../messages'
-import { ConnectionState } from '../models'
 
 export class TrustPingMessageHandler implements Handler {
   private trustPingService: TrustPingService
-  private connectionService: ConnectionService
   public supportedMessages = [TrustPingMessage]
 
-  public constructor(trustPingService: TrustPingService, connectionService: ConnectionService) {
+  public constructor(trustPingService: TrustPingService) {
     this.trustPingService = trustPingService
-    this.connectionService = connectionService
   }
 
   public async handle(messageContext: HandlerInboundMessage<TrustPingMessageHandler>) {
-    const { connection, recipientVerkey } = messageContext
-    if (!connection) {
-      throw new AriesFrameworkError(`Connection for verkey ${recipientVerkey} not found!`)
-    }
+    const connection = messageContext.assertReadyConnection()
+    const pingResponse = this.trustPingService.processPing(messageContext)
 
-    // TODO: This is better addressed in a middleware of some kind because
-    // any message can transition the state to complete, not just an ack or trust ping
-    if (connection.state === ConnectionState.Responded) {
-      await this.connectionService.updateState(connection, ConnectionState.Complete)
+    if (pingResponse) {
+      return createOutboundMessage(connection, pingResponse)
     }
-
-    return this.trustPingService.processPing(messageContext, connection)
   }
 }
