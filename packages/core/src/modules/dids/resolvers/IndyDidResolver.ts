@@ -6,8 +6,7 @@ import { convertPublicKeyToX25519 } from '@stablelib/ed25519'
 
 import { BufferEncoder } from '../../../utils/BufferEncoder'
 import { getFullVerkey } from '../../../utils/did'
-import { DidCommService } from '../../connections'
-import { DidDocumentService } from '../domain'
+import { DidCommService, DidDocumentService } from '../domain'
 import { DidDocumentBuilder } from '../domain/DidDocumentBuilder'
 import { DidCommV2Service } from '../domain/service/DidCommV2Service'
 

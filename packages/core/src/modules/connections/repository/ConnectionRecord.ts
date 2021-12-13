@@ -1,23 +1,24 @@
 import type { TagsBase } from '../../../storage/BaseRecord'
 import type { ConnectionRole } from '../models/ConnectionRole'
 
-import { Type } from 'class-transformer'
+import { Transform, TransformationType, Type } from 'class-transformer'
 
 import { AriesFrameworkError } from '../../../error'
 import { BaseRecord } from '../../../storage/BaseRecord'
 import { uuid } from '../../../utils/uuid'
 import { ConnectionInvitationMessage } from '../messages/ConnectionInvitationMessage'
 import { ConnectionState } from '../models/ConnectionState'
-import { DidDoc } from '../models/did/DidDoc'
+import { DidDocument } from '../../dids'
+import { didDocumentFromLegacyDidDocumentFormat, didDocumentToLegacyDidDocumentFormat } from '../models/DidV1Bridge'
 
 export interface ConnectionRecordProps {
   id?: string
   createdAt?: Date
   did: string
-  didDoc: DidDoc
+  didDoc: DidDocument
   verkey: string
   theirDid?: string
-  theirDidDoc?: DidDoc
+  theirDidDoc?: DidDocument
   theirLabel?: string
   invitation?: ConnectionInvitationMessage
   state: ConnectionState
@@ -49,13 +50,25 @@ export class ConnectionRecord
   public state!: ConnectionState
   public role!: ConnectionRole
 
-  @Type(() => DidDoc)
-  public didDoc!: DidDoc
+  @Type(() => DidDocument)
+  // TODO: how do we migrate to a new did document store?
+  @Transform(({ type, value }) => {
+    if (type === TransformationType.CLASS_TO_PLAIN) return didDocumentToLegacyDidDocumentFormat(value)
+    else if (type === TransformationType.PLAIN_TO_CLASS) return didDocumentFromLegacyDidDocumentFormat(value)
+    return value
+  })
+  public didDoc!: DidDocument
   public did!: string
   public verkey!: string
 
-  @Type(() => DidDoc)
-  public theirDidDoc?: DidDoc
+  @Type(() => DidDocument)
+  // TODO: how do we migrate to a new did document store?
+  @Transform(({ type, value }) => {
+    if (type === TransformationType.CLASS_TO_PLAIN) return didDocumentToLegacyDidDocumentFormat(value)
+    else if (type === TransformationType.PLAIN_TO_CLASS) return didDocumentFromLegacyDidDocumentFormat(value)
+    return value
+  })
+  public theirDidDoc?: DidDocument
   public theirDid?: string
   public theirLabel?: string
 

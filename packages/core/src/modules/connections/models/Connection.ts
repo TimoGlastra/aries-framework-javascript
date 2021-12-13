@@ -1,11 +1,13 @@
-import { Expose, Type } from 'class-transformer'
+import { Expose, Transform, TransformationType, Type } from 'class-transformer'
 import { IsInstance, IsOptional, IsString, ValidateNested } from 'class-validator'
 
-import { DidDoc } from './did/DidDoc'
+import { DidDocument } from '../../dids'
+
+import { didDocumentFromLegacyDidDocumentFormat, didDocumentToLegacyDidDocumentFormat } from './DidV1Bridge'
 
 export interface ConnectionOptions {
   did: string
-  didDoc?: DidDoc
+  didDoc?: DidDocument
 }
 
 export class Connection {
@@ -21,9 +23,14 @@ export class Connection {
   public did!: string
 
   @Expose({ name: 'DIDDoc' })
-  @Type(() => DidDoc)
+  @Type(() => DidDocument)
   @ValidateNested()
-  @IsInstance(DidDoc)
+  @IsInstance(DidDocument)
   @IsOptional()
-  public didDoc?: DidDoc
+  @Transform(({ type, value }) => {
+    if (type === TransformationType.CLASS_TO_PLAIN) return didDocumentToLegacyDidDocumentFormat(value)
+    else if (type === TransformationType.PLAIN_TO_CLASS) return didDocumentFromLegacyDidDocumentFormat(value)
+    return value
+  })
+  public didDoc?: DidDocument
 }

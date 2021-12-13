@@ -24,16 +24,7 @@ import {
   ConnectionResponseMessage,
   TrustPingMessage,
 } from '../messages'
-import {
-  Connection,
-  ConnectionState,
-  ConnectionRole,
-  DidDoc,
-  Ed25119Sig2018,
-  authenticationTypes,
-  ReferencedAuthentication,
-  IndyAgentService,
-} from '../models'
+import { Connection, ConnectionState, ConnectionRole } from '../models'
 import { ConnectionRecord } from '../repository/ConnectionRecord'
 import { ConnectionRepository } from '../repository/ConnectionRepository'
 
