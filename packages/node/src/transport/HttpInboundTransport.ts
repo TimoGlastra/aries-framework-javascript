@@ -5,6 +5,20 @@ import type { Server } from 'http'
 import { DidCommMimeType, AriesFrameworkError, AgentConfig, TransportService, utils } from '@aries-framework/core'
 import express, { text } from 'express'
 
+/**
+ * HttpInboundTransport implements the InboundTransport interface for receiving DIDComm messages over HTTP.
+ *
+ * The transport should be registered through the agent using the `registerInboundTransport` method. Make sure
+ * to register the transport before calling `agent.initialize()`.
+ *
+ * @public
+ *
+ * @example
+ * ```typescript
+ * const httpInboundTransport = new HttpInboundTransport({ port: 3000 ))
+ * agent.registerInboundTransport(httpInboundTransport)
+ * ```
+ */
 export class HttpInboundTransport implements InboundTransport {
   public readonly app: Express
   private port: number
@@ -63,7 +77,7 @@ export class HttpInboundTransport implements InboundTransport {
   }
 }
 
-export class HttpTransportSession implements TransportSession {
+class HttpTransportSession implements TransportSession {
   public id: string
   public readonly type = 'http'
   public req: Request

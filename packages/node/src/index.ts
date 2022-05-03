@@ -1,3 +1,7 @@
+/**
+ * @packageDocumentation
+ * Hello
+ */
 import type { AgentDependencies } from '@aries-framework/core'
 
 import { EventEmitter } from 'events'
@@ -9,6 +13,9 @@ import { NodeFileSystem } from './NodeFileSystem'
 import { HttpInboundTransport } from './transport/HttpInboundTransport'
 import { WsInboundTransport } from './transport/WsInboundTransport'
 
+/**
+ * @public
+ */
 const agentDependencies: AgentDependencies = {
   FileSystem: NodeFileSystem,
   fetch,

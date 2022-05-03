@@ -3,6 +3,20 @@ import type { Agent, InboundTransport, Logger, TransportSession, EncryptedMessag
 import { AriesFrameworkError, AgentConfig, TransportService, utils } from '@aries-framework/core'
 import WebSocket, { Server } from 'ws'
 
+/**
+ * WsInboundTransport implements the InboundTransport interface for receiving DIDComm messages over WebSocket.
+ *
+ * The transport should be registered through the agent using the `registerInboundTransport` method. Make sure
+ * to register the transport before calling `agent.initialize()`.
+ *
+ * @public
+ *
+ * @example
+ * ```typescript
+ * const wsInboundTransport = new WsInboundTransport({ port: 3000 ))
+ * agent.registerInboundTransport(wsInboundTransport)
+ * ```
+ */
 export class WsInboundTransport implements InboundTransport {
   private socketServer: Server
   private logger!: Logger
@@ -71,7 +85,7 @@ export class WsInboundTransport implements InboundTransport {
   }
 }
 
-export class WebSocketTransportSession implements TransportSession {
+class WebSocketTransportSession implements TransportSession {
   public id: string
   public readonly type = 'WebSocket'
   public socket: WebSocket

@@ -14,6 +14,9 @@ import { ReactNativeFileSystem } from './ReactNativeFileSystem'
 const fetch = global.fetch as unknown as AgentDependencies['fetch']
 const WebSocket = global.WebSocket as unknown as AgentDependencies['WebSocketClass']
 
+/**
+ * @public
+ */
 const agentDependencies: AgentDependencies = {
   FileSystem: ReactNativeFileSystem,
   fetch,
