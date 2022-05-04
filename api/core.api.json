@@ -22740,7 +22740,7 @@
         {
           "kind": "TypeAlias",
           "canonicalReference": "@aries-framework/core!HandlerInboundMessage:type",
-          "docComment": "/**\n * Provides exact typing for the AgentMessage in the message context in the `handle` function of a handler. It takes all possible types from `supportedMessageTypes`\n *\n * @example\n *\n * async handle(messageContext: HandlerInboundMessage<BasicMessageHandler>) {}\n */\n",
+          "docComment": "/**\n * Provides exact typing for the AgentMessage in the message context in the `handle` function of a handler. It takes all possible types from `supportedMessageTypes`\n *\n * @example\n * ```ts\n * class MyHandler implements Handler {\n *  public async handle(messageContext: HandlerInboundMessage<BasicMessageHandler>) {\n *    // method implementation\n *  }\n * ```\n *\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",

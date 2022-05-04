@@ -13,7 +13,12 @@ export interface Handler<T extends typeof AgentMessage = typeof AgentMessage> {
  * of a handler. It takes all possible types from `supportedMessageTypes`
  *
  * @example
- * async handle(messageContext: HandlerInboundMessage<BasicMessageHandler>) {}
+ * ```ts
+ * class MyHandler implements Handler {
+ *  public async handle(messageContext: HandlerInboundMessage<BasicMessageHandler>) {
+ *    // method implementation
+ *  }
+ * ```
  */
 export type HandlerInboundMessage<H extends Handler> = InboundMessageContext<
   InstanceType<H['supportedMessages'][number]>

@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/*",
     "demo",
-    "samples/*"
+    "samples/*",
+    "website"
   ],
   "repository": {
     "url": "https://github.com/hyperledger/aries-framework-javascript",
