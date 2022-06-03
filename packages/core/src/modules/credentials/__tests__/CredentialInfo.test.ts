@@ -1,4 +1,4 @@
-import { CredentialInfo } from '../protocol/v1/models/CredentialInfo'
+import { IndyCredentialView } from '../formats/indy/models/models/IndyCredentialView'
 
 describe('CredentialInfo', () => {
   it('should return the correct property values', () => {
@@ -13,7 +13,7 @@ describe('CredentialInfo', () => {
       credentialDefinitionId: 'Th7MpTaRZVRYnPiabds81Y:3:CL:17:TAG',
       schemaId: 'TL1EaPFCZ8Si5aUrqScBDt:2:test-schema-1599055118161:1.0',
     }
-    const credentialInfo = new CredentialInfo({
+    const credentialInfo = new IndyCredentialView({
       claims,
       metadata,
     })

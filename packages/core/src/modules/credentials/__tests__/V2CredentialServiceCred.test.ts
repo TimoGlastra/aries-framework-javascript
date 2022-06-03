@@ -6,9 +6,9 @@ import type { AcceptRequestOptions, RequestCredentialOptions } from '../Credenti
 import type {
   CredentialFormatSpec,
   FormatServiceRequestCredentialFormats,
-} from '../formats/models/CredentialFormatServiceOptions'
+} from '../formats/CredentialFormatServiceOptions'
 import type { CredentialPreviewAttribute } from '../models/CredentialPreviewAttribute'
-import type { IndyCredentialMetadata } from '../protocol/v1/models/CredentialInfo'
+import type { IndyCredentialViewMetadata } from '../formats/indy/models/models/IndyCredentialView'
 import type { V2IssueCredentialMessageProps } from '../protocol/v2/messages/V2IssueCredentialMessage'
 import type { V2OfferCredentialMessageOptions } from '../protocol/v2/messages/V2OfferCredentialMessage'
 import type { V2RequestCredentialMessageOptions } from '../protocol/v2/messages/V2RequestCredentialMessage'
@@ -30,13 +30,13 @@ import { IndyIssuerService } from '../../indy/services/IndyIssuerService'
 import { IndyLedgerService } from '../../ledger/services'
 import { MediationRecipientService } from '../../routing/services/MediationRecipientService'
 import { CredentialEventTypes } from '../CredentialEvents'
-import { CredentialProtocolVersion } from '../CredentialProtocolVersion'
-import { CredentialState } from '../CredentialState'
-import { CredentialUtils } from '../CredentialUtils'
+import { CredentialProtocolVersion } from '../models/CredentialProtocolVersion'
+import { CredentialState } from '../models/CredentialState'
+import { IndyCredentialUtils } from '../formats/indy/IndyCredentialUtils'
 import { CredentialFormatType } from '../CredentialsModuleOptions'
 import { CredentialProblemReportReason } from '../errors/CredentialProblemReportReason'
 import { IndyCredentialFormatService } from '../formats'
-import { V1CredentialPreview } from '../protocol/v1/V1CredentialPreview'
+import { V1CredentialPreview } from '../protocol/v1/messages/V1CredentialPreview'
 import {
   INDY_CREDENTIAL_ATTACHMENT_ID,
   INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
@@ -104,7 +104,7 @@ const credentialAttachment = new Attachment({
   mimeType: 'application/json',
   data: new AttachmentData({
     base64: JsonEncoder.toBase64({
-      values: CredentialUtils.convertAttributesToValues(credentialPreview.attributes),
+      values: IndyCredentialUtils.convertAttributesToValues(credentialPreview.attributes),
     }),
   }),
 })
@@ -152,7 +152,7 @@ const mockCredentialRecord = ({
   credentialAttributes,
 }: {
   state?: CredentialState
-  metadata?: IndyCredentialMetadata & { indyRequest: Record<string, unknown> }
+  metadata?: IndyCredentialViewMetadata & { indyRequest: Record<string, unknown> }
   tags?: CustomCredentialTags
   threadId?: string
   connectionId?: string

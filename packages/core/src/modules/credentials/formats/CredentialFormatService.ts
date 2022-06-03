@@ -1,27 +1,25 @@
 import type { EventEmitter } from '../../../agent/EventEmitter'
+import type { CredentialFormatSpec } from '../models/CredentialFormatSpec'
+import type { CredentialRepository } from '../repository'
+import type { CredentialFormat } from './CredentialFormat'
 import type {
-  ServiceAcceptCredentialOptions,
-  ServiceAcceptProposalOptions,
-  ServiceOfferCredentialOptions,
-} from '../CredentialServiceOptions'
-import type {
-  AcceptRequestOptions,
-  ProposeCredentialOptions,
-  RequestCredentialOptions,
-} from '../CredentialsModuleOptions'
-import type { CredentialExchangeRecord, CredentialRepository } from '../repository'
-import type {
-  FormatServiceCredentialAttachmentFormats,
-  CredentialFormatSpec,
   HandlerAutoAcceptOptions,
-  FormatServiceOfferAttachmentFormats,
-  FormatServiceProposeAttachmentFormats,
-} from './models/CredentialFormatServiceOptions'
+  FormatCreateProposalOptions,
+  FormatCreateProposalReturn,
+  FormatProcessOptions,
+  FormatCreateOfferOptions,
+  FormatCreateOfferReturn,
+  FormatCreateRequestOptions,
+  FormatCreateReturn,
+  FormatAcceptRequestOptions,
+  FormatAcceptOfferOptions,
+  FormatAcceptProposalOptions,
+} from './CredentialFormatServiceOptions'
 
 import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
 import { JsonEncoder } from '../../../utils/JsonEncoder'
 
-export abstract class CredentialFormatService {
+export abstract class CredentialFormatService<CF extends CredentialFormat> {
   protected credentialRepository: CredentialRepository
   protected eventEmitter: EventEmitter
 
@@ -30,42 +28,32 @@ export abstract class CredentialFormatService {
     this.eventEmitter = eventEmitter
   }
 
-  abstract createProposal(options: ProposeCredentialOptions): Promise<FormatServiceProposeAttachmentFormats>
+  // proposal methods
+  abstract createProposal(options: FormatCreateProposalOptions<CF>): Promise<FormatCreateProposalReturn>
+  abstract processProposal(options: FormatProcessOptions): Promise<void>
+  abstract acceptProposal(options: FormatAcceptProposalOptions<CF>): Promise<FormatCreateOfferReturn>
 
-  abstract processProposal(
-    options: ServiceAcceptProposalOptions,
-    credentialRecord: CredentialExchangeRecord
-  ): Promise<void>
+  // offer methods
+  abstract createOffer(options: FormatCreateOfferOptions<CF>): Promise<FormatCreateOfferReturn>
+  abstract processOffer(options: FormatProcessOptions): Promise<void>
+  abstract acceptOffer(options: FormatAcceptOfferOptions<CF>): Promise<FormatCreateReturn>
 
-  abstract createOffer(options: ServiceOfferCredentialOptions): Promise<FormatServiceOfferAttachmentFormats>
+  // request methods
+  abstract createRequest(options: FormatCreateRequestOptions<CF>): Promise<FormatCreateReturn>
+  abstract processRequest(options: FormatProcessOptions): Promise<void>
+  abstract acceptRequest(options: FormatAcceptRequestOptions<CF>): Promise<FormatCreateReturn>
 
-  abstract processOffer(attachment: Attachment, credentialRecord: CredentialExchangeRecord): Promise<void>
+  // credential methods
+  abstract processCredential(options: FormatProcessOptions): Promise<void>
 
-  abstract createRequest(
-    options: RequestCredentialOptions,
-    credentialRecord: CredentialExchangeRecord,
-    holderDid?: string
-  ): Promise<FormatServiceCredentialAttachmentFormats>
-
-  abstract processRequest(options: RequestCredentialOptions, credentialRecord: CredentialExchangeRecord): void
-
-  abstract createCredential(
-    options: AcceptRequestOptions,
-    credentialRecord: CredentialExchangeRecord,
-    requestAttachment: Attachment,
-    offerAttachment?: Attachment
-  ): Promise<FormatServiceCredentialAttachmentFormats>
-
-  abstract processCredential(
-    options: ServiceAcceptCredentialOptions,
-    credentialRecord: CredentialExchangeRecord
-  ): Promise<void>
-
+  // T-TODO: revise interface for methods
   abstract shouldAutoRespondToProposal(options: HandlerAutoAcceptOptions): boolean
   abstract shouldAutoRespondToRequest(options: HandlerAutoAcceptOptions): boolean
   abstract shouldAutoRespondToCredential(options: HandlerAutoAcceptOptions): boolean
 
-  abstract deleteCredentialById(credentialRecordId: string): Promise<void>
+  abstract deleteCredentialById(credentialId: string): Promise<void>
+
+  abstract supportsFormat(format: string): boolean
 
   /**
    *
@@ -77,22 +65,23 @@ export abstract class CredentialFormatService {
    * @returns attachment to the credential proposal
    */
   public getFormatData(data: unknown, id: string): Attachment {
-    const attachment: Attachment = new Attachment({
+    const attachment = new Attachment({
       id,
       mimeType: 'application/json',
       data: new AttachmentData({
         base64: JsonEncoder.toBase64(data),
       }),
     })
+
     return attachment
   }
 
   /**
    * Gets the attachment object for a given attachId. We need to get out the correct attachId for
    * indy and then find the corresponding attachment (if there is one)
-   * @param formats the formats object containing the attachid
-   * @param messageAttachment the attachment containing the payload
+   * @param formats the formats object containing the attachId
+   * @param messageAttachments the attachment containing the payload
    * @returns The Attachment if found or undefined
    */
-  abstract getAttachment(formats: CredentialFormatSpec[], messageAttachment: Attachment[]): Attachment | undefined
+  abstract getAttachment(formats: CredentialFormatSpec[], messageAttachments: Attachment[]): Attachment | undefined
 }

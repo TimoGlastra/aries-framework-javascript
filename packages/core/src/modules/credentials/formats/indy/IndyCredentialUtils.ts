@@ -1,19 +1,18 @@
-import type { LinkedAttachment } from '../../utils/LinkedAttachment'
-import type { V1CredentialPreview } from './protocol/v1/V1CredentialPreview'
-import type { V2CredentialPreview } from './protocol/v2/V2CredentialPreview'
+import type { LinkedAttachment } from '../../../../utils/LinkedAttachment'
+import type { V1CredentialPreview } from '../../protocol/v1/messages/V1CredentialPreview'
+import type { V2CredentialPreview } from '../../protocol/v2/V2CredentialPreview'
 import type { CredValues, Schema } from 'indy-sdk'
 
 import BigNumber from 'bn.js'
 
-import { AriesFrameworkError } from '../../error/AriesFrameworkError'
-import { Hasher } from '../../utils'
-import { encodeAttachment } from '../../utils/attachment'
-import { Buffer } from '../../utils/buffer'
-import { isBoolean, isNumber, isString } from '../../utils/type'
+import { AriesFrameworkError } from '../../../../error/AriesFrameworkError'
+import { Hasher } from '../../../../utils'
+import { encodeAttachment } from '../../../../utils/attachment'
+import { Buffer } from '../../../../utils/buffer'
+import { isBoolean, isNumber, isString } from '../../../../utils/type'
+import { CredentialPreviewAttribute } from '../../models/CredentialPreviewAttribute'
 
-import { CredentialPreviewAttribute } from './models/CredentialPreviewAttribute'
-
-export class CredentialUtils {
+export class IndyCredentialUtils {
   /**
    * Adds attribute(s) to the credential preview that is linked to the given attachment(s)
    *
@@ -24,9 +23,11 @@ export class CredentialUtils {
    * */
   public static createAndLinkAttachmentsToPreview(
     attachments: LinkedAttachment[],
-    credentialPreview: V1CredentialPreview | V2CredentialPreview
+    previewAttributes: CredentialPreviewAttribute[]
   ) {
-    const credentialPreviewAttributeNames = credentialPreview.attributes.map((attribute) => attribute.name)
+    const credentialPreviewAttributeNames = previewAttributes.map((attribute) => attribute.name)
+    const newPreviewAttributes = [...previewAttributes]
+
     attachments.forEach((linkedAttachment) => {
       if (credentialPreviewAttributeNames.includes(linkedAttachment.attributeName)) {
         throw new AriesFrameworkError(
@@ -38,12 +39,13 @@ export class CredentialUtils {
           mimeType: linkedAttachment.attachment.mimeType,
           value: encodeAttachment(linkedAttachment.attachment),
         })
-        credentialPreview.attributes.push(credentialPreviewAttribute)
+        newPreviewAttributes.push(credentialPreviewAttribute)
       }
     })
 
-    return credentialPreview
+    return newPreviewAttributes
   }
+
   /**
    * Converts int value to string
    * Converts string value:
@@ -59,7 +61,7 @@ export class CredentialUtils {
       return {
         [attribute.name]: {
           raw: attribute.value,
-          encoded: CredentialUtils.encode(attribute.value),
+          encoded: IndyCredentialUtils.encode(attribute.value),
         },
         ...credentialValues,
       }
@@ -129,7 +131,7 @@ export class CredentialUtils {
    * @see https://github.com/hyperledger/aries-rfcs/blob/be4ad0a6fb2823bb1fc109364c96f077d5d8dffa/features/0037-present-proof/README.md#verifying-claims-of-indy-based-verifiable-credentials
    */
   public static checkValidEncoding(raw: unknown, encoded: string) {
-    return encoded === CredentialUtils.encode(raw)
+    return encoded === IndyCredentialUtils.encode(raw)
   }
 
   /**
@@ -172,9 +174,9 @@ export class CredentialUtils {
     return new BigNumber(Hasher.hash(Buffer.from(value as string), 'sha2-256')).toString()
   }
 
-  public static checkAttributesMatch(schema: Schema, credentialPreview: V1CredentialPreview | V2CredentialPreview) {
+  public static checkAttributesMatch(schema: Schema, attributes: CredentialPreviewAttribute[]) {
     const schemaAttributes = schema.attrNames
-    const credAttributes = credentialPreview.attributes.map((a) => a.name)
+    const credAttributes = attributes.map((a) => a.name)
 
     const difference = credAttributes
       .filter((x) => !schemaAttributes.includes(x))
@@ -186,6 +188,7 @@ export class CredentialUtils {
       )
     }
   }
+
   private static isInt32(number: number) {
     const minI32 = -2147483648
     const maxI32 = 2147483647

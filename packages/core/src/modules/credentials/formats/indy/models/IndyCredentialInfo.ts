@@ -3,7 +3,7 @@ import type { IndyCredentialInfo as IndySDKCredentialInfo } from 'indy-sdk'
 import { Expose } from 'class-transformer'
 import { IsOptional, IsString } from 'class-validator'
 
-import { JsonTransformer } from '../../../../../utils/JsonTransformer'
+import { JsonTransformer } from '../../../../../utils'
 
 export class IndyCredentialInfo {
   public constructor(options: IndyCredentialInfo) {

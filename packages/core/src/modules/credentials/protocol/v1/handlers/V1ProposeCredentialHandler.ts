@@ -1,16 +1,12 @@
 import type { AgentConfig } from '../../../../../agent/AgentConfig'
 import type { Handler, HandlerInboundMessage } from '../../../../../agent/Handler'
-import type { Attachment } from '../../../../../decorators/attachment/Attachment'
 import type { DidCommMessageRepository } from '../../../../../storage'
-import type { HandlerAutoAcceptOptions } from '../../../formats/models/CredentialFormatServiceOptions'
-import type { CredentialPreviewAttribute } from '../../../models/CredentialPreviewAttribute'
+import type { HandlerAutoAcceptOptions } from '../../../formats/CredentialFormatServiceOptions'
 import type { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
 import type { V1CredentialService } from '../V1CredentialService'
 
 import { createOutboundMessage } from '../../../../../agent/helpers'
-import { AriesFrameworkError } from '../../../../../error/AriesFrameworkError'
-import { AutoAcceptCredential } from '../../../CredentialAutoAcceptType'
-import { V1OfferCredentialMessage, V1ProposeCredentialMessage } from '../messages'
+import { INDY_CREDENTIAL_OFFER_ATTACHMENT_ID, V1OfferCredentialMessage, V1ProposeCredentialMessage } from '../messages'
 
 export class V1ProposeCredentialHandler implements Handler {
   private credentialService: V1CredentialService
@@ -31,8 +27,6 @@ export class V1ProposeCredentialHandler implements Handler {
   public async handle(messageContext: HandlerInboundMessage<V1ProposeCredentialHandler>) {
     const credentialRecord = await this.credentialService.processProposal(messageContext)
 
-    // note that these two messages can be present (or not) and there is no
-    // guarantee which one is present so we need two try-catch blocks
     const proposalMessage = await this.didCommMessageRepository.findAgentMessage({
       associatedRecordId: credentialRecord.id,
       messageClass: V1ProposeCredentialMessage,
@@ -43,38 +37,25 @@ export class V1ProposeCredentialHandler implements Handler {
       messageClass: V1OfferCredentialMessage,
     })
 
-    let proposalValues: CredentialPreviewAttribute[] | undefined
+    const proposalValues = proposalMessage?.credentialProposal?.attributes
+    const offerAttachment = offerMessage?.getAttachmentById(INDY_CREDENTIAL_OFFER_ATTACHMENT_ID)
 
-    if (!proposalMessage || !proposalMessage.credentialProposal || !proposalMessage.credentialProposal.attributes) {
-      throw new AriesFrameworkError('Missing attributes in proposal message')
-    }
-    let proposalAttachment, offerAttachment: Attachment | undefined
-    if (proposalMessage) {
-      proposalValues = proposalMessage.credentialProposal.attributes
-    }
-    if (offerMessage) {
-      offerAttachment = offerMessage.getAttachmentById('indy')
-    }
     const handlerOptions: HandlerAutoAcceptOptions = {
       credentialRecord,
       autoAcceptType: this.agentConfig.autoAcceptCredentials,
       messageAttributes: proposalValues,
-      proposalAttachment,
       offerAttachment,
-      credentialDefinitionId: proposalMessage.credentialDefinitionId,
+      credentialDefinitionId: proposalMessage?.credentialDefinitionId,
     }
-    if (
-      this.agentConfig.autoAcceptCredentials === AutoAcceptCredential.Always ||
-      credentialRecord.autoAcceptCredential === AutoAcceptCredential.Always ||
-      (await this.credentialService.shouldAutoRespondToProposal(handlerOptions))
-    ) {
-      return await this.createOffer(credentialRecord, messageContext, proposalMessage)
+    if (await this.credentialService.shouldAutoRespondToProposal(handlerOptions)) {
+      return await this.acceptProposal(credentialRecord, messageContext, proposalMessage)
     }
   }
-  private async createOffer(
+
+  private async acceptProposal(
     credentialRecord: CredentialExchangeRecord,
     messageContext: HandlerInboundMessage<V1ProposeCredentialHandler>,
-    proposalMessage?: V1ProposeCredentialMessage
+    proposalMessage: V1ProposeCredentialMessage | null
   ) {
     this.agentConfig.logger.info(
       `Automatically sending offer with autoAccept on ${this.agentConfig.autoAcceptCredentials}`
@@ -84,6 +65,7 @@ export class V1ProposeCredentialHandler implements Handler {
       this.agentConfig.logger.error('No connection on the messageContext, aborting auto accept')
       return
     }
+
     if (!proposalMessage?.credentialProposal) {
       this.agentConfig.logger.error(
         `Proposal message with id ${credentialRecord.id} is missing required credential proposal`
@@ -96,10 +78,10 @@ export class V1ProposeCredentialHandler implements Handler {
       return
     }
 
-    const { message } = await this.credentialService.createOfferAsResponse(credentialRecord, {
-      credentialDefinitionId: proposalMessage.credentialDefinitionId,
-      preview: proposalMessage.credentialProposal,
+    const { message } = await this.credentialService.acceptProposal({
+      credentialRecord,
     })
+
     return createOutboundMessage(messageContext.connection, message)
   }
 }

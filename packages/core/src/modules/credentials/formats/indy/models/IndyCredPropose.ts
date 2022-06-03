@@ -1,7 +1,7 @@
 import { Expose } from 'class-transformer'
 import { IsOptional, IsString } from 'class-validator'
 
-export interface CredProposeOptions {
+export interface IndyCredProposeOptions {
   schemaIssuerDid?: string
   schemaId?: string
   schemaName?: string
@@ -19,8 +19,8 @@ export interface CredProposeOptions {
  * class.
  *
  */
-export class CredPropose {
-  public constructor(options: CredProposeOptions) {
+export class IndyCredPropose {
+  public constructor(options: IndyCredProposeOptions) {
     if (options) {
       this.schemaIssuerDid = options.schemaIssuerDid
       this.schemaId = options.schemaId

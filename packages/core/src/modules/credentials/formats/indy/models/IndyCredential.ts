@@ -1,4 +1,4 @@
-import type { IndyCredential } from 'indy-sdk'
+import type * as Indy from 'indy-sdk'
 
 import { Expose, Type } from 'class-transformer'
 import { IsInstance, IsOptional, ValidateNested } from 'class-validator'
@@ -6,10 +6,10 @@ import { IsInstance, IsOptional, ValidateNested } from 'class-validator'
 import { JsonTransformer } from '../../../../../utils/JsonTransformer'
 
 import { IndyCredentialInfo } from './IndyCredentialInfo'
-import { RevocationInterval } from './RevocationInterval'
+import { IndyRevocationInterval } from './IndyRevocationInterval'
 
-export class Credential {
-  public constructor(options: Credential) {
+export class IndyCredential {
+  public constructor(options: IndyCredential) {
     if (options) {
       this.credentialInfo = options.credentialInfo
       this.interval = options.interval
@@ -23,12 +23,12 @@ export class Credential {
   public credentialInfo!: IndyCredentialInfo
 
   @IsOptional()
-  @Type(() => RevocationInterval)
+  @Type(() => IndyRevocationInterval)
   @ValidateNested()
-  @IsInstance(RevocationInterval)
-  public interval?: RevocationInterval
+  @IsInstance(IndyRevocationInterval)
+  public interval?: IndyRevocationInterval
 
-  public toJSON(): IndyCredential {
-    return JsonTransformer.toJSON(this) as unknown as IndyCredential
+  public toJSON(): Indy.IndyCredential {
+    return JsonTransformer.toJSON(this) as unknown as Indy.IndyCredential
   }
 }

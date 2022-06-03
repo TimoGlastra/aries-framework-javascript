@@ -13,10 +13,10 @@ import { SubjectOutboundTransport } from '../../../../../../../../tests/transpor
 import { prepareForIssuance, waitForCredentialRecordSubject, getBaseConfig } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
 import { Agent } from '../../../../../agent/Agent'
-import { AutoAcceptCredential } from '../../../CredentialAutoAcceptType'
+import { AutoAcceptCredential } from '../../../models/CredentialAutoAcceptType'
 import { CredentialEventTypes } from '../../../CredentialEvents'
-import { CredentialProtocolVersion } from '../../../CredentialProtocolVersion'
-import { CredentialState } from '../../../CredentialState'
+import { CredentialProtocolVersion } from '../../../models/CredentialProtocolVersion'
+import { CredentialState } from '../../../models/CredentialState'
 import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
 import { V2CredentialPreview } from '../V2CredentialPreview'
 

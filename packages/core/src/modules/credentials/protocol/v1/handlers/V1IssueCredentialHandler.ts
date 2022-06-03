@@ -5,7 +5,6 @@ import type { CredentialExchangeRecord } from '../../../repository/CredentialExc
 import type { V1CredentialService } from '../V1CredentialService'
 
 import { createOutboundMessage, createOutboundServiceMessage } from '../../../../../agent/helpers'
-import { AriesFrameworkError } from '../../../../../error/AriesFrameworkError'
 import { V1IssueCredentialMessage, V1RequestCredentialMessage } from '../messages'
 
 export class V1IssueCredentialHandler implements Handler {
@@ -26,32 +25,34 @@ export class V1IssueCredentialHandler implements Handler {
 
   public async handle(messageContext: HandlerInboundMessage<V1IssueCredentialHandler>) {
     const credentialRecord = await this.credentialService.processCredential(messageContext)
-    const credentialMessage = await this.didCommMessageRepository.findAgentMessage({
+
+    const credentialMessage = await this.didCommMessageRepository.getAgentMessage({
       associatedRecordId: credentialRecord.id,
       messageClass: V1IssueCredentialMessage,
     })
-    if (!credentialMessage) {
-      throw new AriesFrameworkError('Missing credential message in V2RequestCredentialHandler')
-    }
+
     if (this.credentialService.shouldAutoRespondToCredential(credentialRecord, credentialMessage)) {
-      return await this.createAck(credentialRecord, credentialMessage, messageContext)
+      return await this.acceptCredential(credentialRecord, credentialMessage, messageContext)
     }
   }
 
-  private async createAck(
-    record: CredentialExchangeRecord,
-    credentialMessage: V1IssueCredentialMessage | null,
+  private async acceptCredential(
+    credentialRecord: CredentialExchangeRecord,
+    credentialMessage: V1IssueCredentialMessage,
     messageContext: HandlerInboundMessage<V1IssueCredentialHandler>
   ) {
     this.agentConfig.logger.info(
       `Automatically sending acknowledgement with autoAccept on ${this.agentConfig.autoAcceptCredentials}`
     )
-    const { message, credentialRecord } = await this.credentialService.createAck(record)
+    const { message } = await this.credentialService.acceptCredential({
+      credentialRecord,
+    })
 
     const requestMessage = await this.didCommMessageRepository.findAgentMessage({
       associatedRecordId: credentialRecord.id,
       messageClass: V1RequestCredentialMessage,
     })
+
     if (messageContext.connection) {
       return createOutboundMessage(messageContext.connection, message)
     } else if (credentialMessage?.service && requestMessage?.service) {

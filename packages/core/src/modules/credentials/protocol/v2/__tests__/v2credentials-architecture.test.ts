@@ -3,15 +3,15 @@ import type { CredentialFormatService } from '../../../formats/CredentialFormatS
 import type {
   FormatServiceProposeCredentialFormats,
   IndyProposeCredentialFormat,
-} from '../../../formats/models/CredentialFormatServiceOptions'
+} from '../../../formats/CredentialFormatServiceOptions'
 import type { CredentialService } from '../../../services/CredentialService'
 
 import { getBaseConfig } from '../../../../../../tests/helpers'
 import { Agent } from '../../../../../agent/Agent'
-import { CredentialProtocolVersion } from '../../../CredentialProtocolVersion'
+import { CredentialProtocolVersion } from '../../../models/CredentialProtocolVersion'
 import { CredentialsModule } from '../../../CredentialsModule'
 import { CredentialFormatType } from '../../../CredentialsModuleOptions'
-import { V1CredentialPreview } from '../../v1/V1CredentialPreview'
+import { V1CredentialPreview } from '../../v1/messages/V1CredentialPreview'
 import { CredentialMessageBuilder } from '../CredentialMessageBuilder'
 
 const { config, agentDependencies: dependencies } = getBaseConfig('Format Service Test')

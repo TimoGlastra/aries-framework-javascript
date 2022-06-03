@@ -7,7 +7,7 @@ import type {
 } from '../../CredentialServiceOptions'
 import type { ProposeCredentialOptions } from '../../CredentialsModuleOptions'
 import type { CredentialFormatService } from '../../formats/CredentialFormatService'
-import type { CredentialFormatSpec } from '../../formats/models/CredentialFormatServiceOptions'
+import type { CredentialFormatSpec } from '../../formats/CredentialFormatServiceOptions'
 import type { CredentialExchangeRecordProps } from '../../repository/CredentialExchangeRecord'
 import type { V2IssueCredentialMessageProps } from './messages/V2IssueCredentialMessage'
 import type { V2OfferCredentialMessageOptions } from './messages/V2OfferCredentialMessage'
@@ -16,8 +16,8 @@ import type { V2RequestCredentialMessageOptions } from './messages/V2RequestCred
 
 import { AriesFrameworkError } from '../../../../error/AriesFrameworkError'
 import { uuid } from '../../../../utils/uuid'
-import { CredentialProtocolVersion } from '../../CredentialProtocolVersion'
-import { CredentialState } from '../../CredentialState'
+import { CredentialProtocolVersion } from '../../models/CredentialProtocolVersion'
+import { CredentialState } from '../../models/CredentialState'
 import { CredentialExchangeRecord } from '../../repository/CredentialExchangeRecord'
 
 import { V2CredentialPreview } from './V2CredentialPreview'

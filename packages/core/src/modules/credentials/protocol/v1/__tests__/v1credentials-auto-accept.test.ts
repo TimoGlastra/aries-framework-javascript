@@ -15,11 +15,11 @@ import { setupCredentialTests, waitForCredentialRecord } from '../../../../../..
 import testLogger from '../../../../../../tests/logger'
 import { JsonTransformer } from '../../../../../utils/JsonTransformer'
 import { sleep } from '../../../../../utils/sleep'
-import { AutoAcceptCredential } from '../../../CredentialAutoAcceptType'
-import { CredentialProtocolVersion } from '../../../CredentialProtocolVersion'
-import { CredentialState } from '../../../CredentialState'
+import { AutoAcceptCredential } from '../../../models/CredentialAutoAcceptType'
+import { CredentialProtocolVersion } from '../../../models/CredentialProtocolVersion'
+import { CredentialState } from '../../../models/CredentialState'
 import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
-import { V1CredentialPreview } from '../../v1/V1CredentialPreview'
+import { V1CredentialPreview } from '../messages/V1CredentialPreview'
 
 describe('credentials', () => {
   let faberAgent: Agent

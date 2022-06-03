@@ -10,7 +10,7 @@ import type {
   OfferCredentialOptions,
   ProposeCredentialOptions,
 } from '../../../CredentialsModuleOptions'
-import type { CredPropose } from '../../../formats/models/CredPropose'
+import type { IndyCredPropose } from '../../../formats/indy/models/IndyCredPropose'
 
 import { issueCredential, setupCredentialTests, waitForCredentialRecord } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
@@ -18,10 +18,10 @@ import { AriesFrameworkError } from '../../../../../error/AriesFrameworkError'
 import { IndyHolderService } from '../../../../../modules/indy/services/IndyHolderService'
 import { DidCommMessageRepository } from '../../../../../storage'
 import { JsonTransformer } from '../../../../../utils'
-import { CredentialProtocolVersion } from '../../../CredentialProtocolVersion'
-import { CredentialState } from '../../../CredentialState'
+import { CredentialProtocolVersion } from '../../../models/CredentialProtocolVersion'
+import { CredentialState } from '../../../models/CredentialState'
 import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
-import { V1CredentialPreview } from '../../v1/V1CredentialPreview'
+import { V1CredentialPreview } from '../../v1/messages/V1CredentialPreview'
 import { V1OfferCredentialMessage } from '../../v1/messages/V1OfferCredentialMessage'
 import { V2CredentialPreview } from '../V2CredentialPreview'
 import { V2OfferCredentialMessage } from '../messages/V2OfferCredentialMessage'
@@ -34,7 +34,7 @@ describe('credentials', () => {
   let aliceConnection: ConnectionRecord
   let aliceCredentialRecord: CredentialExchangeRecord
   let faberCredentialRecord: CredentialExchangeRecord
-  let credPropose: CredPropose
+  let credPropose: IndyCredPropose
 
   const newCredentialPreview = V2CredentialPreview.fromRecord({
     name: 'John',

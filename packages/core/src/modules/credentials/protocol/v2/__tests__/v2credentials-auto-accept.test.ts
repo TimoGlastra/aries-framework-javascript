@@ -8,16 +8,16 @@ import type {
   OfferCredentialOptions,
   ProposeCredentialOptions,
 } from '../../../CredentialsModuleOptions'
-import type { CredPropose } from '../../../formats/models/CredPropose'
+import type { IndyCredPropose } from '../../../formats/indy/models/IndyCredPropose'
 import type { Schema } from 'indy-sdk'
 
 import { AriesFrameworkError } from '../../../../../../src/error/AriesFrameworkError'
 import { setupCredentialTests, waitForCredentialRecord } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
 import { sleep } from '../../../../../utils/sleep'
-import { AutoAcceptCredential } from '../../../CredentialAutoAcceptType'
-import { CredentialProtocolVersion } from '../../../CredentialProtocolVersion'
-import { CredentialState } from '../../../CredentialState'
+import { AutoAcceptCredential } from '../../../models/CredentialAutoAcceptType'
+import { CredentialProtocolVersion } from '../../../models/CredentialProtocolVersion'
+import { CredentialState } from '../../../models/CredentialState'
 import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
 import { V2CredentialPreview } from '../V2CredentialPreview'
 
@@ -346,7 +346,7 @@ describe('credentials', () => {
       }
     })
     test('Alice starts with V2 credential proposal to Faber, both have autoAcceptCredential on `contentApproved` and attributes did change', async () => {
-      const credPropose: CredPropose = {
+      const credPropose: IndyCredPropose = {
         schemaIssuerDid: faberAgent.publicDid?.did,
         schemaName: schema.name,
         schemaVersion: schema.version,

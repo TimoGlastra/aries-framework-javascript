@@ -3,6 +3,8 @@ import type { RevocationService } from '../../../services'
 
 import { V1RevocationNotificationMessage } from '../messages/V1RevocationNotificationMessage'
 
+// T-TODO: move to revocation-notification protocol directory
+
 export class V1RevocationNotificationHandler implements Handler {
   private revocationService: RevocationService
   public supportedMessages = [V1RevocationNotificationMessage]

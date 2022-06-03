@@ -1,4 +1,4 @@
-import { CredentialState } from '../CredentialState'
+import { CredentialState } from '../models/CredentialState'
 
 describe('CredentialState', () => {
   test('state matches Issue Credential 1.0 (RFC 0036) state value', () => {

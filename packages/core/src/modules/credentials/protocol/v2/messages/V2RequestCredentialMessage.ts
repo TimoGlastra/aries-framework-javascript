@@ -4,7 +4,7 @@ import { IsArray, IsInstance, IsOptional, IsString, ValidateNested } from 'class
 import { AgentMessage } from '../../../../../agent/AgentMessage'
 import { Attachment } from '../../../../../decorators/attachment/Attachment'
 import { IsValidMessageType, parseMessageType } from '../../../../../utils/messageType'
-import { CredentialFormatSpec } from '../../../formats/models/CredentialFormatServiceOptions'
+import { CredentialFormatSpec } from '../../../formats/CredentialFormatServiceOptions'
 
 export interface V2RequestCredentialMessageOptions {
   id?: string

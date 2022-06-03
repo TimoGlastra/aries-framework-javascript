@@ -1,6 +1,6 @@
 import { IsInt, IsOptional } from 'class-validator'
 
-export class RevocationInterval {
+export class IndyRevocationInterval {
   public constructor(options: { from?: number; to?: number }) {
     if (options) {
       this.from = options.from

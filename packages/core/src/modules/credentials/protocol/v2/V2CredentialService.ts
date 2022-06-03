@@ -15,13 +15,14 @@ import type {
   NegotiateProposalOptions,
   ProposeCredentialOptions,
   RequestCredentialOptions,
+  CredentialFormatType,
 } from '../../CredentialsModuleOptions'
-import type { CredentialFormatService } from '../../formats/CredentialFormatService'
+import type { CredentialFormat, CredentialFormatService } from '../../formats/CredentialFormatService'
 import type {
   CredentialFormats,
   CredentialFormatSpec,
   HandlerAutoAcceptOptions,
-} from '../../formats/models/CredentialFormatServiceOptions'
+} from '../../formats/CredentialFormatServiceOptions'
 import type { CredentialPreviewAttribute } from '../../models/CredentialPreviewAttribute'
 import type { CreateRequestOptions } from './CredentialMessageBuilder'
 
@@ -36,13 +37,11 @@ import { AckStatus } from '../../../common'
 import { ConnectionService } from '../../../connections/services/ConnectionService'
 import { DidResolverService } from '../../../dids'
 import { MediationRecipientService } from '../../../routing'
-import { AutoAcceptCredential } from '../../CredentialAutoAcceptType'
-import { CredentialProtocolVersion } from '../../CredentialProtocolVersion'
-import { CredentialState } from '../../CredentialState'
-import { CredentialFormatType } from '../../CredentialsModuleOptions'
+import { AutoAcceptCredential } from '../../models/CredentialAutoAcceptType'
+import { CredentialProtocolVersion } from '../../models/CredentialProtocolVersion'
+import { CredentialState } from '../../models/CredentialState'
 import { CredentialProblemReportError, CredentialProblemReportReason } from '../../errors'
 import { IndyCredentialFormatService } from '../../formats/indy/IndyCredentialFormatService'
-import { FORMAT_KEYS } from '../../formats/models/CredentialFormatServiceOptions'
 import { CredentialRepository, CredentialExchangeRecord } from '../../repository'
 import { RevocationService } from '../../services'
 import { CredentialService } from '../../services/CredentialService'
@@ -61,11 +60,11 @@ import { V2ProposeCredentialMessage } from './messages/V2ProposeCredentialMessag
 import { V2RequestCredentialMessage } from './messages/V2RequestCredentialMessage'
 
 @scoped(Lifecycle.ContainerScoped)
-export class V2CredentialService extends CredentialService {
+export class V2CredentialService<CFs extends CredentialFormat[]> extends CredentialService<CFs> {
   private connectionService: ConnectionService
   private credentialMessageBuilder: CredentialMessageBuilder
   private indyCredentialFormatService: IndyCredentialFormatService
-  private serviceFormatMap: { Indy: IndyCredentialFormatService } // jsonld todo
+  private serviceFormatMap: { [key: string]: CredentialFormatService }
 
   public constructor(
     connectionService: ConnectionService,
@@ -93,7 +92,8 @@ export class V2CredentialService extends CredentialService {
     this.indyCredentialFormatService = indyCredentialFormatService
     this.credentialMessageBuilder = new CredentialMessageBuilder()
     this.serviceFormatMap = {
-      [CredentialFormatType.Indy]: this.indyCredentialFormatService,
+      // T-TODO: make this generic
+      indy: this.indyCredentialFormatService,
     }
     this.didResolver = didResolver
   }
@@ -948,36 +948,34 @@ export class V2CredentialService extends CredentialService {
     }
     return shouldAutoRespond
   }
-  public async getOfferMessage(id: string): Promise<AgentMessage | null> {
+
+  public async getOfferMessage(credentialRecordId: string): Promise<AgentMessage | null> {
     return await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: id,
+      associatedRecordId: credentialRecordId,
       messageClass: V2OfferCredentialMessage,
     })
   }
-  public async getRequestMessage(id: string): Promise<AgentMessage | null> {
+
+  public async getRequestMessage(credentialRecordId: string): Promise<AgentMessage | null> {
     return await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: id,
+      associatedRecordId: credentialRecordId,
       messageClass: V2RequestCredentialMessage,
     })
   }
 
-  public async getCredentialMessage(id: string): Promise<AgentMessage | null> {
+  public async getCredentialMessage(credentialRecordId: string): Promise<AgentMessage | null> {
     return await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: id,
+      associatedRecordId: credentialRecordId,
       messageClass: V2IssueCredentialMessage,
     })
-  }
-
-  public update(credentialRecord: CredentialExchangeRecord) {
-    return this.credentialRepository.update(credentialRecord)
   }
 
   /**
    * Returns the protocol version for this credential service
    * @returns v2 as this is the v2 service
    */
-  public getVersion(): CredentialProtocolVersion {
-    return CredentialProtocolVersion.V2
+  public getVersion() {
+    return 'v2' as const
   }
 
   /**
@@ -992,53 +990,43 @@ export class V2CredentialService extends CredentialService {
   }
 
   /**
-   * Retrieve a credential record by connection id and thread id
-   *
-   * @param connectionId The connection id
-   * @param threadId The thread id
-   * @throws {RecordNotFoundError} If no record is found
-   * @throws {RecordDuplicateError} If multiple records are found
-   * @returns The credential record
-   */
-  public getByThreadAndConnectionId(threadId: string, connectionId?: string): Promise<CredentialExchangeRecord> {
-    return this.credentialRepository.getSingleByQuery({
-      connectionId,
-      threadId,
-    })
-  }
-
-  /**
    * Get all the format service objects for a given credential format from an incoming message
    * @param messageFormats the format objects containing the format name (eg indy)
    * @return the credential format service objects in an array - derived from format object keys
    */
   public getFormatsFromMessage(messageFormats: CredentialFormatSpec[]): CredentialFormatService[] {
-    const formats: CredentialFormatService[] = []
+    const formatServices = new Set<CredentialFormatService>()
+
     for (const msg of messageFormats) {
-      if (msg.format.includes('indy')) {
-        formats.push(this.getFormatService(CredentialFormatType.Indy))
-      } else if (msg.format.includes('aries')) {
-        // todo
-      } else {
-        throw new AriesFrameworkError(`Unknown Message Format: ${msg.format}`)
-      }
+      const service = this.getServiceForFormat(msg.format)
+      if (service) formatServices.add(service)
     }
-    return formats
+
+    return Array.from(formatServices)
   }
+
   /**
    * Get all the format service objects for a given credential format
    * @param credentialFormats the format object containing various optional parameters
    * @return the credential format service objects in an array - derived from format object keys
    */
   public getFormats(credentialFormats: CredentialFormats): CredentialFormatService[] {
-    const formats: CredentialFormatService[] = []
+    const formats = new Set<CredentialFormatService>()
     const formatKeys = Object.keys(credentialFormats)
 
     for (const key of formatKeys) {
-      const credentialFormatType: CredentialFormatType = FORMAT_KEYS[key]
-      const formatService: CredentialFormatService = this.getFormatService(credentialFormatType)
-      formats.push(formatService)
+      const formatService = this.serviceFormatMap[key]
+      if (formatService) formats.add(formatService)
     }
-    return formats
+
+    return Array.from(formats)
+  }
+
+  private getServiceForFormat(format: string): CredentialFormatService | null {
+    for (const service of Object.values(this.serviceFormatMap)) {
+      if (service.supportsFormat(format)) return service
+    }
+
+    return null
   }
 }

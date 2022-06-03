@@ -1,24 +1,24 @@
 import type { Attachment } from '../../../../../decorators/attachment/Attachment'
 
-export interface CredentialInfoOptions {
-  metadata?: IndyCredentialMetadata | null
+export interface IndyCredentialViewModel {
+  metadata?: IndyCredentialViewMetadata | null
   claims: Record<string, string>
   attachments?: Attachment[]
 }
 
-export interface IndyCredentialMetadata {
+export interface IndyCredentialViewMetadata {
   credentialDefinitionId?: string
   schemaId?: string
 }
 
-export class CredentialInfo {
-  public constructor(options: CredentialInfoOptions) {
+export class IndyCredentialView {
+  public constructor(options: IndyCredentialViewModel) {
     this.metadata = options.metadata ?? {}
     this.claims = options.claims
     this.attachments = options.attachments
   }
 
-  public metadata: IndyCredentialMetadata
+  public metadata: IndyCredentialViewMetadata
   public claims: Record<string, string>
   public attachments?: Attachment[]
 }

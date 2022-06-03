@@ -1,5 +1,5 @@
-import { CredentialUtils } from '../CredentialUtils'
-import { CredentialPreviewAttribute } from '../models/CredentialPreviewAttribute'
+import { CredentialPreviewAttribute } from '../../../models/CredentialPreviewAttribute'
+import { IndyCredentialUtils } from '../IndyCredentialUtils'
 
 /**
  * Sample test cases for encoding/decoding of verifiable credential claims - Aries RFCs 0036 and 0037
@@ -108,7 +108,7 @@ describe('CredentialUtils', () => {
         }),
       ]
 
-      expect(CredentialUtils.convertAttributesToValues(attributes)).toEqual({
+      expect(IndyCredentialUtils.convertAttributesToValues(attributes)).toEqual({
         name: {
           raw: '101 Wilson Lane',
           encoded: '68086943237164982734333428280784300550565381723532936263016368251445461241953',
@@ -135,7 +135,7 @@ describe('CredentialUtils', () => {
         age: { raw: '1234', encoded: '1234' },
       }
 
-      expect(() => CredentialUtils.assertValuesMatch(firstValues, secondValues)).not.toThrow()
+      expect(() => IndyCredentialUtils.assertValuesMatch(firstValues, secondValues)).not.toThrow()
     })
 
     test('throws if number of values in the entries do not match', () => {
@@ -150,7 +150,7 @@ describe('CredentialUtils', () => {
         age: { raw: '1234', encoded: '1234' },
       }
 
-      expect(() => CredentialUtils.assertValuesMatch(firstValues, secondValues)).toThrow(
+      expect(() => IndyCredentialUtils.assertValuesMatch(firstValues, secondValues)).toThrow(
         'Number of values in first entry (1) does not match number of values in second entry (2)'
       )
     })
@@ -171,7 +171,7 @@ describe('CredentialUtils', () => {
         age: { raw: '1234', encoded: '1234' },
       }
 
-      expect(() => CredentialUtils.assertValuesMatch(firstValues, secondValues)).toThrow(
+      expect(() => IndyCredentialUtils.assertValuesMatch(firstValues, secondValues)).toThrow(
         "Second cred values object has no value for key 'name'"
       )
     })
@@ -184,7 +184,7 @@ describe('CredentialUtils', () => {
         age: { raw: '1234', encoded: '12345' },
       }
 
-      expect(() => CredentialUtils.assertValuesMatch(firstValues, secondValues)).toThrow(
+      expect(() => IndyCredentialUtils.assertValuesMatch(firstValues, secondValues)).toThrow(
         "Encoded credential values for key 'age' do not match"
       )
     })
@@ -197,7 +197,7 @@ describe('CredentialUtils', () => {
         age: { raw: '12345', encoded: '1234' },
       }
 
-      expect(() => CredentialUtils.assertValuesMatch(firstValues, secondValues)).toThrow(
+      expect(() => IndyCredentialUtils.assertValuesMatch(firstValues, secondValues)).toThrow(
         "Raw credential values for key 'age' do not match"
       )
     })
@@ -210,7 +210,7 @@ describe('CredentialUtils', () => {
     )
 
     test.each(testEntries)('returns true for valid encoding %s', (_, raw, encoded) => {
-      expect(CredentialUtils.checkValidEncoding(raw, encoded)).toEqual(true)
+      expect(IndyCredentialUtils.checkValidEncoding(raw, encoded)).toEqual(true)
     })
   })
 })

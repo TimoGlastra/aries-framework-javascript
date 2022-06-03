@@ -1,6 +1,6 @@
-import { CredentialProtocolVersion } from '../CredentialProtocolVersion'
-import { CredentialState } from '../CredentialState'
 import { CredentialPreviewAttribute } from '../models/CredentialPreviewAttribute'
+import { CredentialProtocolVersion } from '../models/CredentialProtocolVersion'
+import { CredentialState } from '../models/CredentialState'
 import { CredentialExchangeRecord } from '../repository/CredentialExchangeRecord'
 import { CredentialMetadataKeys } from '../repository/CredentialMetadataTypes'
 

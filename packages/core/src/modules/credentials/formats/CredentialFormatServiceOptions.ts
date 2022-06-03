@@ -1,0 +1,86 @@
+import type { Attachment } from '../../../decorators/attachment/Attachment'
+import type { AutoAcceptCredential } from '../models/CredentialAutoAcceptType'
+import type { CredentialFormatSpec } from '../models/CredentialFormatSpec'
+import type { CredentialPreviewAttribute } from '../models/CredentialPreviewAttribute'
+import type { CredentialExchangeRecord } from '../repository/CredentialExchangeRecord'
+import type { CredentialFormat, CredentialFormatPayload } from './CredentialFormat'
+
+/**
+ * Base return type for all methods that create an attachment format.
+ *
+ * It requires an attachment and a format to be returned.
+ */
+export interface FormatCreateReturn {
+  format: CredentialFormatSpec
+  attachment: Attachment
+}
+
+/**
+ * Base return type for all process methods.
+ */
+export interface FormatProcessOptions {
+  attachment: Attachment
+  credentialRecord: CredentialExchangeRecord
+}
+
+export interface FormatCreateProposalOptions<CF extends CredentialFormat> {
+  credentialRecord: CredentialExchangeRecord
+  credentialFormats: CredentialFormatPayload<[CF], 'createProposal'>
+}
+
+export interface FormatAcceptProposalOptions<CF extends CredentialFormat> {
+  credentialRecord: CredentialExchangeRecord
+  credentialFormats?: CredentialFormatPayload<[CF], 'acceptProposal'>
+  attachId?: string
+}
+
+export interface FormatCreateProposalReturn extends FormatCreateReturn {
+  previewAttributes?: CredentialPreviewAttribute[]
+}
+
+export interface FormatCreateOfferOptions<CF extends CredentialFormat> {
+  credentialRecord: CredentialExchangeRecord
+  credentialFormats: CredentialFormatPayload<[CF], 'createOffer'>
+  attachId?: string
+}
+
+export interface FormatAcceptOfferOptions<CF extends CredentialFormat> {
+  credentialRecord: CredentialExchangeRecord
+  credentialFormats?: CredentialFormatPayload<[CF], 'acceptOffer'>
+  attachId?: string
+
+  // T-TODO: remove attachments from interface
+  offerAttachment: Attachment
+}
+
+export interface FormatCreateOfferReturn extends FormatCreateReturn {
+  previewAttributes?: CredentialPreviewAttribute[]
+}
+
+export interface FormatCreateRequestOptions<CF extends CredentialFormat> {
+  credentialRecord: CredentialExchangeRecord
+  credentialFormats: CredentialFormatPayload<[CF], 'createRequest'>
+}
+
+export interface FormatAcceptRequestOptions<CF extends CredentialFormat> {
+  credentialRecord: CredentialExchangeRecord
+  credentialFormats?: CredentialFormatPayload<[CF], 'acceptRequest'>
+  attachId?: string
+
+  // T-TODO: remove attachments? We can retrieve them ourselves maybe? That would cause redundant queries, but that could be solved using a cache
+  requestAttachment: Attachment
+  offerAttachment?: Attachment
+}
+
+// OLD
+
+export interface HandlerAutoAcceptOptions {
+  credentialRecord: CredentialExchangeRecord
+  autoAcceptType: AutoAcceptCredential
+  messageAttributes?: CredentialPreviewAttribute[]
+  proposalAttachment?: Attachment
+  offerAttachment?: Attachment
+  requestAttachment?: Attachment
+  credentialAttachment?: Attachment
+  credentialDefinitionId?: string
+}

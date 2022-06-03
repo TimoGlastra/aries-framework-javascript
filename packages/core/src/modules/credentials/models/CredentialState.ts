@@ -1,5 +1,5 @@
 /**
- * Issue Credential states as defined in RFC 0036
+ * Issue Credential states as defined in RFC 0036 and RFC 0453
  *
  * @see https://github.com/hyperledger/aries-rfcs/blob/master/features/0036-issue-credential/README.md#states
  */
