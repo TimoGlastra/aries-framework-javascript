@@ -55,12 +55,13 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
     this.registerHandlers()
   }
 
-  abstract getVersion(): CredentialProtocolVersion
-  abstract getFormatService(formatKey: CFs[number]['formatKey']): CredentialFormatService<CFs[number]>
-  // T-TODO: remove this method if possible
-  abstract getFormats<M extends keyof CredentialFormat['credentialFormats']>(
-    credentialFormats: CredentialFormatPayload<CFs, M>
-  ): CredentialFormatService<CFs[number]>[]
+  abstract readonly version: CredentialProtocolVersion
+
+  // T-TODO: remove these methods if possible
+  // abstract getFormatService(formatKey: CFs[number]['formatKey']): CredentialFormatService<CFs[number]>
+  // abstract getFormats<M extends keyof CredentialFormat['credentialFormats']>(
+  //   credentialFormats: CredentialFormatPayload<CFs, M>
+  // ): CredentialFormatService<CFs[number]>[]
 
   // methods for proposal
   abstract createProposal(options: CreateProposalOptions<CFs>): Promise<CredentialProtocolMsgReturnType<AgentMessage>>

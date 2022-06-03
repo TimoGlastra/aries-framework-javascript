@@ -4,6 +4,24 @@ import type { CredentialFormatSpec } from '../models/CredentialFormatSpec'
 import type { CredentialPreviewAttribute } from '../models/CredentialPreviewAttribute'
 import type { CredentialExchangeRecord } from '../repository/CredentialExchangeRecord'
 import type { CredentialFormat, CredentialFormatPayload } from './CredentialFormat'
+import type { CredentialFormatService } from './CredentialFormatService'
+
+/**
+ * Get the service map for usage in the credentials module. Will return a type mapping of protocol version to service.
+ *
+ * @example
+ * ```
+ * type CredentialFormatServiceMap = FormatServiceMap<[IndyCredentialFormat]>
+ *
+ * // equal to
+ * type CredentialFormatServiceMap = {
+ *   indy: CredentialFormatService<IndyCredentialFormat>
+ * }
+ * ```
+ */
+export type FormatServiceMap<CFs extends CredentialFormat[]> = {
+  [CF in CFs[number] as CF['formatKey']]: CredentialFormatService<CF>
+}
 
 /**
  * Base return type for all methods that create an attachment format.

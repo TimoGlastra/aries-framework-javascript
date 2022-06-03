@@ -19,7 +19,7 @@ import type {
 import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
 import { JsonEncoder } from '../../../utils/JsonEncoder'
 
-export abstract class CredentialFormatService<CF extends CredentialFormat> {
+export abstract class CredentialFormatService<CF extends CredentialFormat = CredentialFormat> {
   protected credentialRepository: CredentialRepository
   protected eventEmitter: EventEmitter
 
@@ -27,6 +27,8 @@ export abstract class CredentialFormatService<CF extends CredentialFormat> {
     this.credentialRepository = credentialRepository
     this.eventEmitter = eventEmitter
   }
+
+  abstract readonly formatKey: CF['formatKey']
 
   // proposal methods
   abstract createProposal(options: FormatCreateProposalOptions<CF>): Promise<FormatCreateProposalReturn>

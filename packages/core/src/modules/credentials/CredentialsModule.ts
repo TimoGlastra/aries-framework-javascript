@@ -87,7 +87,7 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
     credentialRepository: CredentialRepository,
     mediationRecipientService: MediationRecipientService,
     didCommMessageRepository: DidCommMessageRepository,
-    v1Service: V1CredentialService<CFs>,
+    v1Service: V1CredentialService,
     v2Service: V2CredentialService<CFs>
   ) {
     this.messageSender = messageSender
@@ -102,7 +102,7 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
     this.serviceMap = [v1Service, v2Service].reduce(
       (serviceMap, service) => ({
         ...serviceMap,
-        [service.getVersion()]: service,
+        [service.version]: service,
       }),
       {}
     ) as ServiceMap<CFs, CSs>
@@ -113,7 +113,7 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
   // T-TODO: reduce typing complexity of this method
   public getService<PVT extends CredentialProtocolVersion>(
     protocolVersion: PVT
-  ): ReturnType<CSs[number]['getVersion']> extends PVT ? CSs[number] : CredentialService<CFs> {
+  ): CSs[number]['version'] extends PVT ? CSs[number] : CredentialService<CFs> {
     const _protocolVersion = protocolVersion as unknown as keyof ServiceMap<CFs, CSs>
 
     if (!this.serviceMap[_protocolVersion]) {
@@ -256,7 +256,7 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
 
     const service = this.getService(credentialRecord.protocolVersion)
 
-    this.logger.debug(`Got a CredentialService object for this version; version = ${service.getVersion()}`)
+    this.logger.debug(`Got a CredentialService object for this version; version = ${service.version}`)
     const offerMessage = await service.getOfferMessage(credentialRecord.id)
 
     // Use connection if present

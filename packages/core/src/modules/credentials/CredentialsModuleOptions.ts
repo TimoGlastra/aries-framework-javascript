@@ -1,13 +1,14 @@
-import type { AutoAcceptCredential } from './models/CredentialAutoAcceptType'
 import type { CredentialFormat, CredentialFormatPayload } from './formats'
-import { CredentialService } from './services'
+import type { AutoAcceptCredential } from './models/CredentialAutoAcceptType'
+import type { CredentialService } from './services'
 
 /**
  * Get the supported protocol versions based on the provided credential services.
  */
-export type ProtocolVersionType<CFs extends CredentialFormat[], CSs extends CredentialService<CFs>[]> = ReturnType<
-  CSs[number]['getVersion']
->
+export type ProtocolVersionType<
+  CFs extends CredentialFormat[],
+  CSs extends CredentialService<CFs>[]
+> = CSs[number]['version']
 
 /**
  * Get the service map for usage in the credentials module. Will return a type mapping of protocol version to service.
@@ -23,7 +24,7 @@ export type ProtocolVersionType<CFs extends CredentialFormat[], CSs extends Cred
  * ```
  */
 export type ServiceMap<CFs extends CredentialFormat[], CSs extends CredentialService<CFs>[]> = {
-  [CS in CSs[number] as ReturnType<CS['getVersion']>]: CredentialService<CFs>
+  [CS in CSs[number] as CS['version']]: CredentialService<CFs>
 }
 
 interface BaseOptions {

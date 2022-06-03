@@ -16,7 +16,6 @@ import type { V2RequestCredentialMessageOptions } from './messages/V2RequestCred
 
 import { AriesFrameworkError } from '../../../../error/AriesFrameworkError'
 import { uuid } from '../../../../utils/uuid'
-import { CredentialProtocolVersion } from '../../models/CredentialProtocolVersion'
 import { CredentialState } from '../../models/CredentialState'
 import { CredentialExchangeRecord } from '../../repository/CredentialExchangeRecord'
 

@@ -36,21 +36,29 @@ export interface CreateOfferOptions<CFs extends CredentialFormat[]> {
 export interface AcceptOfferOptions<CFs extends CredentialFormat[]> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<CFs, 'acceptOffer'>
+  autoAcceptCredential?: AutoAcceptCredential
+  comment?: string
 }
 
 export interface NegotiateOfferOptions<CFs extends CredentialFormat[]> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats: CredentialFormatPayload<CFs, 'createProposal'>
+  autoAcceptCredential?: AutoAcceptCredential
+  comment?: string
 }
 
 export interface CreateRequestOptions<CFs extends CredentialFormat[]> {
   connection: ConnectionRecord
   credentialFormats: CredentialFormatPayload<CFs, 'createRequest'>
+  autoAcceptCredential?: AutoAcceptCredential
+  comment?: string
 }
 
 export interface AcceptRequestOptions<CFs extends CredentialFormat[]> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<CFs, 'acceptRequest'>
+  autoAcceptCredential?: AutoAcceptCredential
+  comment?: string
 }
 
 export interface AcceptCredentialOptions {

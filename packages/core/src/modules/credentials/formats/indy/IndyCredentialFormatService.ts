@@ -80,6 +80,8 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
     this.logger = agentConfig.logger
   }
 
+  public readonly formatKey = 'indy' as const
+
   /**
    * Create a {@link AttachmentFormats} object dependent on the message type.
    *
@@ -259,7 +261,8 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
   /**
    * We don't have any models to validate an indy request object, for now this method does nothing
    */
-  public async processRequest(): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async processRequest(options: FormatProcessOptions): Promise<void> {
     // not needed for Indy
   }
 
