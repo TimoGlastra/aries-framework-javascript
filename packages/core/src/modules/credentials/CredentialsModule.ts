@@ -2,6 +2,7 @@ import type { AgentMessage } from '../../agent/AgentMessage'
 import type { Logger } from '../../logger'
 import type { DeleteCredentialOptions } from './CredentialServiceOptions'
 import type {
+  AcceptCredentialOptions,
   AcceptOfferOptions,
   AcceptProposalOptions,
   AcceptRequestOptions,
@@ -10,8 +11,10 @@ import type {
   OfferCredentialOptions,
   ProposeCredentialOptions,
   ServiceMap,
+  CreateOfferOptions,
 } from './CredentialsModuleOptions'
 import type { CredentialFormat } from './formats'
+import type { IndyCredentialFormat } from './formats/indy/IndyCredentialFormat'
 import type { CredentialProtocolVersion } from './models/CredentialProtocolVersion'
 import type { CredentialExchangeRecord } from './repository/CredentialExchangeRecord'
 import type { CredentialService } from './services/CredentialService'
@@ -45,7 +48,7 @@ export interface CredentialsModule<CFs extends CredentialFormat[], CSs extends C
   declineOffer(credentialRecordId: string): Promise<CredentialExchangeRecord>
   negotiateOffer(options: NegotiateOfferOptions<CFs>): Promise<CredentialExchangeRecord>
   // out of band
-  createOffer(options: OfferCredentialOptions<CFs, CSs>): Promise<{
+  createOffer(options: CreateOfferOptions<CFs, CSs>): Promise<{
     message: AgentMessage
     credentialRecord: CredentialExchangeRecord
   }>
@@ -58,7 +61,7 @@ export interface CredentialsModule<CFs extends CredentialFormat[], CSs extends C
   acceptRequest(options: AcceptRequestOptions<CFs>): Promise<CredentialExchangeRecord>
 
   // Credential
-  acceptCredential(credentialRecordId: string): Promise<CredentialExchangeRecord>
+  acceptCredential(options: AcceptCredentialOptions): Promise<CredentialExchangeRecord>
 
   // Record Methods
   getAll(): Promise<CredentialExchangeRecord[]>
@@ -68,8 +71,10 @@ export interface CredentialsModule<CFs extends CredentialFormat[], CSs extends C
 }
 
 @scoped(Lifecycle.ContainerScoped)
-export class CredentialsModule<CFs extends CredentialFormat[], CSs extends CredentialService<CFs>[]>
-  implements CredentialsModule<CFs, CSs>
+export class CredentialsModule<
+  CFs extends CredentialFormat[] = [IndyCredentialFormat],
+  CSs extends CredentialService<CFs>[] = [V1CredentialService, V2CredentialService<CFs>]
+> implements CredentialsModule<CFs, CSs>
 {
   private connectionService: ConnectionService
   private messageSender: MessageSender
@@ -142,6 +147,8 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
     const { credentialRecord, message } = await service.createProposal({
       connection,
       credentialFormats: options.credentialFormats,
+      comment: options.comment,
+      autoAcceptCredential: options.autoAcceptCredential,
     })
 
     this.logger.debug('We have a message (sending outbound): ', message)
@@ -175,7 +182,12 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
     const service = this.getService(credentialRecord.protocolVersion)
 
     // will get back a credential record -> map to Credential Exchange Record
-    const { message } = await service.acceptProposal({ credentialRecord, credentialFormats: options.credentialFormats })
+    const { message } = await service.acceptProposal({
+      credentialRecord,
+      credentialFormats: options.credentialFormats,
+      comment: options.comment,
+      autoAcceptCredential: options.autoAcceptCredential,
+    })
 
     // send the message
     const connection = await this.connectionService.getById(credentialRecord.connectionId)
@@ -208,6 +220,8 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
     const { message } = await service.negotiateProposal({
       credentialRecord,
       credentialFormats: options.credentialFormats,
+      comment: options.comment,
+      autoAcceptCredential: options.autoAcceptCredential,
     })
 
     const connection = await this.connectionService.getById(credentialRecord.connectionId)
@@ -266,6 +280,8 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
       const { message } = await service.acceptOffer({
         credentialRecord,
         credentialFormats: options.credentialFormats,
+        comment: options.comment,
+        autoAcceptCredential: options.autoAcceptCredential,
       })
 
       const outboundMessage = createOutboundMessage(connection, message)
@@ -287,6 +303,8 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
       const { message } = await service.acceptOffer({
         credentialRecord,
         credentialFormats: options.credentialFormats,
+        comment: options.comment,
+        autoAcceptCredential: options.autoAcceptCredential,
       })
 
       // Set and save ~service decorator to record (to remember our verkey)
@@ -332,6 +350,8 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
     const { message } = await service.negotiateOffer({
       credentialFormats: options.credentialFormats,
       credentialRecord,
+      comment: options.comment,
+      autoAcceptCredential: options.autoAcceptCredential,
     })
 
     if (!credentialRecord.connectionId) {
@@ -353,14 +373,18 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
    * @param options The credential options to use for the offer
    * @returns The credential record and credential offer message
    */
-  public async createOffer(options: OfferCredentialOptions<CFs, CSs>): Promise<{
+  public async createOffer(options: CreateOfferOptions<CFs>): Promise<{
     message: AgentMessage
     credentialRecord: CredentialExchangeRecord
   }> {
     const service = this.getService(options.protocolVersion)
 
     this.logger.debug(`Got a CredentialService object for version ${options.protocolVersion}`)
-    const { message, credentialRecord } = await service.createOffer(options)
+    const { message, credentialRecord } = await service.createOffer({
+      credentialFormats: options.credentialFormats,
+      comment: options.comment,
+      autoAcceptCredential: options.autoAcceptCredential,
+    })
 
     this.logger.debug('Offer Message successfully created; message= ', message)
 
@@ -382,7 +406,12 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
 
     this.logger.debug(`Got a CredentialService object for version ${credentialRecord.protocolVersion}`)
 
-    const { message } = await service.acceptRequest({ credentialRecord, credentialFormats: options.credentialFormats })
+    const { message } = await service.acceptRequest({
+      credentialRecord,
+      credentialFormats: options.credentialFormats,
+      comment: options.comment,
+      autoAcceptCredential: options.autoAcceptCredential,
+    })
     this.logger.debug('We have a credential message (sending outbound): ', message)
 
     const requestMessage = await service.getRequestMessage(credentialRecord.id)
@@ -433,15 +462,17 @@ export class CredentialsModule<CFs extends CredentialFormat[], CSs extends Crede
    * @returns credential exchange record associated with the sent credential acknowledgement message
    *
    */
-  public async acceptCredential(credentialRecordId: string): Promise<CredentialExchangeRecord> {
-    const credentialRecord = await this.getById(credentialRecordId)
+  public async acceptCredential(options: AcceptCredentialOptions): Promise<CredentialExchangeRecord> {
+    const credentialRecord = await this.getById(options.credentialRecordId)
 
     // with version we can get the Service
     const service = this.getService(credentialRecord.protocolVersion)
 
     this.logger.debug(`Got a CredentialService object for version ${credentialRecord.protocolVersion}`)
 
-    const { message } = await service.acceptCredential({ credentialRecord })
+    const { message } = await service.acceptCredential({
+      credentialRecord,
+    })
 
     const requestMessage = await service.getRequestMessage(credentialRecord.id)
     const credentialMessage = await service.getCredentialMessage(credentialRecord.id)

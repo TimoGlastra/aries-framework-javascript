@@ -1,4 +1,4 @@
-import { IndyCredentialView } from '../formats/indy/models/models/IndyCredentialView'
+import { IndyCredentialView } from '../formats/indy/models'
 
 describe('CredentialInfo', () => {
   it('should return the correct property values', () => {

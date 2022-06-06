@@ -17,7 +17,7 @@ describe('CredentialRecord', () => {
             value: '25',
           }),
         ],
-        protocolVersion: CredentialProtocolVersion.V1,
+        protocolVersion: 'v1',
       })
 
       credentialRecord.metadata.set(CredentialMetadataKeys.IndyCredential, {

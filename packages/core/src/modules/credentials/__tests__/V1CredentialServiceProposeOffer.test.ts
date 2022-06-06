@@ -147,7 +147,7 @@ describe('CredentialService', () => {
     beforeEach(async () => {
       proposeOptions = {
         connectionId: connection.id,
-        protocolVersion: CredentialProtocolVersion.V1,
+        protocolVersion: 'v1',
         credentialFormats: {
           indy: {
             payload: credPropose,

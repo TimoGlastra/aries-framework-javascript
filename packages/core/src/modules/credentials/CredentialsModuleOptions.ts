@@ -35,8 +35,10 @@ interface BaseOptions {
 /**
  * Interface for CredentialsModule.proposeCredential. Will send a proposal.
  */
-export interface ProposeCredentialOptions<CFs extends CredentialFormat[], CSs extends CredentialService<CFs>[]>
-  extends BaseOptions {
+export interface ProposeCredentialOptions<
+  CFs extends CredentialFormat[] = CredentialFormat[],
+  CSs extends CredentialService<CFs>[] = CredentialService<CredentialFormat[]>[]
+> extends BaseOptions {
   connectionId: string
   protocolVersion: ProtocolVersionType<CFs, CSs>
   credentialFormats: CredentialFormatPayload<CFs, 'createProposal'>
@@ -47,7 +49,7 @@ export interface ProposeCredentialOptions<CFs extends CredentialFormat[], CSs ex
  *
  * credentialFormats is optional because this is an accept method
  */
-export interface AcceptProposalOptions<CFs extends CredentialFormat[]> extends BaseOptions {
+export interface AcceptProposalOptions<CFs extends CredentialFormat[] = CredentialFormat[]> extends BaseOptions {
   credentialRecordId: string
   credentialFormats?: CredentialFormatPayload<CFs, 'acceptProposal'>
 }
@@ -55,7 +57,7 @@ export interface AcceptProposalOptions<CFs extends CredentialFormat[]> extends B
 /**
  * Interface for CredentialsModule.negotiateProposal. Will send an offer
  */
-export interface NegotiateProposalOptions<CFs extends CredentialFormat[]> extends BaseOptions {
+export interface NegotiateProposalOptions<CFs extends CredentialFormat[] = CredentialFormat[]> extends BaseOptions {
   credentialRecordId: string
   credentialFormats: CredentialFormatPayload<CFs, 'createOffer'>
 }
@@ -63,8 +65,10 @@ export interface NegotiateProposalOptions<CFs extends CredentialFormat[]> extend
 /**
  * Interface for CredentialsModule.createOffer. Will create an out of band offer
  */
-export interface CreateOfferOptions<CFs extends CredentialFormat[], CSs extends CredentialService<CFs>[]>
-  extends BaseOptions {
+export interface CreateOfferOptions<
+  CFs extends CredentialFormat[] = CredentialFormat[],
+  CSs extends CredentialService<CFs>[] = CredentialService<CredentialFormat[]>[]
+> extends BaseOptions {
   protocolVersion: ProtocolVersionType<CFs, CSs>
   credentialFormats: CredentialFormatPayload<CFs, 'createOffer'>
 }
@@ -72,8 +76,10 @@ export interface CreateOfferOptions<CFs extends CredentialFormat[], CSs extends 
 /**
  * Interface for CredentialsModule.offerCredentials. Extends CreateOfferOptions, will send an offer
  */
-export interface OfferCredentialOptions<CFs extends CredentialFormat[], CSs extends CredentialService<CFs>[]>
-  extends BaseOptions,
+export interface OfferCredentialOptions<
+  CFs extends CredentialFormat[] = CredentialFormat[],
+  CSs extends CredentialService<CFs>[] = CredentialService<CredentialFormat[]>[]
+> extends BaseOptions,
     CreateOfferOptions<CFs, CSs> {
   connectionId: string
 }
@@ -83,7 +89,7 @@ export interface OfferCredentialOptions<CFs extends CredentialFormat[], CSs exte
  *
  * credentialFormats is optional because this is an accept method
  */
-export interface AcceptOfferOptions<CFs extends CredentialFormat[]> extends BaseOptions {
+export interface AcceptOfferOptions<CFs extends CredentialFormat[] = CredentialFormat[]> extends BaseOptions {
   credentialRecordId: string
   credentialFormats?: CredentialFormatPayload<CFs, 'acceptOffer'>
 }
@@ -91,7 +97,7 @@ export interface AcceptOfferOptions<CFs extends CredentialFormat[]> extends Base
 /**
  * Interface for CredentialsModule.negotiateOffer. Will send a proposal.
  */
-export interface NegotiateOfferOptions<CFs extends CredentialFormat[]> {
+export interface NegotiateOfferOptions<CFs extends CredentialFormat[] = CredentialFormat[]> extends BaseOptions {
   credentialRecordId: string
   credentialFormats: CredentialFormatPayload<CFs, 'createProposal'>
 }
@@ -101,7 +107,16 @@ export interface NegotiateOfferOptions<CFs extends CredentialFormat[]> {
  *
  * credentialFormats is optional because this is an accept method
  */
-export interface AcceptRequestOptions<CFs extends CredentialFormat[]> extends BaseOptions {
+export interface AcceptRequestOptions<CFs extends CredentialFormat[] = CredentialFormat[]> extends BaseOptions {
   credentialRecordId: string
   credentialFormats?: CredentialFormatPayload<CFs, 'acceptRequest'>
+  autoAcceptCredential?: AutoAcceptCredential
+  comment?: string
+}
+
+/**
+ * Interface for CredentialsModule.acceptCredential. Will send an ack message
+ */
+export interface AcceptCredentialOptions {
+  credentialRecordId: string
 }

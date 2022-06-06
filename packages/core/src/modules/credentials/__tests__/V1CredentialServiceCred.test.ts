@@ -1,3 +1,4 @@
+import type { IndyCredentialViewMetadata, CredentialPreviewAttribute } from '..'
 import type { Logger } from '../../../../src/logger'
 import type { AgentConfig } from '../../../agent/AgentConfig'
 import type { ConnectionRecord } from '../../connections'
@@ -5,12 +6,9 @@ import type { ConnectionService } from '../../connections/services/ConnectionSer
 import type { DidRepository } from '../../dids/repository'
 import type { StoreCredentialOptions } from '../../indy/services/IndyHolderService'
 import type { RevocationNotificationReceivedEvent, CredentialStateChangedEvent } from '../CredentialEvents'
-import type { ServiceAcceptRequestOptions } from '../CredentialServiceOptions'
-import type { RequestCredentialOptions } from '../CredentialsModuleOptions'
-import type { CredentialPreviewAttribute } from '../models/CredentialPreviewAttribute'
-import type { IndyCredentialViewMetadata } from '../formats/indy/models/models/IndyCredentialView'
 import type { CustomCredentialTags } from '../repository/CredentialExchangeRecord'
 
+import { IndyCredentialUtils, CredentialState } from '..'
 import { getAgentConfig, getMockConnection, mockFunction } from '../../../../tests/helpers'
 import { Dispatcher } from '../../../agent/Dispatcher'
 import { EventEmitter } from '../../../agent/EventEmitter'
@@ -26,15 +24,10 @@ import { DidResolverService } from '../../dids'
 import { IndyHolderService } from '../../indy/services/IndyHolderService'
 import { IndyIssuerService } from '../../indy/services/IndyIssuerService'
 import { IndyLedgerService } from '../../ledger/services'
-import { MediationRecipientService } from '../../routing/services/MediationRecipientService'
+import { MediationRecipientService } from '../../routing'
 import { CredentialEventTypes } from '../CredentialEvents'
-import { CredentialProtocolVersion } from '../models/CredentialProtocolVersion'
-import { CredentialState } from '../models/CredentialState'
-import { IndyCredentialUtils } from '../formats/indy/IndyCredentialUtils'
-import { CredentialFormatType } from '../CredentialsModuleOptions'
 import { CredentialProblemReportReason } from '../errors/CredentialProblemReportReason'
 import { IndyCredentialFormatService } from '../formats/indy/IndyCredentialFormatService'
-import { V1CredentialPreview } from '../protocol/v1/messages/V1CredentialPreview'
 import { V1CredentialService } from '../protocol/v1/V1CredentialService'
 import {
   V1RequestCredentialMessage,
@@ -45,6 +38,7 @@ import {
   V1OfferCredentialMessage,
   V1IssueCredentialMessage,
   V1CredentialProblemReportMessage,
+  V1CredentialPreview,
 } from '../protocol/v1/messages'
 import { V1RevocationNotificationMessage } from '../protocol/v1/messages/V1RevocationNotificationMessage'
 import { V2RevocationNotificationMessage } from '../protocol/v2/messages/V2RevocationNotificationMessage'
@@ -159,7 +153,7 @@ const mockCredentialRecord = ({
       },
     ],
     tags,
-    protocolVersion: CredentialProtocolVersion.V1,
+    protocolVersion: 'v1',
   })
 
   if (metadata?.indyRequest) {

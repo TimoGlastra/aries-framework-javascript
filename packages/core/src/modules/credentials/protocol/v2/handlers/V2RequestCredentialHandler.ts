@@ -2,12 +2,12 @@ import type { AgentConfig } from '../../../../../agent/AgentConfig'
 import type { Handler } from '../../../../../agent/Handler'
 import type { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
 import type { DidCommMessageRepository } from '../../../../../storage'
-import type { AcceptRequestOptions } from '../../../CredentialsModuleOptions'
 import type { CredentialExchangeRecord } from '../../../repository'
 import type { V2CredentialService } from '../V2CredentialService'
 
 import { createOutboundMessage, createOutboundServiceMessage } from '../../../../../agent/helpers'
 import { AriesFrameworkError } from '../../../../../error/AriesFrameworkError'
+import { DidCommMessageRole } from '../../../../../storage'
 import { V2OfferCredentialMessage } from '../messages/V2OfferCredentialMessage'
 import { V2ProposeCredentialMessage } from '../messages/V2ProposeCredentialMessage'
 import { V2RequestCredentialMessage } from '../messages/V2RequestCredentialMessage'
@@ -55,12 +55,12 @@ export class V2RequestCredentialHandler implements Handler {
       offerMessage ?? undefined
     )
     if (shouldAutoRespond) {
-      return await this.createCredential(credentialRecord, messageContext, requestMessage, offerMessage)
+      return await this.acceptRequest(credentialRecord, messageContext, requestMessage, offerMessage)
     }
   }
 
-  private async createCredential(
-    record: CredentialExchangeRecord,
+  private async acceptRequest(
+    credentialRecord: CredentialExchangeRecord,
     messageContext: InboundMessageContext<V2RequestCredentialMessage>,
     requestMessage: V2RequestCredentialMessage,
     offerMessage?: V2OfferCredentialMessage | null
@@ -68,13 +68,11 @@ export class V2RequestCredentialHandler implements Handler {
     this.agentConfig.logger.info(
       `Automatically sending credential with autoAccept on ${this.agentConfig.autoAcceptCredentials}`
     )
-    const options: AcceptRequestOptions = {
-      comment: requestMessage.comment,
-      autoAcceptCredential: record.autoAcceptCredential,
-      credentialRecordId: record.id,
-    }
 
-    const { message, credentialRecord } = await this.credentialService.createCredential(record, options)
+    const { message } = await this.credentialService.acceptProposal({
+      credentialRecord,
+    })
+
     if (messageContext.connection) {
       return createOutboundMessage(messageContext.connection, message)
     } else if (requestMessage.service && offerMessage?.service) {
@@ -83,7 +81,11 @@ export class V2RequestCredentialHandler implements Handler {
 
       // Set ~service, update message in record (for later use)
       message.setService(ourService)
-      await this.credentialService.update(credentialRecord)
+      await this.didCommMessageRepository.saveOrUpdateAgentMessage({
+        agentMessage: message,
+        associatedRecordId: credentialRecord.id,
+        role: DidCommMessageRole.Sender,
+      })
 
       return createOutboundServiceMessage({
         payload: message,
@@ -91,6 +93,7 @@ export class V2RequestCredentialHandler implements Handler {
         senderKey: ourService.resolvedDidCommService.recipientKeys[0],
       })
     }
+
     this.agentConfig.logger.error(`Could not automatically create credential request`)
   }
 }

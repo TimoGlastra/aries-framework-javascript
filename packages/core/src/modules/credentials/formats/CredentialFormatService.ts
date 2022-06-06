@@ -29,6 +29,7 @@ export abstract class CredentialFormatService<CF extends CredentialFormat = Cred
   }
 
   abstract readonly formatKey: CF['formatKey']
+  abstract readonly credentialRecordType: CF['credentialRecordType']
 
   // proposal methods
   abstract createProposal(options: FormatCreateProposalOptions<CF>): Promise<FormatCreateProposalReturn>

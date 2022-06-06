@@ -81,6 +81,7 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
   }
 
   public readonly formatKey = 'indy' as const
+  public readonly credentialRecordType = 'indy' as const
 
   /**
    * Create a {@link AttachmentFormats} object dependent on the message type.

@@ -19,12 +19,7 @@ import type {
   AcceptRequestOptions,
   AcceptCredentialOptions,
 } from '../CredentialServiceOptions'
-import type {
-  CredentialFormat,
-  CredentialFormatPayload,
-  CredentialFormatService,
-  HandlerAutoAcceptOptions,
-} from '../formats'
+import type { CredentialFormat, CredentialFormatService, HandlerAutoAcceptOptions } from '../formats'
 import type { CredentialProtocolVersion } from '../models/CredentialProtocolVersion'
 import type { CredentialExchangeRecord, CredentialRepository } from './../repository'
 
@@ -62,6 +57,9 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
   // abstract getFormats<M extends keyof CredentialFormat['credentialFormats']>(
   //   credentialFormats: CredentialFormatPayload<CFs, M>
   // ): CredentialFormatService<CFs[number]>[]
+  abstract getFormatServiceForRecordType(
+    credentialRecordType: CFs[number]['credentialRecordType']
+  ): CredentialFormatService<CFs[number]>
 
   // methods for proposal
   abstract createProposal(options: CreateProposalOptions<CFs>): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
@@ -89,7 +87,7 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
   // methods for ack
   abstract processAck(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
 
-  abstract registerHandlers(): void
+  protected abstract registerHandlers(): void
 
   abstract getOfferMessage(id: string): Promise<AgentMessage | null>
   abstract getRequestMessage(id: string): Promise<AgentMessage | null>
@@ -163,6 +161,10 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
    *
    */
   public async updateState(credentialRecord: CredentialExchangeRecord, newState: CredentialState) {
+    this.logger.debug(
+      `Updating credential record ${credentialRecord.id} to state ${newState} (previous=${credentialRecord.state})`
+    )
+
     const previousState = credentialRecord.state
     credentialRecord.state = newState
     await this.credentialRepository.update(credentialRecord)
@@ -220,7 +222,7 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
 
     if (deleteAssociatedCredentials) {
       for (const credential of credentialRecord.credentials) {
-        const formatService = this.getFormatService(credential.credentialRecordType)
+        const formatService = this.getFormatServiceForRecordType(credential.credentialRecordType)
         await formatService.deleteCredentialById(credential.credentialRecordId)
       }
     }

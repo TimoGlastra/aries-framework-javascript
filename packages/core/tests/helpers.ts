@@ -13,8 +13,8 @@ import type {
   ProofStateChangedEvent,
   SchemaTemplate,
 } from '../src'
-import type { AcceptOfferOptions, OfferCredentialOptions } from '../src/modules/credentials/CredentialsModuleOptions'
-import type { CredentialOfferTemplate } from '../src/modules/credentials/protocol'
+import type { AcceptOfferOptions } from '../src/modules/credentials'
+import type { IndyOfferCredentialFormat } from '../src/modules/credentials/formats/indy/IndyCredentialFormat'
 import type { Schema, CredDef } from 'indy-sdk'
 import type { Observable } from 'rxjs'
 
@@ -47,7 +47,6 @@ import {
 import { KeyType } from '../src/crypto'
 import { Attachment, AttachmentData } from '../src/decorators/attachment/Attachment'
 import { AutoAcceptCredential } from '../src/modules/credentials/models/CredentialAutoAcceptType'
-import { CredentialProtocolVersion } from '../src/modules/credentials/models/CredentialProtocolVersion'
 import { V1CredentialPreview } from '../src/modules/credentials/protocol/v1/messages/V1CredentialPreview'
 import { DidCommV1Service, DidKey, Key } from '../src/modules/dids'
 import { OutOfBandRole } from '../src/modules/oob/domain/OutOfBandRole'
@@ -393,7 +392,7 @@ export async function issueCredential({
   issuerAgent: Agent
   issuerConnectionId: string
   holderAgent: Agent
-  credentialTemplate: Omit<CredentialOfferTemplate, 'autoAcceptCredential'>
+  credentialTemplate: IndyOfferCredentialFormat
 }) {
   const issuerReplay = new ReplaySubject<CredentialStateChangedEvent>()
   const holderReplay = new ReplaySubject<CredentialStateChangedEvent>()
@@ -405,20 +404,19 @@ export async function issueCredential({
     .observable<CredentialStateChangedEvent>(CredentialEventTypes.CredentialStateChanged)
     .subscribe(holderReplay)
 
-  const offerOptions: OfferCredentialOptions = {
+  let issuerCredentialRecord = await issuerAgent.credentials.offerCredential({
     comment: 'some comment about credential',
     connectionId: issuerConnectionId,
-    protocolVersion: CredentialProtocolVersion.V1,
+    protocolVersion: 'v1',
     credentialFormats: {
       indy: {
-        attributes: credentialTemplate.preview.attributes,
+        attributes: credentialTemplate.attributes,
         credentialDefinitionId: credentialTemplate.credentialDefinitionId,
         linkedAttachments: credentialTemplate.linkedAttachments,
       },
     },
     autoAcceptCredential: AutoAcceptCredential.ContentApproved,
-  }
-  let issuerCredentialRecord = await issuerAgent.credentials.offerCredential(offerOptions)
+  })
 
   let holderCredentialRecord = await waitForCredentialRecordSubject(holderReplay, {
     threadId: issuerCredentialRecord.threadId,
@@ -456,7 +454,7 @@ export async function issueConnectionLessCredential({
 }: {
   issuerAgent: Agent
   holderAgent: Agent
-  credentialTemplate: Omit<CredentialOfferTemplate, 'autoAcceptCredential'>
+  credentialTemplate: IndyOfferCredentialFormat
 }) {
   const issuerReplay = new ReplaySubject<CredentialStateChangedEvent>()
   const holderReplay = new ReplaySubject<CredentialStateChangedEvent>()
@@ -468,20 +466,18 @@ export async function issueConnectionLessCredential({
     .observable<CredentialStateChangedEvent>(CredentialEventTypes.CredentialStateChanged)
     .subscribe(holderReplay)
 
-  const offerOptions: OfferCredentialOptions = {
+  // eslint-disable-next-line prefer-const
+  let { credentialRecord: issuerCredentialRecord, message } = await issuerAgent.credentials.createOffer({
     comment: 'V1 Out of Band offer',
-    protocolVersion: CredentialProtocolVersion.V1,
+    protocolVersion: 'v1',
     credentialFormats: {
       indy: {
-        attributes: credentialTemplate.preview.attributes,
+        attributes: credentialTemplate.attributes,
         credentialDefinitionId: credentialTemplate.credentialDefinitionId,
       },
     },
     autoAcceptCredential: AutoAcceptCredential.ContentApproved,
-    connectionId: '',
-  }
-  // eslint-disable-next-line prefer-const
-  let { credentialRecord: issuerCredentialRecord, message } = await issuerAgent.credentials.createOffer(offerOptions)
+  })
 
   const { message: offerMessage } = await issuerAgent.oob.createLegacyConnectionlessInvitation({
     recordId: issuerCredentialRecord.id,
@@ -706,8 +702,7 @@ export async function setupProofsTest(faberName: string, aliceName: string, auto
     holderAgent: aliceAgent,
     credentialTemplate: {
       credentialDefinitionId: definition.id,
-      comment: 'some comment about credential',
-      preview: credentialPreview,
+      attributes: credentialPreview.attributes,
       linkedAttachments: [
         new LinkedAttachment({
           name: 'image_0',

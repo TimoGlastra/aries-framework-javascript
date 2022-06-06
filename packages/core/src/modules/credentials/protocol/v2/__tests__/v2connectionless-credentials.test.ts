@@ -13,12 +13,11 @@ import { SubjectOutboundTransport } from '../../../../../../../../tests/transpor
 import { prepareForIssuance, waitForCredentialRecordSubject, getBaseConfig } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
 import { Agent } from '../../../../../agent/Agent'
-import { AutoAcceptCredential } from '../../../models/CredentialAutoAcceptType'
 import { CredentialEventTypes } from '../../../CredentialEvents'
-import { CredentialProtocolVersion } from '../../../models/CredentialProtocolVersion'
+import { AutoAcceptCredential } from '../../../models/CredentialAutoAcceptType'
 import { CredentialState } from '../../../models/CredentialState'
 import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
-import { V2CredentialPreview } from '../V2CredentialPreview'
+import { V2CredentialPreview } from '../messages/V2CredentialPreview'
 
 const faberConfig = getBaseConfig('Faber connection-less Credentials V2', {
   endpoints: ['rxjs:faber'],
@@ -92,7 +91,7 @@ describe('credentials', () => {
           credentialDefinitionId: credDefId,
         },
       },
-      protocolVersion: CredentialProtocolVersion.V2,
+      protocolVersion: 'v2',
       connectionId: '',
     }
     // eslint-disable-next-line prefer-const
@@ -138,7 +137,9 @@ describe('credentials', () => {
     })
 
     testLogger.test('Alice sends credential ack to Faber')
-    aliceCredentialRecord = await aliceAgent.credentials.acceptCredential(aliceCredentialRecord.id)
+    aliceCredentialRecord = await aliceAgent.credentials.acceptCredential({
+      credentialRecordId: aliceCredentialRecord.id,
+    })
 
     testLogger.test('Faber waits for credential ack from Alice')
     faberCredentialRecord = await waitForCredentialRecordSubject(faberReplay, {
@@ -186,7 +187,7 @@ describe('credentials', () => {
           credentialDefinitionId: credDefId,
         },
       },
-      protocolVersion: CredentialProtocolVersion.V2,
+      protocolVersion: 'v2',
       autoAcceptCredential: AutoAcceptCredential.ContentApproved,
       connectionId: '',
     }

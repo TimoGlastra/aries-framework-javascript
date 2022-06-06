@@ -80,7 +80,7 @@ describe('out of band', () => {
     const { definition } = await prepareForIssuance(faberAgent, ['name', 'age', 'profile_picture', 'x-ray'])
 
     credentialTemplate = {
-      protocolVersion: CredentialProtocolVersion.V1,
+      protocolVersion: 'v1',
       credentialFormats: {
         indy: {
           attributes: V1CredentialPreview.fromRecord({

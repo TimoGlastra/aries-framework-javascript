@@ -90,7 +90,7 @@ describe('credentials', () => {
           credentialDefinitionId: credDefId,
         },
       },
-      protocolVersion: CredentialProtocolVersion.V1,
+      protocolVersion: 'v1',
       connectionId: '',
     }
     // eslint-disable-next-line prefer-const
@@ -189,7 +189,7 @@ describe('credentials', () => {
           credentialDefinitionId: credDefId,
         },
       },
-      protocolVersion: CredentialProtocolVersion.V1,
+      protocolVersion: 'v1',
       autoAcceptCredential: AutoAcceptCredential.ContentApproved,
       connectionId: '',
     }

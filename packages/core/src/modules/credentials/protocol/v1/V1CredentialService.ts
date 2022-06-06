@@ -91,6 +91,16 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
    */
   public readonly version = 'v1'
 
+  public getFormatServiceForRecordType(credentialRecordType: IndyCredentialFormat['credentialRecordType']) {
+    if (credentialRecordType !== this.formatService.credentialRecordType) {
+      throw new AriesFrameworkError(
+        `Unsupported credential record type ${credentialRecordType} for v1 issue credential protocol`
+      )
+    }
+
+    return this.formatService
+  }
+
   /**
    * Create a {@link ProposeCredentialMessage} not bound to an existing credential exchange.
    * To create a proposal as response to an existing credential exchange, use {@link createProposalAsResponse}.
@@ -360,12 +370,10 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
       throw new AriesFrameworkError('Missing indy credential format data for v1 create offer')
     }
 
-    const threadId = uuid()
-
     // Create record
     const credentialRecord = new CredentialExchangeRecord({
       connectionId: connection?.id,
-      threadId,
+      threadId: uuid(),
       linkedAttachments: credentialFormats.indy.linkedAttachments?.map(
         (linkedAttachments) => linkedAttachments.attachment
       ),
@@ -385,7 +393,7 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
 
     // Construct offer message
     const message = new V1OfferCredentialMessage({
-      id: threadId,
+      id: credentialRecord.threadId,
       credentialPreview: new V1CredentialPreview({
         attributes: previewAttributes,
       }),
@@ -834,17 +842,17 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
   public async processAck(
     messageContext: InboundMessageContext<V1CredentialAckMessage>
   ): Promise<CredentialExchangeRecord> {
-    const { message: credentialAckMessage, connection } = messageContext
+    const { message: ackMessage, connection } = messageContext
 
-    this.logger.debug(`Processing credential ack with id ${credentialAckMessage.id}`)
+    this.logger.debug(`Processing credential ack with id ${ackMessage.id}`)
 
-    const credentialRecord = await this.getByThreadAndConnectionId(credentialAckMessage.threadId, connection?.id)
+    const credentialRecord = await this.getByThreadAndConnectionId(ackMessage.threadId, connection?.id)
 
-    const requestCredentialMessage = await this.didCommMessageRepository.findAgentMessage({
+    const requestCredentialMessage = await this.didCommMessageRepository.getAgentMessage({
       associatedRecordId: credentialRecord.id,
       messageClass: V1RequestCredentialMessage,
     })
-    const issueCredentialMessage = await this.didCommMessageRepository.findAgentMessage({
+    const issueCredentialMessage = await this.didCommMessageRepository.getAgentMessage({
       associatedRecordId: credentialRecord.id,
       messageClass: V1IssueCredentialMessage,
     })
@@ -852,36 +860,14 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     // Assert
     credentialRecord.assertState(CredentialState.CredentialIssued)
     this.connectionService.assertConnectionOrServiceDecorator(messageContext, {
-      previousReceivedMessage: requestCredentialMessage ?? undefined,
-      previousSentMessage: issueCredentialMessage ?? undefined,
+      previousReceivedMessage: requestCredentialMessage,
+      previousSentMessage: issueCredentialMessage,
     })
 
     // Update record
     await this.updateState(credentialRecord, CredentialState.Done)
 
     return credentialRecord
-  }
-
-  public registerHandlers() {
-    this.dispatcher.registerHandler(
-      new V1ProposeCredentialHandler(this, this.agentConfig, this.didCommMessageRepository)
-    )
-    this.dispatcher.registerHandler(
-      new V1OfferCredentialHandler(
-        this,
-        this.agentConfig,
-        this.mediationRecipientService,
-        this.didCommMessageRepository
-      )
-    )
-    this.dispatcher.registerHandler(
-      new V1RequestCredentialHandler(this, this.agentConfig, this.didCommMessageRepository)
-    )
-    this.dispatcher.registerHandler(new V1IssueCredentialHandler(this, this.agentConfig, this.didCommMessageRepository))
-    this.dispatcher.registerHandler(new V1CredentialAckHandler(this))
-    this.dispatcher.registerHandler(new V1CredentialProblemReportHandler(this))
-
-    this.dispatcher.registerHandler(new V1RevocationNotificationHandler(this.revocationService))
   }
 
   // AUTO RESPOND METHODS
@@ -979,8 +965,6 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     return shouldAutoReturn
   }
 
-  // REPOSITORY METHODS
-
   public async getOfferMessage(id: string): Promise<AgentMessage | null> {
     return await this.didCommMessageRepository.findAgentMessage({
       associatedRecordId: id,
@@ -1000,6 +984,28 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
       associatedRecordId: id,
       messageClass: V1IssueCredentialMessage,
     })
+  }
+
+  protected registerHandlers() {
+    this.dispatcher.registerHandler(
+      new V1ProposeCredentialHandler(this, this.agentConfig, this.didCommMessageRepository)
+    )
+    this.dispatcher.registerHandler(
+      new V1OfferCredentialHandler(
+        this,
+        this.agentConfig,
+        this.mediationRecipientService,
+        this.didCommMessageRepository
+      )
+    )
+    this.dispatcher.registerHandler(
+      new V1RequestCredentialHandler(this, this.agentConfig, this.didCommMessageRepository)
+    )
+    this.dispatcher.registerHandler(new V1IssueCredentialHandler(this, this.agentConfig, this.didCommMessageRepository))
+    this.dispatcher.registerHandler(new V1CredentialAckHandler(this))
+    this.dispatcher.registerHandler(new V1CredentialProblemReportHandler(this))
+
+    this.dispatcher.registerHandler(new V1RevocationNotificationHandler(this.revocationService))
   }
 
   private areProposalValuesValid(

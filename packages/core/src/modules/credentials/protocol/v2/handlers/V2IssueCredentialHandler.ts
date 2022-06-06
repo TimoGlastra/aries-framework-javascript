@@ -44,12 +44,17 @@ export class V2IssueCredentialHandler implements Handler {
 
     const shouldAutoRespond = this.credentialService.shouldAutoRespondToCredential(credentialRecord, credentialMessage)
     if (shouldAutoRespond) {
-      return await this.createAck(credentialRecord, messageContext, requestMessage ?? undefined, credentialMessage)
+      return await this.acceptCredential(
+        credentialRecord,
+        messageContext,
+        requestMessage ?? undefined,
+        credentialMessage
+      )
     }
   }
 
-  private async createAck(
-    record: CredentialExchangeRecord,
+  private async acceptCredential(
+    credentialRecord: CredentialExchangeRecord,
     messageContext: HandlerInboundMessage<V2IssueCredentialHandler>,
     requestMessage?: V2RequestCredentialMessage,
     credentialMessage?: V2IssueCredentialMessage
@@ -57,7 +62,9 @@ export class V2IssueCredentialHandler implements Handler {
     this.agentConfig.logger.info(
       `Automatically sending acknowledgement with autoAccept on ${this.agentConfig.autoAcceptCredentials}`
     )
-    const { message } = await this.credentialService.createAck(record)
+    const { message } = await this.credentialService.acceptCredential({
+      credentialRecord,
+    })
 
     if (messageContext.connection) {
       return createOutboundMessage(messageContext.connection, message)
