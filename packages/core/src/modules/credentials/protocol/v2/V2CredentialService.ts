@@ -37,6 +37,7 @@ import { MediationRecipientService } from '../../../routing'
 import { IndyCredentialFormatService } from '../../formats/indy/IndyCredentialFormatService'
 import { CredentialState, AutoAcceptCredential } from '../../models'
 import { CredentialExchangeRecord, CredentialRepository } from '../../repository'
+import { RevocationService } from '../../services'
 import { CredentialService } from '../../services/CredentialService'
 
 import { CredentialFormatCoordinator } from './CredentialFormatCoordinator'
@@ -48,6 +49,7 @@ import {
   V2ProposeCredentialHandler,
   V2RequestCredentialHandler,
 } from './handlers'
+import { V2RevocationNotificationHandler } from './handlers/V2RevocationNotificationHandler'
 import {
   V2CredentialAckMessage,
   V2IssueCredentialMessage,
@@ -62,6 +64,7 @@ export class V2CredentialService<CFs extends CredentialFormat[] = CredentialForm
   private credentialFormatCoordinator: CredentialFormatCoordinator<CFs>
   private didCommMessageRepository: DidCommMessageRepository
   private mediationRecipientService: MediationRecipientService
+  private revocationService: RevocationService
   private formatServiceMap: { [key: string]: CredentialFormatService }
 
   public constructor(
@@ -72,12 +75,14 @@ export class V2CredentialService<CFs extends CredentialFormat[] = CredentialForm
     agentConfig: AgentConfig,
     mediationRecipientService: MediationRecipientService,
     didCommMessageRepository: DidCommMessageRepository,
-    indyCredentialFormatService: IndyCredentialFormatService
+    indyCredentialFormatService: IndyCredentialFormatService,
+    revocationService: RevocationService
   ) {
     super(credentialRepository, eventEmitter, dispatcher, agentConfig)
     this.connectionService = connectionService
     this.didCommMessageRepository = didCommMessageRepository
     this.mediationRecipientService = mediationRecipientService
+    this.revocationService = revocationService
     this.credentialFormatCoordinator = new CredentialFormatCoordinator(didCommMessageRepository)
 
     // Dynamically build format service map. This will be extracted once services are registered dynamically
@@ -88,6 +93,8 @@ export class V2CredentialService<CFs extends CredentialFormat[] = CredentialForm
       }),
       {}
     ) as FormatServiceMap<CFs>
+
+    this.registerHandlers()
   }
 
   /**
@@ -962,6 +969,7 @@ export class V2CredentialService<CFs extends CredentialFormat[] = CredentialForm
     this.dispatcher.registerHandler(new V2IssueCredentialHandler(this, this.agentConfig, this.didCommMessageRepository))
     this.dispatcher.registerHandler(new V2CredentialAckHandler(this))
     this.dispatcher.registerHandler(new V2CredentialProblemReportHandler(this))
+    this.dispatcher.registerHandler(new V2RevocationNotificationHandler(this.revocationService))
   }
 
   /**

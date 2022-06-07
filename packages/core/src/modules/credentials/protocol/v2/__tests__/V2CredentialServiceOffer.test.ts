@@ -1,36 +1,39 @@
-import type { AgentConfig } from '../../../agent/AgentConfig'
-import type { ConnectionService } from '../../connections/services/ConnectionService'
-import type { DidRepository } from '../../dids/repository'
-import type { CredentialStateChangedEvent } from '../CredentialEvents'
-import type { ServiceOfferCredentialOptions } from '../CredentialServiceOptions'
-import type { ProposeCredentialOptions } from '../CredentialsModuleOptions'
+import type { AgentConfig } from '../../../../../agent/AgentConfig'
+import type { Wallet } from '../../../../../wallet'
+import type { ConnectionService } from '../../../../connections/services/ConnectionService'
+import type { DidRepository } from '../../../../dids/repository'
+import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
+import type { CreateOfferOptions } from '../../../CredentialServiceOptions'
+import type { IndyCredentialFormat } from '../../../formats/indy/IndyCredentialFormat'
 
-import { Agent } from '../../../../src/agent/Agent'
-import { Dispatcher } from '../../../../src/agent/Dispatcher'
-import { DidCommMessageRepository } from '../../../../src/storage'
-import { getAgentConfig, getBaseConfig, getMockConnection, mockFunction } from '../../../../tests/helpers'
-import { EventEmitter } from '../../../agent/EventEmitter'
-import { MessageSender } from '../../../agent/MessageSender'
-import { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
-import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
-import { DidExchangeState } from '../../connections'
-import { DidResolverService } from '../../dids'
-import { IndyHolderService } from '../../indy/services/IndyHolderService'
-import { IndyIssuerService } from '../../indy/services/IndyIssuerService'
-import { IndyLedgerService } from '../../ledger/services'
-import { MediationRecipientService } from '../../routing/services/MediationRecipientService'
-import { CredentialEventTypes } from '../CredentialEvents'
-import { CredentialProtocolVersion } from '../models/CredentialProtocolVersion'
-import { CredentialState } from '../models/CredentialState'
-import { IndyCredentialFormatService } from '../formats'
-import { V1CredentialPreview } from '../protocol/v1/messages/V1CredentialPreview'
-import { V1CredentialService } from '../protocol/v1/V1CredentialService'
-import { INDY_CREDENTIAL_OFFER_ATTACHMENT_ID, V1OfferCredentialMessage } from '../protocol/v1/messages'
-import { CredentialExchangeRecord } from '../repository/CredentialExchangeRecord'
-import { CredentialRepository } from '../repository/CredentialRepository'
-import { RevocationService } from '../services'
+import { getAgentConfig, getBaseConfig, getMockConnection, mockFunction } from '../../../../../../tests/helpers'
+import { Agent } from '../../../../../agent/Agent'
+import { Dispatcher } from '../../../../../agent/Dispatcher'
+import { EventEmitter } from '../../../../../agent/EventEmitter'
+import { MessageSender } from '../../../../../agent/MessageSender'
+import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
+import { InjectionSymbols } from '../../../../../constants'
+import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
+import { DidCommMessageRepository } from '../../../../../storage'
+import { DidExchangeState } from '../../../../connections'
+import { DidResolverService } from '../../../../dids'
+import { IndyHolderService } from '../../../../indy/services/IndyHolderService'
+import { IndyIssuerService } from '../../../../indy/services/IndyIssuerService'
+import { IndyLedgerService } from '../../../../ledger/services'
+import { MediationRecipientService } from '../../../../routing/services/MediationRecipientService'
+import { CredentialEventTypes } from '../../../CredentialEvents'
+import { IndyCredentialFormatService } from '../../../formats/indy/IndyCredentialFormatService'
+import { CredentialState } from '../../../models/CredentialState'
+import { INDY_CREDENTIAL_OFFER_ATTACHMENT_ID } from '../../v1/messages'
+import { V1CredentialPreview } from '../../v1/messages/V1CredentialPreview'
+import { V2CredentialService } from '../V2CredentialService'
+import { V2CredentialPreview } from '../messages/V2CredentialPreview'
+import { V2OfferCredentialMessage } from '../messages/V2OfferCredentialMessage'
+import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
+import { CredentialRepository } from '../../../repository/CredentialRepository'
+import { RevocationService } from '../../../services'
 
-import { schema, credDef } from './fixtures'
+import { credDef, schema } from '../../../__tests__/fixtures'
 
 // Mock classes
 jest.mock('../repository/CredentialRepository')
@@ -59,10 +62,6 @@ const credentialPreview = V1CredentialPreview.fromRecord({
   age: '99',
 })
 
-const badCredentialPreview = V1CredentialPreview.fromRecord({
-  test: 'credential',
-  error: 'yes',
-})
 const offerAttachment = new Attachment({
   id: INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
   mimeType: 'application/json',
@@ -72,7 +71,7 @@ const offerAttachment = new Attachment({
   }),
 })
 
-const { config, agentDependencies: dependencies } = getBaseConfig('Agent Class Test V1 Cred')
+const { config, agentDependencies: dependencies } = getBaseConfig('Agent Class Test V2 Offer')
 
 describe('CredentialService', () => {
   let agent: Agent
@@ -87,10 +86,10 @@ describe('CredentialService', () => {
   let agentConfig: AgentConfig
 
   let dispatcher: Dispatcher
-  let credentialService: V1CredentialService
-  let revocationService: RevocationService
+  let credentialService: V2CredentialService
   let didResolverService: DidResolverService
   let didRepository: DidRepository
+  let revocationService: RevocationService
 
   beforeEach(async () => {
     credentialRepository = new CredentialRepositoryMock()
@@ -103,147 +102,56 @@ describe('CredentialService', () => {
     mockFunction(indyLedgerService.getCredentialDefinition).mockReturnValue(Promise.resolve(credDef))
     agentConfig = getAgentConfig('CredentialServiceTest')
     eventEmitter = new EventEmitter(agentConfig)
+    revocationService = new RevocationService(credentialRepository, eventEmitter, agentConfig)
 
     dispatcher = new Dispatcher(messageSender, eventEmitter, agentConfig)
-    revocationService = new RevocationService(credentialRepository, eventEmitter, agentConfig)
     didResolverService = new DidResolverService(agentConfig, indyLedgerService, didRepository)
+    const connectionService = {
+      getById: () => Promise.resolve(connection),
+      assertConnectionOrServiceDecorator: () => true,
+    } as unknown as ConnectionService
 
-    credentialService = new V1CredentialService(
-      {
-        getById: () => Promise.resolve(connection),
-        assertConnectionOrServiceDecorator: () => true,
-      } as unknown as ConnectionService,
-      didCommMessageRepository,
+    const wallet = agent.injectionContainer.resolve<Wallet>(InjectionSymbols.Wallet)
+
+    credentialService = new V2CredentialService(
+      connectionService,
+      credentialRepository,
+      eventEmitter,
+      dispatcher,
       agentConfig,
       mediationRecipientService,
-      dispatcher,
-      eventEmitter,
-      credentialRepository,
+      didCommMessageRepository,
       new IndyCredentialFormatService(
         credentialRepository,
         eventEmitter,
         indyIssuerService,
         indyLedgerService,
         indyHolderService,
-        agentConfig
+        connectionService,
+        didResolverService,
+        agentConfig,
+        wallet
       ),
-      revocationService,
-      didResolverService
+      revocationService
     )
     mockFunction(indyLedgerService.getSchema).mockReturnValue(Promise.resolve(schema))
   })
-
-  describe('createCredentialProposal', () => {
-    let proposeOptions: ProposeCredentialOptions
-    const credPropose = {
-      credentialDefinitionId: 'Th7MpTaRZVRYnPiabds81Y:3:CL:17:TAG',
-      schemaIssuerDid: 'GMm4vMw8LLrLJjp81kRRLp',
-      schemaName: 'ahoy',
-      schemaVersion: '1.0',
-      schemaId: 'q7ATwTYbQDgiigVijUAej:2:test:1.0',
-      issuerDid: 'GMm4vMw8LLrLJjp81kRRLp',
+  describe('createCredentialOffer', () => {
+    let offerOptions: CreateOfferOptions<[IndyCredentialFormat]> = {
+      comment: 'some comment',
+      connection,
+      credentialFormats: {
+        indy: {
+          attributes: credentialPreview.attributes,
+          credentialDefinitionId: 'Th7MpTaRZVRYnPiabds81Y:3:CL:17:TAG',
+        },
+      },
     }
 
-    beforeEach(async () => {
-      proposeOptions = {
-        connectionId: connection.id,
-        protocolVersion: 'v1',
-        credentialFormats: {
-          indy: {
-            payload: credPropose,
-            attributes: credentialPreview.attributes,
-          },
-        },
-        comment: 'v1 propose credential test',
-      }
-    })
-
     test(`creates credential record in ${CredentialState.OfferSent} state with offer, thread ID`, async () => {
       const repositorySaveSpy = jest.spyOn(credentialRepository, 'save')
 
-      await credentialService.createProposal(proposeOptions)
-
-      // then
-      expect(repositorySaveSpy).toHaveBeenCalledTimes(1)
-
-      const [[createdCredentialRecord]] = repositorySaveSpy.mock.calls
-      expect(createdCredentialRecord).toMatchObject({
-        type: CredentialExchangeRecord.type,
-        id: expect.any(String),
-        createdAt: expect.any(Date),
-        threadId: createdCredentialRecord.threadId,
-        connectionId: connection.id,
-        state: CredentialState.ProposalSent,
-      })
-    })
-
-    test(`emits stateChange event with a new credential in ${CredentialState.ProposalSent} state`, async () => {
-      const eventListenerMock = jest.fn()
-      eventEmitter.on<CredentialStateChangedEvent>(CredentialEventTypes.CredentialStateChanged, eventListenerMock)
-
-      await credentialService.createProposal(proposeOptions)
-
-      expect(eventListenerMock).toHaveBeenCalledWith({
-        type: 'CredentialStateChanged',
-        payload: {
-          previousState: null,
-          credentialRecord: expect.objectContaining({
-            state: CredentialState.ProposalSent,
-          }),
-        },
-      })
-    })
-
-    test('returns credential proposal message', async () => {
-      const { message: credentialProposal } = await credentialService.createProposal(proposeOptions)
-
-      expect(credentialProposal.toJSON()).toMatchObject({
-        '@id': expect.any(String),
-        '@type': 'https://didcomm.org/issue-credential/1.0/propose-credential',
-        comment: 'v1 propose credential test',
-        schema_id: 'q7ATwTYbQDgiigVijUAej:2:test:1.0',
-        schema_name: 'ahoy',
-        schema_version: '1.0',
-        cred_def_id: 'Th7MpTaRZVRYnPiabds81Y:3:CL:17:TAG',
-        issuer_did: 'GMm4vMw8LLrLJjp81kRRLp',
-        credential_proposal: {
-          '@type': 'https://didcomm.org/issue-credential/1.0/credential-preview',
-          attributes: [
-            {
-              name: 'name',
-              'mime-type': 'text/plain',
-              value: 'John',
-            },
-            {
-              name: 'age',
-              'mime-type': 'text/plain',
-              value: '99',
-            },
-          ],
-        },
-      })
-    })
-  })
-
-  describe('createCredentialOffer', () => {
-    let offerOptions: ServiceOfferCredentialOptions
-
-    beforeEach(async () => {
-      offerOptions = {
-        comment: 'some comment',
-        connection,
-        credentialFormats: {
-          indy: {
-            attributes: credentialPreview.attributes,
-            credentialDefinitionId: 'Th7MpTaRZVRYnPiabds81Y:3:CL:17:TAG',
-          },
-        },
-      }
-    })
-
-    test(`creates credential record in ${CredentialState.OfferSent} state with offer, thread ID`, async () => {
-      const repositorySaveSpy = jest.spyOn(credentialRepository, 'save')
-
+      // when
       await credentialService.createOffer(offerOptions)
 
       // then
@@ -255,8 +163,8 @@ describe('CredentialService', () => {
         id: expect.any(String),
         createdAt: expect.any(Date),
         threadId: createdCredentialRecord.threadId,
-        connectionId: connection.id,
         state: CredentialState.OfferSent,
+        connectionId: connection.id,
       })
     })
 
@@ -279,12 +187,13 @@ describe('CredentialService', () => {
 
     test('returns credential offer message', async () => {
       const { message: credentialOffer } = await credentialService.createOffer(offerOptions)
+
       expect(credentialOffer.toJSON()).toMatchObject({
         '@id': expect.any(String),
-        '@type': 'https://didcomm.org/issue-credential/1.0/offer-credential',
+        '@type': 'https://didcomm.org/issue-credential/2.0/offer-credential',
         comment: 'some comment',
         credential_preview: {
-          '@type': 'https://didcomm.org/issue-credential/1.0/credential-preview',
+          '@type': 'https://didcomm.org/issue-credential/2.0/credential-preview',
           attributes: [
             {
               name: 'name',
@@ -311,6 +220,11 @@ describe('CredentialService', () => {
     })
 
     test('throw error if credential preview attributes do not match with schema attributes', async () => {
+      const badCredentialPreview = V2CredentialPreview.fromRecord({
+        test: 'credential',
+        error: 'yes',
+      })
+
       offerOptions = {
         ...offerOptions,
         credentialFormats: {
@@ -323,7 +237,7 @@ describe('CredentialService', () => {
       expect(credentialService.createOffer(offerOptions)).rejects.toThrowError(
         `The credential preview attributes do not match the schema attributes (difference is: test,error,name,age, needs: name,age)`
       )
-      const credentialPreviewWithExtra = V1CredentialPreview.fromRecord({
+      const credentialPreviewWithExtra = V2CredentialPreview.fromRecord({
         test: 'credential',
         error: 'yes',
         name: 'John',
@@ -346,15 +260,23 @@ describe('CredentialService', () => {
   })
 
   describe('processCredentialOffer', () => {
-    let messageContext: InboundMessageContext<V1OfferCredentialMessage>
-    let credentialOfferMessage: V1OfferCredentialMessage
+    let messageContext: InboundMessageContext<V2OfferCredentialMessage>
+    let credentialOfferMessage: V2OfferCredentialMessage
 
     beforeEach(async () => {
-      credentialOfferMessage = new V1OfferCredentialMessage({
+      credentialOfferMessage = new V2OfferCredentialMessage({
+        formats: [
+          {
+            attachId: INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
+            format: 'hlindy/cred-abstract@v2.0',
+          },
+        ],
         comment: 'some comment',
         credentialPreview: credentialPreview,
         offerAttachments: [offerAttachment],
+        replacementId: undefined,
       })
+
       messageContext = new InboundMessageContext(credentialOfferMessage, {
         connection,
       })
@@ -365,6 +287,7 @@ describe('CredentialService', () => {
       const repositorySaveSpy = jest.spyOn(credentialRepository, 'save')
       agent = new Agent(config, dependencies)
       await agent.initialize()
+      const wallet = agent.injectionContainer.resolve<Wallet>(InjectionSymbols.Wallet)
       expect(agent.isInitialized).toBe(true)
       const agentConfig = getAgentConfig('CredentialServiceTest')
       eventEmitter = new EventEmitter(agentConfig)
@@ -372,27 +295,31 @@ describe('CredentialService', () => {
       const dispatcher = agent.injectionContainer.resolve<Dispatcher>(Dispatcher)
       const mediationRecipientService = agent.injectionContainer.resolve(MediationRecipientService)
 
-      credentialService = new V1CredentialService(
-        {
-          getById: () => Promise.resolve(connection),
-          assertConnectionOrServiceDecorator: () => true,
-        } as unknown as ConnectionService,
-        didCommMessageRepository,
+      const connectionService = {
+        getById: () => Promise.resolve(connection),
+        assertConnectionOrServiceDecorator: () => true,
+      } as unknown as ConnectionService
+
+      credentialService = new V2CredentialService(
+        connectionService,
+        credentialRepository,
+        eventEmitter,
+        dispatcher,
         agentConfig,
         mediationRecipientService,
-        dispatcher,
-        eventEmitter,
-        credentialRepository,
+        didCommMessageRepository,
         new IndyCredentialFormatService(
           credentialRepository,
           eventEmitter,
           indyIssuerService,
           indyLedgerService,
           indyHolderService,
-          agentConfig
+          connectionService,
+          didResolverService,
+          agentConfig,
+          wallet
         ),
-        revocationService,
-        didResolverService
+        revocationService
       )
       // when
       const returnedCredentialRecord = await credentialService.processOffer(messageContext)

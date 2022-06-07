@@ -1,53 +1,54 @@
-import type { CredentialFormatSpec, IndyCredentialViewMetadata, Wallet } from '../../..'
-import type { AgentConfig } from '../../../../src/agent/AgentConfig'
-import type { ConnectionService } from '../../connections/services/ConnectionService'
-import type { DidRepository } from '../../dids/repository'
-import type { CredentialStateChangedEvent } from '../CredentialEvents'
-import type { CredentialPreviewAttribute } from '../models/CredentialPreviewAttribute'
-import type { V2IssueCredentialMessageProps } from '../protocol/v2/messages/V2IssueCredentialMessage'
-import type { V2OfferCredentialMessageOptions } from '../protocol/v2/messages/V2OfferCredentialMessage'
-import type { V2RequestCredentialMessageOptions } from '../protocol/v2/messages/V2RequestCredentialMessage'
-import type { CustomCredentialTags } from '../repository/CredentialExchangeRecord'
+import type { CredentialFormatSpec, IndyCredentialViewMetadata, Wallet } from '../../../../..'
+import type { AgentConfig } from '../../../../../agent/AgentConfig'
+import type { ConnectionService } from '../../../../connections/services/ConnectionService'
+import type { DidRepository } from '../../../../dids/repository'
+import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
+import type { CredentialPreviewAttribute } from '../../../models/CredentialPreviewAttribute'
+import type { V2IssueCredentialMessageProps } from '../messages/V2IssueCredentialMessage'
+import type { V2OfferCredentialMessageOptions } from '../messages/V2OfferCredentialMessage'
+import type { V2RequestCredentialMessageOptions } from '../messages/V2RequestCredentialMessage'
+import type { CustomCredentialTags } from '../../../repository/CredentialExchangeRecord'
 
-import { getAgentConfig, getBaseConfig, getMockConnection, mockFunction } from '../../../../tests/helpers'
-import { Agent } from '../../../agent/Agent'
-import { Dispatcher } from '../../../agent/Dispatcher'
-import { EventEmitter } from '../../../agent/EventEmitter'
-import { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
-import { InjectionSymbols } from '../../../constants'
-import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
-import { DidCommMessageRepository, DidCommMessageRole } from '../../../storage'
-import { JsonEncoder } from '../../../utils/JsonEncoder'
-import { AckStatus } from '../../common/messages/AckMessage'
-import { DidExchangeState } from '../../connections'
-import { DidResolverService } from '../../dids'
-import { IndyHolderService } from '../../indy/services/IndyHolderService'
-import { IndyIssuerService } from '../../indy/services/IndyIssuerService'
-import { IndyLedgerService } from '../../ledger/services'
-import { MediationRecipientService } from '../../routing/services/MediationRecipientService'
-import { CredentialEventTypes } from '../CredentialEvents'
-import { CredentialProblemReportReason } from '../errors/CredentialProblemReportReason'
-import { IndyCredentialFormatService } from '../formats'
-import { IndyCredentialUtils } from '../formats/indy/IndyCredentialUtils'
-import { CredentialState } from '../models/CredentialState'
+import { getAgentConfig, getBaseConfig, getMockConnection, mockFunction } from '../../../../../../tests/helpers'
+import { Agent } from '../../../../../agent/Agent'
+import { Dispatcher } from '../../../../../agent/Dispatcher'
+import { EventEmitter } from '../../../../../agent/EventEmitter'
+import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
+import { InjectionSymbols } from '../../../../../constants'
+import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
+import { DidCommMessageRepository, DidCommMessageRole } from '../../../../../storage'
+import { JsonEncoder } from '../../../../../utils/JsonEncoder'
+import { AckStatus } from '../../../../common/messages/AckMessage'
+import { DidExchangeState } from '../../../../connections'
+import { DidResolverService } from '../../../../dids'
+import { IndyHolderService } from '../../../../indy/services/IndyHolderService'
+import { IndyIssuerService } from '../../../../indy/services/IndyIssuerService'
+import { IndyLedgerService } from '../../../../ledger/services'
+import { MediationRecipientService } from '../../../../routing/services/MediationRecipientService'
+import { CredentialEventTypes } from '../../../CredentialEvents'
+import { CredentialProblemReportReason } from '../../../errors/CredentialProblemReportReason'
+import { IndyCredentialFormatService } from '../../../formats'
+import { IndyCredentialUtils } from '../../../formats/indy/IndyCredentialUtils'
+import { CredentialState } from '../../../models/CredentialState'
 import {
   INDY_CREDENTIAL_ATTACHMENT_ID,
   INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
   INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
   V1OfferCredentialMessage,
-} from '../protocol/v1/messages'
-import { V1CredentialPreview } from '../protocol/v1/messages/V1CredentialPreview'
-import { V2CredentialService } from '../protocol/v2/V2CredentialService'
-import { V2CredentialAckMessage } from '../protocol/v2/messages/V2CredentialAckMessage'
-import { V2CredentialProblemReportMessage } from '../protocol/v2/messages/V2CredentialProblemReportMessage'
-import { V2IssueCredentialMessage } from '../protocol/v2/messages/V2IssueCredentialMessage'
-import { V2OfferCredentialMessage } from '../protocol/v2/messages/V2OfferCredentialMessage'
-import { V2RequestCredentialMessage } from '../protocol/v2/messages/V2RequestCredentialMessage'
-import { CredentialExchangeRecord } from '../repository/CredentialExchangeRecord'
-import { CredentialMetadataKeys } from '../repository/CredentialMetadataTypes'
-import { CredentialRepository } from '../repository/CredentialRepository'
+} from '../../v1/messages'
+import { V1CredentialPreview } from '../../v1/messages/V1CredentialPreview'
+import { V2CredentialService } from '../V2CredentialService'
+import { V2CredentialAckMessage } from '../messages/V2CredentialAckMessage'
+import { V2CredentialProblemReportMessage } from '../messages/V2CredentialProblemReportMessage'
+import { V2IssueCredentialMessage } from '../messages/V2IssueCredentialMessage'
+import { V2OfferCredentialMessage } from '../messages/V2OfferCredentialMessage'
+import { V2RequestCredentialMessage } from '../messages/V2RequestCredentialMessage'
+import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
+import { CredentialMetadataKeys } from '../../../repository/CredentialMetadataTypes'
+import { CredentialRepository } from '../../../repository/CredentialRepository'
+import { RevocationService } from '../../../services'
 
-import { credDef, credReq, credOffer } from './fixtures'
+import { credDef, credReq, credOffer } from '../../../__tests__/fixtures'
 
 // Mock classes
 jest.mock('../repository/CredentialRepository')
@@ -203,6 +204,7 @@ describe('CredentialService', () => {
   let credentialService: V2CredentialService
   let didResolverService: DidResolverService
   let didRepository: DidRepository
+  let revocationService: RevocationService
 
   const initMessages = () => {
     credentialRequestMessage = new V2RequestCredentialMessage(requestOptions)
@@ -229,7 +231,10 @@ describe('CredentialService', () => {
     eventEmitter = new EventEmitter(agentConfig)
     dispatcher = agent.injectionContainer.resolve<Dispatcher>(Dispatcher)
     didCommMessageRepository = new DidCommMessageRepositoryMock()
+    revocationService = new RevocationService(credentialRepository, eventEmitter, agentConfig)
+
     didResolverService = new DidResolverService(agentConfig, indyLedgerService, didRepository)
+
     const connectionService = {
       getById: () => Promise.resolve(connection),
       assertConnectionOrServiceDecorator: () => true,
@@ -254,7 +259,8 @@ describe('CredentialService', () => {
         didResolverService,
         agentConfig,
         wallet
-      )
+      ),
+      revocationService
     )
   })
 

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type { SubjectMessage } from '../../../tests/transport/SubjectInboundTransport'
-import type { OfferCredentialOptions } from '../src/modules/credentials/CredentialsModuleOptions'
+import type { CreateOfferOptions } from '../src/modules/credentials'
+import type { IndyCredentialFormat } from '../src/modules/credentials/formats/indy/IndyCredentialFormat'
 import type { AgentMessage, AgentMessageReceivedEvent } from '@aries-framework/core'
 
 import { Subject } from 'rxjs'
@@ -27,8 +28,7 @@ import {
   AutoAcceptCredential,
   CredentialState,
   V1CredentialPreview,
-  CredentialProtocolVersion,
-} from '@aries-framework/core' // Maybe it's not bad to import from package?
+} from '@aries-framework/core'
 
 const faberConfig = getBaseConfig('Faber Agent OOB', {
   endpoints: ['rxjs:faber'],
@@ -57,7 +57,7 @@ describe('out of band', () => {
 
   let faberAgent: Agent
   let aliceAgent: Agent
-  let credentialTemplate: OfferCredentialOptions
+  let credentialTemplate: CreateOfferOptions<[IndyCredentialFormat]>
 
   beforeAll(async () => {
     const faberMessages = new Subject<SubjectMessage>()

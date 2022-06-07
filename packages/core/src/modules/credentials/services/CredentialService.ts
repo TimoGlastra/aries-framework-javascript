@@ -46,8 +46,6 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
     this.dispatcher = dispatcher
     this.agentConfig = agentConfig
     this.logger = this.agentConfig.logger
-
-    this.registerHandlers()
   }
 
   abstract readonly version: CredentialProtocolVersion
@@ -86,8 +84,6 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
 
   // methods for ack
   abstract processAck(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
-
-  protected abstract registerHandlers(): void
 
   abstract getOfferMessage(id: string): Promise<AgentMessage | null>
   abstract getRequestMessage(id: string): Promise<AgentMessage | null>

@@ -1,34 +1,35 @@
-import type { IndyCredentialViewMetadata, CredentialPreviewAttribute } from '..'
-import type { Logger } from '../../../../src/logger'
-import type { AgentConfig } from '../../../agent/AgentConfig'
-import type { ConnectionRecord } from '../../connections'
-import type { ConnectionService } from '../../connections/services/ConnectionService'
-import type { DidRepository } from '../../dids/repository'
-import type { StoreCredentialOptions } from '../../indy/services/IndyHolderService'
-import type { RevocationNotificationReceivedEvent, CredentialStateChangedEvent } from '../CredentialEvents'
-import type { CustomCredentialTags } from '../repository/CredentialExchangeRecord'
+import type { IndyCredentialViewMetadata, CredentialPreviewAttribute } from '../../..'
+import type { Logger } from '../../../../../logger'
+import type { AgentConfig } from '../../../../../agent/AgentConfig'
+import type { ConnectionRecord } from '../../../../connections'
+import type { ConnectionService } from '../../../../connections/services/ConnectionService'
+import type { DidRepository } from '../../../../dids/repository'
+import type { StoreCredentialOptions } from '../../../../indy/services/IndyHolderService'
+import type { RevocationNotificationReceivedEvent, CredentialStateChangedEvent } from '../../../CredentialEvents'
+import type { CustomCredentialTags } from '../../../repository/CredentialExchangeRecord'
 
-import { IndyCredentialUtils, CredentialState } from '..'
-import { getAgentConfig, getMockConnection, mockFunction } from '../../../../tests/helpers'
-import { Dispatcher } from '../../../agent/Dispatcher'
-import { EventEmitter } from '../../../agent/EventEmitter'
-import { MessageSender } from '../../../agent/MessageSender'
-import { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
-import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
-import { AriesFrameworkError, RecordNotFoundError } from '../../../error'
-import { DidCommMessageRepository } from '../../../storage'
-import { JsonEncoder } from '../../../utils/JsonEncoder'
-import { AckStatus } from '../../common'
-import { DidExchangeState } from '../../connections'
-import { DidResolverService } from '../../dids'
-import { IndyHolderService } from '../../indy/services/IndyHolderService'
-import { IndyIssuerService } from '../../indy/services/IndyIssuerService'
-import { IndyLedgerService } from '../../ledger/services'
-import { MediationRecipientService } from '../../routing'
-import { CredentialEventTypes } from '../CredentialEvents'
-import { CredentialProblemReportReason } from '../errors/CredentialProblemReportReason'
-import { IndyCredentialFormatService } from '../formats/indy/IndyCredentialFormatService'
-import { V1CredentialService } from '../protocol/v1/V1CredentialService'
+import { IndyCredentialUtils, CredentialState } from '../../..'
+import { getAgentConfig, getMockConnection, mockFunction } from '../../../../../../tests/helpers'
+import { Dispatcher } from '../../../../../agent/Dispatcher'
+import { EventEmitter } from '../../../../../agent/EventEmitter'
+import { MessageSender } from '../../../../../agent/MessageSender'
+import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
+import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
+import { AriesFrameworkError, RecordNotFoundError } from '../../../../../error'
+import { DidCommMessageRepository } from '../../../../../storage'
+import { JsonEncoder } from '../../../../../utils/JsonEncoder'
+import { IndyWallet } from '../../../../../wallet/IndyWallet'
+import { AckStatus } from '../../../../common'
+import { DidExchangeState } from '../../../../connections'
+import { DidResolverService } from '../../../../dids'
+import { IndyHolderService } from '../../../../indy/services/IndyHolderService'
+import { IndyIssuerService } from '../../../../indy/services/IndyIssuerService'
+import { IndyLedgerService } from '../../../../ledger/services'
+import { MediationRecipientService } from '../../../../routing'
+import { CredentialEventTypes } from '../../../CredentialEvents'
+import { CredentialProblemReportReason } from '../../../errors/CredentialProblemReportReason'
+import { IndyCredentialFormatService } from '../../../formats/indy/IndyCredentialFormatService'
+import { V1CredentialService } from '../V1CredentialService'
 import {
   V1RequestCredentialMessage,
   V1CredentialAckMessage,
@@ -39,15 +40,15 @@ import {
   V1IssueCredentialMessage,
   V1CredentialProblemReportMessage,
   V1CredentialPreview,
-} from '../protocol/v1/messages'
-import { V1RevocationNotificationMessage } from '../protocol/v1/messages/V1RevocationNotificationMessage'
-import { V2RevocationNotificationMessage } from '../protocol/v2/messages/V2RevocationNotificationMessage'
-import { CredentialExchangeRecord } from '../repository/CredentialExchangeRecord'
-import { CredentialMetadataKeys } from '../repository/CredentialMetadataTypes'
-import { CredentialRepository } from '../repository/CredentialRepository'
-import { RevocationService } from '../services'
+} from '../messages'
+import { V1RevocationNotificationMessage } from '../messages/V1RevocationNotificationMessage'
+import { V2RevocationNotificationMessage } from '../../v2/messages/V2RevocationNotificationMessage'
+import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
+import { CredentialMetadataKeys } from '../../../repository/CredentialMetadataTypes'
+import { CredentialRepository } from '../../../repository/CredentialRepository'
+import { RevocationService } from '../../../services'
 
-import { credDef, credReq, credOffer, schema } from './fixtures'
+import { credDef, credReq, credOffer, schema } from '../../../__tests__/fixtures'
 
 // Mock classes
 jest.mock('../repository/CredentialRepository')
@@ -103,12 +104,6 @@ const credentialAttachment = new Attachment({
   }),
 })
 
-const acceptRequestOptions: ServiceAcceptRequestOptions = {
-  attachId: INDY_CREDENTIAL_ATTACHMENT_ID,
-  comment: 'credential response comment',
-  credentialRecordId: undefined,
-}
-
 // A record is deserialized to JSON when it's stored into the storage. We want to simulate this behaviour for `offer`
 // object to test our service would behave correctly. We use type assertion for `offer` attribute to `any`.
 const mockCredentialRecord = ({
@@ -148,7 +143,7 @@ const mockCredentialRecord = ({
     connectionId: connectionId ?? '123',
     credentials: [
       {
-        credentialRecordType: CredentialFormatType.Indy,
+        credentialRecordType: 'indy',
         credentialRecordId: '123456',
       },
     ],
@@ -250,11 +245,14 @@ describe('CredentialService', () => {
     didResolverService = new DidResolverService(agentConfig, indyLedgerService, didRepository)
     logger = agentConfig.logger
 
+    const connectionService = {
+      getById: () => Promise.resolve(connection),
+      assertConnectionOrServiceDecorator: () => true,
+    } as unknown as ConnectionService
+
+    const wallet = new IndyWallet(agentConfig)
     credentialService = new V1CredentialService(
-      {
-        getById: () => Promise.resolve(connection),
-        assertConnectionOrServiceDecorator: () => true,
-      } as unknown as ConnectionService,
+      connectionService,
       didCommMessageRepository,
       agentConfig,
       mediationRecipientService,
@@ -267,10 +265,12 @@ describe('CredentialService', () => {
         indyIssuerService,
         indyLedgerService,
         indyHolderService,
-        agentConfig
+        connectionService,
+        didResolverService,
+        agentConfig,
+        wallet
       ),
-      revocationService,
-      didResolverService
+      revocationService
     )
     mockFunction(indyLedgerService.getCredentialDefinition).mockReturnValue(Promise.resolve(credDef))
     mockFunction(indyLedgerService.getSchema).mockReturnValue(Promise.resolve(schema))
@@ -293,8 +293,7 @@ describe('CredentialService', () => {
       // mock offer so that the request works
 
       // when
-      const options: RequestCredentialOptions = { holderDid: 'holderDid' }
-      await credentialService.createRequest(credentialRecord, options)
+      await credentialService.acceptOffer({ credentialRecord })
 
       // then
       expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
@@ -308,14 +307,12 @@ describe('CredentialService', () => {
     test('returns credential request message base on existing credential offer message', async () => {
       // given
       const comment = 'credential request comment'
-      const options: RequestCredentialOptions = {
-        connectionId: credentialRecord.connectionId,
-        comment: 'credential request comment',
-        holderDid: 'holderDid',
-      }
 
       // when
-      const { message: credentialRequest } = await credentialService.createRequest(credentialRecord, options)
+      const { message: credentialRequest } = await credentialService.acceptOffer({
+        credentialRecord,
+        comment: 'credential request comment',
+      })
 
       // then
       expect(credentialRequest.toJSON()).toMatchObject({
@@ -343,7 +340,7 @@ describe('CredentialService', () => {
       await Promise.all(
         invalidCredentialStates.map(async (state) => {
           await expect(
-            credentialService.createRequest(mockCredentialRecord({ state }), { holderDid: 'holderDid' })
+            credentialService.acceptOffer({ credentialRecord: mockCredentialRecord({ state }) })
           ).rejects.toThrowError(`Credential record is in invalid state ${state}. Valid states are: ${validState}.`)
         })
       )
@@ -436,7 +433,7 @@ describe('CredentialService', () => {
       const repositoryUpdateSpy = jest.spyOn(credentialRepository, 'update')
 
       // when
-      await credentialService.createCredential(credential, acceptRequestOptions)
+      await credentialService.acceptRequest({ credentialRecord: credential })
 
       // then
       expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
@@ -454,7 +451,7 @@ describe('CredentialService', () => {
       eventEmitter.on<CredentialStateChangedEvent>(CredentialEventTypes.CredentialStateChanged, eventListenerMock)
 
       // when
-      await credentialService.createCredential(credential, acceptRequestOptions)
+      await credentialService.acceptRequest({ credentialRecord: credential })
 
       // then
       expect(eventListenerMock).toHaveBeenCalledWith({
@@ -475,7 +472,7 @@ describe('CredentialService', () => {
 
       // when
 
-      const { message: credentialResponse } = await credentialService.createCredential(credential, acceptRequestOptions)
+      const { message: credentialResponse } = await credentialService.acceptRequest({ credentialRecord: credential })
       // then
       expect(credentialResponse.toJSON()).toMatchObject({
         '@id': expect.any(String),
@@ -555,7 +552,7 @@ describe('CredentialService', () => {
     })
   })
 
-  describe('createAck', () => {
+  describe('acceptCredential', () => {
     const threadId = 'fd9c5ddb-ec11-4acd-bc32-540736249746'
     let credential: CredentialExchangeRecord
 
@@ -572,7 +569,7 @@ describe('CredentialService', () => {
       const repositoryUpdateSpy = jest.spyOn(credentialRepository, 'update')
 
       // when
-      await credentialService.createAck(credential)
+      await credentialService.acceptCredential({ credentialRecord: credential })
 
       // then
       expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
@@ -587,7 +584,7 @@ describe('CredentialService', () => {
       eventEmitter.on<CredentialStateChangedEvent>(CredentialEventTypes.CredentialStateChanged, eventListenerMock)
 
       // when
-      await credentialService.createAck(credential)
+      await credentialService.acceptCredential({ credentialRecord: credential })
 
       // then
       expect(eventListenerMock).toHaveBeenCalledWith({
@@ -606,7 +603,7 @@ describe('CredentialService', () => {
       mockFunction(credentialRepository.getById).mockReturnValue(Promise.resolve(credential))
 
       // when
-      const { message: ackMessage } = await credentialService.createAck(credential)
+      const { message: ackMessage } = await credentialService.acceptCredential({ credentialRecord: credential })
 
       // then
       expect(ackMessage.toJSON()).toMatchObject({
@@ -624,9 +621,13 @@ describe('CredentialService', () => {
       await Promise.all(
         invalidCredentialStates.map(async (state) => {
           await expect(
-            credentialService.createAck(
-              mockCredentialRecord({ state, threadId, connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190' })
-            )
+            credentialService.acceptCredential({
+              credentialRecord: mockCredentialRecord({
+                state,
+                threadId,
+                connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
+              }),
+            })
           ).rejects.toThrowError(`Credential record is in invalid state ${state}. Valid states are: ${validState}.`)
         })
       )

@@ -32,7 +32,6 @@ import { ConnectionService } from '../../../connections'
 import { DidResolverService, findVerificationMethodByKeyType } from '../../../dids'
 import { IndyHolderService, IndyIssuerService } from '../../../indy'
 import { IndyLedgerService } from '../../../ledger'
-import { credOffer } from '../../__tests__/fixtures'
 import { CredentialProblemReportError, CredentialProblemReportReason } from '../../errors'
 import { AutoAcceptCredential } from '../../models/CredentialAutoAcceptType'
 import { CredentialFormatSpec } from '../../models/CredentialFormatSpec'
@@ -380,18 +379,10 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
    */
 
   public shouldAutoRespondToProposal(handlerOptions: HandlerAutoAcceptOptions): boolean {
-    const autoAccept = composeAutoAccept(
-      handlerOptions.credentialRecord.autoAcceptCredential,
-      handlerOptions.autoAcceptType
+    return (
+      this.areProposalValuesValid(handlerOptions.credentialRecord, handlerOptions.messageAttributes) &&
+      this.areProposalAndOfferDefinitionIdEqual(handlerOptions.proposalAttachment, handlerOptions.offerAttachment)
     )
-
-    if (autoAccept === AutoAcceptCredential.ContentApproved) {
-      return (
-        this.areProposalValuesValid(handlerOptions.credentialRecord, handlerOptions.messageAttributes) &&
-        this.areProposalAndOfferDefinitionIdEqual(handlerOptions.proposalAttachment, handlerOptions.offerAttachment)
-      )
-    }
-    return false
   }
 
   /**
@@ -457,8 +448,8 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
     await this.assertPreviewAttributesMatchSchemaAttributes(offer, previewAttributes)
 
     credentialRecord.metadata.set(CredentialMetadataKeys.IndyCredential, {
-      schemaId: credOffer.schema_id,
-      credentialDefinitionId: credOffer.cred_def_id,
+      schemaId: offer.schema_id,
+      credentialDefinitionId: offer.cred_def_id,
     })
 
     const attachment = this.getFormatData(offer, format.attachId)

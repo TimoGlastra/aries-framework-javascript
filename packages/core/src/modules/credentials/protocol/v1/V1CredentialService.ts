@@ -84,6 +84,8 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     this.didCommMessageRepository = didCommMessageRepository
     this.mediationRecipientService = mediationRecipientService
     this.revocationService = revocationService
+
+    this.registerHandlers()
   }
 
   /**
@@ -184,12 +186,14 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
   ): Promise<CredentialExchangeRecord> {
     const { message: proposalMessage, connection } = messageContext
 
-    this.logger.debug(`Processing credential proposal with id ${proposalMessage.id}`)
+    this.logger.debug(`Processing credential proposal with message id ${proposalMessage.id}`)
 
     let credentialRecord = await this.findByThreadAndConnectionId(proposalMessage.threadId, connection?.id)
 
     // Credential record already exists, this is a response to an earlier message sent by us
     if (credentialRecord) {
+      this.logger.debug('Credential record already exists for incoming proposal')
+
       // Assert
       credentialRecord.assertState(CredentialState.OfferSent)
 
@@ -215,12 +219,13 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
         associatedRecordId: credentialRecord.id,
       })
     } else {
+      this.logger.debug('Credential record does not exists yet for incoming proposal')
+
       // No credential record exists with thread id
       credentialRecord = new CredentialExchangeRecord({
         connectionId: connection?.id,
         threadId: proposalMessage.threadId,
         state: CredentialState.ProposalReceived,
-        credentialAttributes: proposalMessage.credentialProposal?.attributes,
         protocolVersion: 'v1',
       })
 
@@ -383,6 +388,7 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     })
 
     const { attachment, previewAttributes } = await this.formatService.createOffer({
+      attachId: INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
       credentialFormats,
       credentialRecord,
     })
@@ -750,6 +756,12 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     issueMessage.setThread({ threadId: credentialRecord.threadId })
     issueMessage.setPleaseAck()
 
+    await this.didCommMessageRepository.saveAgentMessage({
+      agentMessage: issueMessage,
+      associatedRecordId: credentialRecord.id,
+      role: DidCommMessageRole.Sender,
+    })
+
     credentialRecord.autoAcceptCredential = autoAcceptCredential ?? credentialRecord.autoAcceptCredential
     await this.updateState(credentialRecord, CredentialState.CredentialIssued)
 
@@ -893,19 +905,33 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     return shouldAutoReturn
   }
 
-  public async shouldAutoRespondToProposal(handlerOptions: HandlerAutoAcceptOptions): Promise<boolean> {
-    const autoAccept = composeAutoAccept(
-      handlerOptions.credentialRecord.autoAcceptCredential,
-      handlerOptions.autoAcceptType
-    )
+  public async shouldAutoRespondToProposal({
+    credentialRecord,
+    proposalMessage,
+  }: {
+    credentialRecord: CredentialExchangeRecord
+    proposalMessage: V1ProposeCredentialMessage
+  }): Promise<boolean> {
+    const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
 
-    if (autoAccept === AutoAcceptCredential.ContentApproved) {
-      return (
-        this.areProposalValuesValid(handlerOptions.credentialRecord, handlerOptions.messageAttributes) &&
-        this.areProposalAndOfferDefinitionIdEqual(handlerOptions.credentialDefinitionId, handlerOptions.offerAttachment)
-      )
-    }
-    return false
+    // Handle always / never cases
+    if (autoAccept === AutoAcceptCredential.Always) return true
+    if (autoAccept === AutoAcceptCredential.Never) return false
+
+    const offerMessage = await this.didCommMessageRepository.findAgentMessage({
+      associatedRecordId: credentialRecord.id,
+      messageClass: V1OfferCredentialMessage,
+    })
+
+    return (
+      proposalMessage.credentialProposal?.attributes !== undefined &&
+      offerMessage?.credentialPreview !== undefined &&
+      this.arePreviewAttributesEqual(
+        proposalMessage.credentialProposal.attributes,
+        offerMessage.credentialPreview.attributes
+      ) &&
+      this.areProposalAndOfferDefinitionIdEqual(proposalMessage, offerMessage)
+    )
   }
 
   public shouldAutoRespondToRequest(
@@ -914,27 +940,19 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     proposeMessage?: V1ProposeCredentialMessage,
     offerMessage?: V1OfferCredentialMessage
   ): boolean {
-    let proposalAttachment, offerAttachment, requestAttachment: Attachment | undefined
+    const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
 
-    if (offerMessage) {
-      offerAttachment = offerMessage.getAttachmentById(INDY_CREDENTIAL_OFFER_ATTACHMENT_ID)
-    }
-    if (requestMessage) {
-      requestAttachment = requestMessage.getAttachmentById(INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID)
-    }
-    const handlerOptions: HandlerAutoAcceptOptions = {
-      credentialRecord,
-      autoAcceptType: this.agentConfig.autoAcceptCredentials,
-      proposalAttachment,
-      offerAttachment,
-      requestAttachment,
-    }
-    const shouldAutoReturn =
-      this.agentConfig.autoAcceptCredentials === AutoAcceptCredential.Always ||
-      credentialRecord.autoAcceptCredential === AutoAcceptCredential.Always ||
-      this.formatService.shouldAutoRespondToRequest(handlerOptions)
+    // Handle always / never cases
+    if (autoAccept === AutoAcceptCredential.Always) return true
+    if (autoAccept === AutoAcceptCredential.Never) return false
 
-    return shouldAutoReturn
+    const offerAttachment = offerMessage?.getAttachmentById(INDY_CREDENTIAL_OFFER_ATTACHMENT_ID)
+    const requestAttachment = requestMessage?.getAttachmentById(INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID)
+
+    // T-TODO: should be async
+    return this.formatService.shouldAutoRespondToRequest({
+      autoAcceptType,
+    })
   }
 
   public shouldAutoRespondToOffer(
@@ -1008,30 +1026,24 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     this.dispatcher.registerHandler(new V1RevocationNotificationHandler(this.revocationService))
   }
 
-  private areProposalValuesValid(
-    credentialRecord: CredentialExchangeRecord,
-    proposeMessageAttributes?: CredentialPreviewAttribute[]
+  private arePreviewAttributesEqual(
+    firstAttributes: CredentialPreviewAttribute[],
+    secondAttributes: CredentialPreviewAttribute[]
   ) {
-    const { credentialAttributes } = credentialRecord
+    const proposeValues = IndyCredentialUtils.convertAttributesToValues(firstAttributes)
+    const defaultValues = IndyCredentialUtils.convertAttributesToValues(secondAttributes)
 
-    if (proposeMessageAttributes && credentialAttributes) {
-      const proposeValues = IndyCredentialUtils.convertAttributesToValues(proposeMessageAttributes)
-      const defaultValues = IndyCredentialUtils.convertAttributesToValues(credentialAttributes)
-      if (IndyCredentialUtils.checkValuesMatch(proposeValues, defaultValues)) {
-        return true
-      }
-    }
-    return false
+    return IndyCredentialUtils.checkValuesMatch(proposeValues, defaultValues)
   }
 
-  private areProposalAndOfferDefinitionIdEqual(proposalCredentialDefinitionId?: string, offerAttachment?: Attachment) {
-    let credOffer: CredOffer | undefined
+  private areProposalAndOfferDefinitionIdEqual(
+    proposalMessage: V1ProposeCredentialMessage,
+    offerMessage: V1OfferCredentialMessage
+  ) {
+    const offerCredentialDefinitionId = offerMessage.indyCredentialOffer?.cred_def_id
+    if (!proposalMessage.credentialDefinitionId || !offerCredentialDefinitionId) return false
 
-    if (offerAttachment) {
-      credOffer = offerAttachment.getDataAsJson<CredOffer>()
-    }
-    const offerCredentialDefinitionId = credOffer?.cred_def_id
-    return proposalCredentialDefinitionId === offerCredentialDefinitionId
+    return proposalMessage.credentialDefinitionId === offerCredentialDefinitionId
   }
 
   private assertOnlyIndyFormat(credentialFormats: Record<string, unknown>) {

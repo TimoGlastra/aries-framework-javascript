@@ -92,7 +92,7 @@ const testEncodings: { [key: string]: { raw: string | number | boolean | null; e
   },
 }
 
-describe('CredentialUtils', () => {
+describe('IndyCredentialUtils', () => {
   describe('convertAttributesToValues', () => {
     test('returns object with raw and encoded attributes', () => {
       const attributes = [

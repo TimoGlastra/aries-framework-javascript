@@ -41,20 +41,17 @@ describe('credentials', () => {
         AutoAcceptCredential.Always
       ))
     })
+
     afterAll(async () => {
       await faberAgent.shutdown()
       await faberAgent.wallet.delete()
       await aliceAgent.shutdown()
       await aliceAgent.wallet.delete()
     })
-    // ==============================
-    // TESTS v1 BEGIN
-    // ==========================
+
     test('Alice starts with V1 credential proposal to Faber, both with autoAcceptCredential on `always`', async () => {
       testLogger.test('Alice sends credential proposal to Faber')
-      let aliceCredentialRecord: CredentialExchangeRecord
 
-      const schemaId = schema.id
       const aliceCredentialExchangeRecord = await aliceAgent.credentials.proposeCredential({
         connectionId: aliceConnection.id,
         protocolVersion: 'v1',
@@ -66,16 +63,19 @@ describe('credentials', () => {
         },
         comment: 'v1 propose credential test',
       })
+
       testLogger.test('Alice waits for credential from Faber')
-      aliceCredentialRecord = await waitForCredentialRecord(aliceAgent, {
+      let aliceCredentialRecord = await waitForCredentialRecord(aliceAgent, {
         threadId: aliceCredentialExchangeRecord.threadId,
         state: CredentialState.CredentialReceived,
       })
+
       testLogger.test('Faber waits for credential ack from Alice')
       aliceCredentialRecord = await waitForCredentialRecord(faberAgent, {
         threadId: aliceCredentialRecord.threadId,
         state: CredentialState.Done,
       })
+
       expect(aliceCredentialRecord).toMatchObject({
         type: CredentialExchangeRecord.type,
         id: expect.any(String),
@@ -83,7 +83,7 @@ describe('credentials', () => {
         metadata: {
           data: {
             '_internal/indyCredential': {
-              schemaId,
+              schemaId: schema.id,
               credentialDefinitionId: credDefId,
             },
           },
@@ -91,6 +91,7 @@ describe('credentials', () => {
         state: CredentialState.Done,
       })
     })
+
     test('Faber starts with V1 credential offer to Alice, both with autoAcceptCredential on `always`', async () => {
       testLogger.test('Faber sends credential offer to Alice')
       const schemaId = schema.id
@@ -130,7 +131,7 @@ describe('credentials', () => {
         },
         credentials: [
           {
-            credentialRecordType: 'Indy',
+            credentialRecordType: 'indy',
             credentialRecordId: expect.any(String),
           },
         ],
@@ -164,7 +165,7 @@ describe('credentials', () => {
     // ==============================
     // TESTS v1 BEGIN
     // ==========================
-    test('Alice starts with V1 credential proposal to Faber, both with autoAcceptCredential on `contentApproved`', async () => {
+    test('vAlice starts with V1 credential proposal to Faber, both with autoAcceptCredential on `contentApproved`', async () => {
       testLogger.test('Alice sends credential proposal to Faber')
       const schemaId = schema.id
       let faberCredentialExchangeRecord: CredentialExchangeRecord
@@ -228,7 +229,7 @@ describe('credentials', () => {
         },
         credentials: [
           {
-            credentialRecordType: 'Indy',
+            credentialRecordType: 'indy',
             credentialRecordId: expect.any(String),
           },
         ],
@@ -322,7 +323,7 @@ describe('credentials', () => {
           },
           credentials: [
             {
-              credentialRecordType: 'Indy',
+              credentialRecordType: 'indy',
               credentialRecordId: expect.any(String),
             },
           ],

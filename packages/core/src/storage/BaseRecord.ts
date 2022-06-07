@@ -5,7 +5,7 @@ import { MetadataTransformer } from '../utils/transformers'
 
 import { Metadata } from './Metadata'
 
-export type TagValue = string | boolean | undefined | Array<string>
+export type TagValue = string | boolean | undefined | Array<string> | null
 export type TagsBase = {
   [key: string]: TagValue
   [key: number]: never

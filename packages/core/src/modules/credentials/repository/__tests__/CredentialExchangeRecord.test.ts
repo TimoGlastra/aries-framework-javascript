@@ -1,10 +1,9 @@
-import { CredentialPreviewAttribute } from '../models/CredentialPreviewAttribute'
-import { CredentialProtocolVersion } from '../models/CredentialProtocolVersion'
-import { CredentialState } from '../models/CredentialState'
-import { CredentialExchangeRecord } from '../repository/CredentialExchangeRecord'
-import { CredentialMetadataKeys } from '../repository/CredentialMetadataTypes'
+import { CredentialPreviewAttribute } from '../../models/CredentialPreviewAttribute'
+import { CredentialState } from '../../models/CredentialState'
+import { CredentialExchangeRecord } from '../CredentialExchangeRecord'
+import { CredentialMetadataKeys } from '../CredentialMetadataTypes'
 
-describe('CredentialRecord', () => {
+describe('CredentialExchangeRecord', () => {
   describe('getCredentialInfo()', () => {
     test('creates credential info object from credential record data', () => {
       const credentialRecord = new CredentialExchangeRecord({
