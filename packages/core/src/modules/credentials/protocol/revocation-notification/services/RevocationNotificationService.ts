@@ -8,14 +8,15 @@ import type { V2RevocationNotificationMessage } from '../messages/V2RevocationNo
 import { scoped, Lifecycle } from 'tsyringe'
 
 import { AgentConfig } from '../../../../../agent/AgentConfig'
+import { Dispatcher } from '../../../../../agent/Dispatcher'
 import { EventEmitter } from '../../../../../agent/EventEmitter'
 import { AriesFrameworkError } from '../../../../../error/AriesFrameworkError'
+import { JsonTransformer } from '../../../../../utils'
 import { CredentialEventTypes } from '../../../CredentialEvents'
 import { RevocationNotification } from '../../../models/RevocationNotification'
 import { CredentialRepository } from '../../../repository'
-import { Dispatcher } from '../../../../..'
 import { V1RevocationNotificationHandler, V2RevocationNotificationHandler } from '../handlers'
-import { JsonTransformer } from '../../../../../utils'
+import { v1ThreadRegex, v2IndyRevocationFormat, v2IndyRevocationIdentifierRegex } from '../util/revocationIdentifier'
 
 @scoped(Lifecycle.ContainerScoped)
 export class RevocationNotificationService {
@@ -76,13 +77,10 @@ export class RevocationNotificationService {
     this.logger.info('Processing revocation notification v1', { message: messageContext.message })
 
     // ThreadID = indy::<revocation_registry_id>::<credential_revocation_id>
-    const threadRegex =
-      /(indy)::((?:[\dA-z]{21,22}):4:(?:[\dA-z]{21,22}):3:[Cc][Ll]:(?:(?:[1-9][0-9]*)|(?:[\dA-z]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(?:[\dA-z-]+))::(\d+)$/
-
     const threadId = messageContext.message.issueThread
 
     try {
-      const threadIdGroups = threadId.match(threadRegex)
+      const threadIdGroups = threadId.match(v1ThreadRegex)
       if (!threadIdGroups) {
         throw new AriesFrameworkError(
           `Incorrect revocation notification threadId format: \n${threadId}\ndoes not match\n"indy::<revocation_registry_id>::<credential_revocation_id>"`
@@ -115,13 +113,16 @@ export class RevocationNotificationService {
   ): Promise<void> {
     this.logger.info('Processing revocation notification v2', { message: messageContext.message })
 
-    // CredentialId = <revocation_registry_id>::<credential_revocation_id>
-    const credentialIdRegex =
-      /((?:[\dA-z]{21,22}):4:(?:[\dA-z]{21,22}):3:[Cc][Ll]:(?:(?:[1-9][0-9]*)|(?:[\dA-z]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(?:[\dA-z-]+))::(\d+)$/
     const credentialId = messageContext.message.credentialId
 
+    if (messageContext.message.revocationFormat !== v2IndyRevocationFormat) {
+      throw new AriesFrameworkError(
+        `Unknown revocation format: ${messageContext.message.revocationFormat}. Supported formats are indy-anoncreds`
+      )
+    }
+
     try {
-      const credentialIdGroups = credentialId.match(credentialIdRegex)
+      const credentialIdGroups = credentialId.match(v2IndyRevocationIdentifierRegex)
       if (!credentialIdGroups) {
         throw new AriesFrameworkError(
           `Incorrect revocation notification credentialId format: \n${credentialId}\ndoes not match\n"<revocation_registry_id>::<credential_revocation_id>"`

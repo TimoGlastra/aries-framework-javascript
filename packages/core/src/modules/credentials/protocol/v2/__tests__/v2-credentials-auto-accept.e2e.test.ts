@@ -4,9 +4,9 @@ import type { AcceptOfferOptions, AcceptProposalOptions } from '../../../Credent
 import type { IndyCredPropose } from '../../../formats/indy/models/IndyCredPropose'
 import type { Schema } from 'indy-sdk'
 
-import { AriesFrameworkError } from '../../../../../../src/error/AriesFrameworkError'
 import { setupCredentialTests, waitForCredentialRecord } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
+import { AriesFrameworkError } from '../../../../../error/AriesFrameworkError'
 import { sleep } from '../../../../../utils/sleep'
 import { AutoAcceptCredential } from '../../../models/CredentialAutoAcceptType'
 import { CredentialState } from '../../../models/CredentialState'

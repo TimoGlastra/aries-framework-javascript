@@ -1,7 +1,7 @@
-import { Exclude, Transform, TransformationType } from 'class-transformer'
+import { Exclude } from 'class-transformer'
 
 import { JsonTransformer } from '../utils/JsonTransformer'
-import { MetadataTransformer } from '../utils/transformers'
+import { DateTransformer, MetadataTransformer } from '../utils/transformers'
 
 import { Metadata } from './Metadata'
 
@@ -24,14 +24,10 @@ export abstract class BaseRecord<
 
   public id!: string
 
-  @Transform(({ value, type }) =>
-    type === TransformationType.CLASS_TO_PLAIN ? value.toISOString(value) : new Date(value)
-  )
+  @DateTransformer()
   public createdAt!: Date
 
-  @Transform(({ value, type }) =>
-    type === TransformationType.CLASS_TO_PLAIN ? value.toISOString(value) : new Date(value)
-  )
+  @DateTransformer()
   public updatedAt?: Date
 
   @Exclude()
