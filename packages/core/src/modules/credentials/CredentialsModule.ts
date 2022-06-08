@@ -271,7 +271,7 @@ export class CredentialsModule<
     const service = this.getService(credentialRecord.protocolVersion)
 
     this.logger.debug(`Got a CredentialService object for this version; version = ${service.version}`)
-    const offerMessage = await service.getOfferMessage(credentialRecord.id)
+    const offerMessage = await service.findOfferMessage(credentialRecord.id)
 
     // Use connection if present
     if (credentialRecord.connectionId) {
@@ -414,8 +414,8 @@ export class CredentialsModule<
     })
     this.logger.debug('We have a credential message (sending outbound): ', message)
 
-    const requestMessage = await service.getRequestMessage(credentialRecord.id)
-    const offerMessage = await service.getOfferMessage(credentialRecord.id)
+    const requestMessage = await service.findRequestMessage(credentialRecord.id)
+    const offerMessage = await service.findOfferMessage(credentialRecord.id)
 
     // Use connection if present
     if (credentialRecord.connectionId) {
@@ -474,8 +474,8 @@ export class CredentialsModule<
       credentialRecord,
     })
 
-    const requestMessage = await service.getRequestMessage(credentialRecord.id)
-    const credentialMessage = await service.getCredentialMessage(credentialRecord.id)
+    const requestMessage = await service.findRequestMessage(credentialRecord.id)
+    const credentialMessage = await service.findCredentialMessage(credentialRecord.id)
 
     if (credentialRecord.connectionId) {
       const connection = await this.connectionService.getById(credentialRecord.connectionId)

@@ -1,15 +1,13 @@
 import type { Handler, HandlerInboundMessage } from '../../../../../agent/Handler'
-import type { RevocationService } from '../../../services'
+import type { RevocationNotificationService } from '../../../services'
 
 import { V1RevocationNotificationMessage } from '../messages/V1RevocationNotificationMessage'
 
-// T-TODO: move to revocation-notification protocol directory
-
 export class V1RevocationNotificationHandler implements Handler {
-  private revocationService: RevocationService
+  private revocationService: RevocationNotificationService
   public supportedMessages = [V1RevocationNotificationMessage]
 
-  public constructor(revocationService: RevocationService) {
+  public constructor(revocationService: RevocationNotificationService) {
     this.revocationService = revocationService
   }
 

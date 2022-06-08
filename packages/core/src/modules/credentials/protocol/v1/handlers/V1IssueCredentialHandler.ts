@@ -26,19 +26,18 @@ export class V1IssueCredentialHandler implements Handler {
   public async handle(messageContext: HandlerInboundMessage<V1IssueCredentialHandler>) {
     const credentialRecord = await this.credentialService.processCredential(messageContext)
 
-    const credentialMessage = await this.didCommMessageRepository.getAgentMessage({
-      associatedRecordId: credentialRecord.id,
-      messageClass: V1IssueCredentialMessage,
+    const shouldAutoRespond = await this.credentialService.shouldAutoRespondToCredential({
+      credentialRecord,
+      credentialMessage: messageContext.message,
     })
 
-    if (this.credentialService.shouldAutoRespondToCredential(credentialRecord, credentialMessage)) {
-      return await this.acceptCredential(credentialRecord, credentialMessage, messageContext)
+    if (shouldAutoRespond) {
+      return await this.acceptCredential(credentialRecord, messageContext)
     }
   }
 
   private async acceptCredential(
     credentialRecord: CredentialExchangeRecord,
-    credentialMessage: V1IssueCredentialMessage,
     messageContext: HandlerInboundMessage<V1IssueCredentialHandler>
   ) {
     this.agentConfig.logger.info(
@@ -48,15 +47,15 @@ export class V1IssueCredentialHandler implements Handler {
       credentialRecord,
     })
 
-    const requestMessage = await this.didCommMessageRepository.findAgentMessage({
+    const requestMessage = await this.didCommMessageRepository.getAgentMessage({
       associatedRecordId: credentialRecord.id,
       messageClass: V1RequestCredentialMessage,
     })
 
     if (messageContext.connection) {
       return createOutboundMessage(messageContext.connection, message)
-    } else if (credentialMessage?.service && requestMessage?.service) {
-      const recipientService = credentialMessage.service
+    } else if (messageContext.message.service && requestMessage.service) {
+      const recipientService = messageContext.message.service
       const ourService = requestMessage.service
 
       return createOutboundServiceMessage({

@@ -19,7 +19,7 @@ import type {
   AcceptRequestOptions,
   AcceptCredentialOptions,
 } from '../CredentialServiceOptions'
-import type { CredentialFormat, CredentialFormatService, HandlerAutoAcceptOptions } from '../formats'
+import type { CredentialFormat, CredentialFormatService } from '../formats'
 import type { CredentialProtocolVersion } from '../models/CredentialProtocolVersion'
 import type { CredentialExchangeRecord, CredentialRepository } from './../repository'
 
@@ -85,30 +85,10 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
   // methods for ack
   abstract processAck(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
 
-  abstract getOfferMessage(id: string): Promise<AgentMessage | null>
-  abstract getRequestMessage(id: string): Promise<AgentMessage | null>
-  abstract getCredentialMessage(id: string): Promise<AgentMessage | null>
-
-  // T-TODO: revise auto respond methods, reduce number of options
-  abstract shouldAutoRespondToProposal(options: HandlerAutoAcceptOptions): Promise<boolean>
-
-  abstract shouldAutoRespondToOffer(
-    credentialRecord: CredentialExchangeRecord,
-    offerMessage: AgentMessage,
-    proposeMessage?: AgentMessage
-  ): boolean
-
-  abstract shouldAutoRespondToRequest(
-    credentialRecord: CredentialExchangeRecord,
-    requestMessage: AgentMessage,
-    proposeMessage?: AgentMessage,
-    offerMessage?: AgentMessage
-  ): boolean
-
-  abstract shouldAutoRespondToCredential(
-    credentialRecord: CredentialExchangeRecord,
-    credentialMessage: AgentMessage
-  ): boolean
+  abstract findProposalMessage(credentialExchangeId: string): Promise<AgentMessage | null>
+  abstract findOfferMessage(credentialExchangeId: string): Promise<AgentMessage | null>
+  abstract findRequestMessage(credentialExchangeId: string): Promise<AgentMessage | null>
+  abstract findCredentialMessage(credentialExchangeId: string): Promise<AgentMessage | null>
 
   /**
    * Decline a credential offer

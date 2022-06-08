@@ -1,7 +1,6 @@
 import type { AgentMessage } from '../../../../agent/AgentMessage'
 import type { HandlerInboundMessage } from '../../../../agent/Handler'
 import type { InboundMessageContext } from '../../../../agent/models/InboundMessageContext'
-import type { Attachment } from '../../../../decorators/attachment/Attachment'
 import type {
   CreateProposalOptions,
   CredentialProtocolMsgReturnType,
@@ -19,9 +18,8 @@ import type {
   CredentialFormatPayload,
   CredentialFormatService,
   FormatServiceMap,
-  HandlerAutoAcceptOptions,
 } from '../../formats'
-import type { CredentialFormatSpec, CredentialPreviewAttribute } from '../../models'
+import type { CredentialFormatSpec } from '../../models'
 
 import { Lifecycle, scoped } from 'tsyringe'
 
@@ -37,8 +35,8 @@ import { MediationRecipientService } from '../../../routing'
 import { IndyCredentialFormatService } from '../../formats/indy/IndyCredentialFormatService'
 import { CredentialState, AutoAcceptCredential } from '../../models'
 import { CredentialExchangeRecord, CredentialRepository } from '../../repository'
-import { RevocationService } from '../../services'
 import { CredentialService } from '../../services/CredentialService'
+import { composeAutoAccept } from '../../util/composeAutoAccept'
 
 import { CredentialFormatCoordinator } from './CredentialFormatCoordinator'
 import {
@@ -49,7 +47,6 @@ import {
   V2ProposeCredentialHandler,
   V2RequestCredentialHandler,
 } from './handlers'
-import { V2RevocationNotificationHandler } from './handlers/V2RevocationNotificationHandler'
 import {
   V2CredentialAckMessage,
   V2IssueCredentialMessage,
@@ -64,7 +61,6 @@ export class V2CredentialService<CFs extends CredentialFormat[] = CredentialForm
   private credentialFormatCoordinator: CredentialFormatCoordinator<CFs>
   private didCommMessageRepository: DidCommMessageRepository
   private mediationRecipientService: MediationRecipientService
-  private revocationService: RevocationService
   private formatServiceMap: { [key: string]: CredentialFormatService }
 
   public constructor(
@@ -75,14 +71,12 @@ export class V2CredentialService<CFs extends CredentialFormat[] = CredentialForm
     agentConfig: AgentConfig,
     mediationRecipientService: MediationRecipientService,
     didCommMessageRepository: DidCommMessageRepository,
-    indyCredentialFormatService: IndyCredentialFormatService,
-    revocationService: RevocationService
+    indyCredentialFormatService: IndyCredentialFormatService
   ) {
     super(credentialRepository, eventEmitter, dispatcher, agentConfig)
     this.connectionService = connectionService
     this.didCommMessageRepository = didCommMessageRepository
     this.mediationRecipientService = mediationRecipientService
-    this.revocationService = revocationService
     this.credentialFormatCoordinator = new CredentialFormatCoordinator(didCommMessageRepository)
 
     // Dynamically build format service map. This will be extracted once services are registered dynamically
@@ -793,157 +787,242 @@ export class V2CredentialService<CFs extends CredentialFormat[] = CredentialForm
   }
 
   // AUTO ACCEPT METHODS
-  public async shouldAutoRespondToProposal(options: HandlerAutoAcceptOptions): Promise<boolean> {
-    if (this.agentConfig.autoAcceptCredentials === AutoAcceptCredential.Never) {
-      return false
-    }
-    if (options.credentialRecord.autoAcceptCredential === AutoAcceptCredential.Never) {
-      return false
-    }
-    const proposalMessage = await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: options.credentialRecord.id,
-      messageClass: V2ProposeCredentialMessage,
-    })
-    if (!proposalMessage) {
-      throw new AriesFrameworkError('Missing proposal message in V2ProposeCredentialHandler')
-    }
-    const formatServices: CredentialFormatService[] = this.getFormatServicesFromMessage(proposalMessage.formats)
-    let shouldAutoRespond = true
+  public async shouldAutoRespondToProposal(options: {
+    credentialRecord: CredentialExchangeRecord
+    proposalMessage: V2ProposeCredentialMessage
+  }): Promise<boolean> {
+    const { credentialRecord, proposalMessage } = options
+    const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
+
+    // Handle always / never cases
+    if (autoAccept === AutoAcceptCredential.Always) return true
+    if (autoAccept === AutoAcceptCredential.Never) return false
+
+    const offerMessage = await this.findOfferMessage(credentialRecord.id)
+    if (!offerMessage) return false
+
+    // NOTE: we take the formats from the offerMessage so we always check all services that we last sent
+    // Otherwise we'll only check the formats from the proposal, which could be different from the formats
+    // we use.
+    const formatServices = this.getFormatServicesFromMessage(offerMessage.formats)
+
     for (const formatService of formatServices) {
-      const formatShouldAutoRespond =
-        this.agentConfig.autoAcceptCredentials == AutoAcceptCredential.Always ||
-        formatService.shouldAutoRespondToProposal(options)
+      const offerAttachment = this.credentialFormatCoordinator.getAttachmentForService(
+        formatService,
+        offerMessage.formats,
+        offerMessage.messageAttachment
+      )
 
-      shouldAutoRespond = shouldAutoRespond && formatShouldAutoRespond
-    }
-    return shouldAutoRespond
-  }
+      const proposalAttachment = this.credentialFormatCoordinator.getAttachmentForService(
+        formatService,
+        proposalMessage.formats,
+        proposalMessage.messageAttachment
+      )
 
-  public shouldAutoRespondToOffer(
-    credentialRecord: CredentialExchangeRecord,
-    offerMessage: V2OfferCredentialMessage,
-    proposeMessage?: V2ProposeCredentialMessage
-  ): boolean {
-    if (this.agentConfig.autoAcceptCredentials === AutoAcceptCredential.Never) {
-      return false
-    }
-    let offerValues: CredentialPreviewAttribute[] | undefined
-    let shouldAutoRespond = true
-    const formatServices: CredentialFormatService[] = this.getFormatServicesFromMessage(offerMessage.formats)
-    for (const formatService of formatServices) {
-      let proposalAttachment: Attachment | undefined
-
-      if (proposeMessage) {
-        proposalAttachment = formatService.getAttachment(proposeMessage.formats, proposeMessage.messageAttachment)
-      }
-      const offerAttachment = formatService.getAttachment(offerMessage.formats, offerMessage.messageAttachment)
-
-      offerValues = offerMessage.credentialPreview?.attributes
-
-      const handlerOptions: HandlerAutoAcceptOptions = {
+      const shouldAutoRespondToFormat = formatService.shouldAutoRespondToProposal({
         credentialRecord,
-        autoAcceptType: this.agentConfig.autoAcceptCredentials,
-        messageAttributes: offerValues,
-        proposalAttachment,
         offerAttachment,
-      }
-      const formatShouldAutoRespond =
-        this.agentConfig.autoAcceptCredentials == AutoAcceptCredential.Always ||
-        formatService.shouldAutoRespondToProposal(handlerOptions)
+        proposalAttachment,
+      })
 
-      shouldAutoRespond = shouldAutoRespond && formatShouldAutoRespond
+      // If any of the formats return false, we should not auto accept
+      if (!shouldAutoRespondToFormat) return false
     }
 
-    return shouldAutoRespond
+    return true
   }
 
-  public shouldAutoRespondToRequest(
-    credentialRecord: CredentialExchangeRecord,
-    requestMessage: V2RequestCredentialMessage,
-    proposeMessage?: V2ProposeCredentialMessage,
-    offerMessage?: V2OfferCredentialMessage
-  ): boolean {
-    const formatServices: CredentialFormatService[] = this.getFormatServicesFromMessage(requestMessage.formats)
-    let shouldAutoRespond = true
+  public async shouldAutoRespondToOffer(options: {
+    credentialRecord: CredentialExchangeRecord
+    offerMessage: V2OfferCredentialMessage
+  }): Promise<boolean> {
+    const { credentialRecord, offerMessage } = options
+    const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
+
+    // Handle always / never cases
+    if (autoAccept === AutoAcceptCredential.Always) return true
+    if (autoAccept === AutoAcceptCredential.Never) return false
+
+    const proposalMessage = await this.findProposalMessage(credentialRecord.id)
+    if (!proposalMessage) return false
+
+    // NOTE: we take the formats from the proposalMessage so we always check all services that we last sent
+    // Otherwise we'll only check the formats from the offer, which could be different from the formats
+    // we use.
+    const formatServices = this.getFormatServicesFromMessage(proposalMessage.formats)
 
     for (const formatService of formatServices) {
-      let proposalAttachment, offerAttachment, requestAttachment: Attachment | undefined
-      if (proposeMessage) {
-        proposalAttachment = formatService.getAttachment(proposeMessage.formats, proposeMessage.messageAttachment)
-      }
-      if (offerMessage) {
-        offerAttachment = formatService.getAttachment(offerMessage.formats, offerMessage.messageAttachment)
-      }
-      if (requestMessage) {
-        requestAttachment = formatService.getAttachment(requestMessage.formats, requestMessage.messageAttachment)
-      }
-      const handlerOptions: HandlerAutoAcceptOptions = {
+      const offerAttachment = this.credentialFormatCoordinator.getAttachmentForService(
+        formatService,
+        offerMessage.formats,
+        offerMessage.messageAttachment
+      )
+
+      const proposalAttachment = this.credentialFormatCoordinator.getAttachmentForService(
+        formatService,
+        proposalMessage.formats,
+        proposalMessage.messageAttachment
+      )
+
+      const shouldAutoRespondToFormat = formatService.shouldAutoRespondToOffer({
         credentialRecord,
-        autoAcceptType: this.agentConfig.autoAcceptCredentials,
+        offerAttachment,
         proposalAttachment,
+      })
+
+      // If any of the formats return false, we should not auto accept
+      if (!shouldAutoRespondToFormat) return false
+    }
+
+    return true
+  }
+
+  public async shouldAutoRespondToRequest(options: {
+    credentialRecord: CredentialExchangeRecord
+    requestMessage: V2RequestCredentialMessage
+  }): Promise<boolean> {
+    const { credentialRecord, requestMessage } = options
+    const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
+
+    // Handle always / never cases
+    if (autoAccept === AutoAcceptCredential.Always) return true
+    if (autoAccept === AutoAcceptCredential.Never) return false
+
+    const proposalMessage = await this.findProposalMessage(credentialRecord.id)
+
+    const offerMessage = await this.findOfferMessage(credentialRecord.id)
+    if (!offerMessage) return false
+
+    // NOTE: we take the formats from the offerMessage so we always check all services that we last sent
+    // Otherwise we'll only check the formats from the request, which could be different from the formats
+    // we use.
+    const formatServices = this.getFormatServicesFromMessage(offerMessage.formats)
+
+    for (const formatService of formatServices) {
+      const offerAttachment = this.credentialFormatCoordinator.getAttachmentForService(
+        formatService,
+        offerMessage.formats,
+        offerMessage.messageAttachment
+      )
+
+      const proposalAttachment = proposalMessage
+        ? this.credentialFormatCoordinator.getAttachmentForService(
+            formatService,
+            proposalMessage.formats,
+            proposalMessage.messageAttachment
+          )
+        : undefined
+
+      const requestAttachment = this.credentialFormatCoordinator.getAttachmentForService(
+        formatService,
+        requestMessage.formats,
+        requestMessage.messageAttachment
+      )
+
+      const shouldAutoRespondToFormat = formatService.shouldAutoRespondToRequest({
+        credentialRecord,
         offerAttachment,
         requestAttachment,
-      }
-      const formatShouldAutoRespond =
-        this.agentConfig.autoAcceptCredentials == AutoAcceptCredential.Always ||
-        formatService.shouldAutoRespondToRequest(handlerOptions)
+        proposalAttachment,
+      })
 
-      shouldAutoRespond = shouldAutoRespond && formatShouldAutoRespond
+      // If any of the formats return false, we should not auto accept
+      if (!shouldAutoRespondToFormat) return false
     }
-    return shouldAutoRespond
+
+    return true
   }
 
-  public shouldAutoRespondToCredential(
-    credentialRecord: CredentialExchangeRecord,
+  public async shouldAutoRespondToCredential(options: {
+    credentialRecord: CredentialExchangeRecord
     credentialMessage: V2IssueCredentialMessage
-  ): boolean {
-    // 1. Get all formats for this message
-    const formatServices: CredentialFormatService[] = this.getFormatServicesFromMessage(credentialMessage.formats)
+  }): Promise<boolean> {
+    const { credentialRecord, credentialMessage } = options
+    const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
 
-    // 2. loop through found formats
-    let shouldAutoRespond = true
-    let credentialAttachment: Attachment | undefined
+    // Handle always / never cases
+    if (autoAccept === AutoAcceptCredential.Always) return true
+    if (autoAccept === AutoAcceptCredential.Never) return false
+
+    const proposalMessage = await this.findProposalMessage(credentialRecord.id)
+    const offerMessage = await this.findOfferMessage(credentialRecord.id)
+
+    const requestMessage = await this.findRequestMessage(credentialRecord.id)
+    if (!requestMessage) return false
+
+    // NOTE: we take the formats from the requestMessage so we always check all services that we last sent
+    // Otherwise we'll only check the formats from the credential, which could be different from the formats
+    // we use.
+    const formatServices = this.getFormatServicesFromMessage(requestMessage.formats)
 
     for (const formatService of formatServices) {
-      if (credentialMessage) {
-        credentialAttachment = formatService.getAttachment(
-          credentialMessage.formats,
-          credentialMessage.messageAttachment
-        )
-      }
-      const handlerOptions: HandlerAutoAcceptOptions = {
+      const offerAttachment = offerMessage
+        ? this.credentialFormatCoordinator.getAttachmentForService(
+            formatService,
+            offerMessage.formats,
+            offerMessage.messageAttachment
+          )
+        : undefined
+
+      const proposalAttachment = proposalMessage
+        ? this.credentialFormatCoordinator.getAttachmentForService(
+            formatService,
+            proposalMessage.formats,
+            proposalMessage.messageAttachment
+          )
+        : undefined
+
+      const requestAttachment = this.credentialFormatCoordinator.getAttachmentForService(
+        formatService,
+        requestMessage.formats,
+        requestMessage.messageAttachment
+      )
+
+      const credentialAttachment = this.credentialFormatCoordinator.getAttachmentForService(
+        formatService,
+        credentialMessage.formats,
+        credentialMessage.messageAttachment
+      )
+
+      const shouldAutoRespondToFormat = formatService.shouldAutoRespondToCredential({
         credentialRecord,
-        autoAcceptType: this.agentConfig.autoAcceptCredentials,
+        offerAttachment,
         credentialAttachment,
-      }
-      // 3. Call format.shouldRespondToProposal for each one
+        requestAttachment,
+        proposalAttachment,
+      })
 
-      const formatShouldAutoRespond =
-        this.agentConfig.autoAcceptCredentials == AutoAcceptCredential.Always ||
-        formatService.shouldAutoRespondToCredential(handlerOptions)
-
-      shouldAutoRespond = shouldAutoRespond && formatShouldAutoRespond
+      // If any of the formats return false, we should not auto accept
+      if (!shouldAutoRespondToFormat) return false
     }
-    return shouldAutoRespond
+
+    return true
   }
 
-  public async getOfferMessage(credentialRecordId: string): Promise<AgentMessage | null> {
+  public async findProposalMessage(credentialExchangeId: string) {
+    return this.didCommMessageRepository.findAgentMessage({
+      associatedRecordId: credentialExchangeId,
+      messageClass: V2ProposeCredentialMessage,
+    })
+  }
+
+  public async findOfferMessage(credentialExchangeId: string) {
     return await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: credentialRecordId,
+      associatedRecordId: credentialExchangeId,
       messageClass: V2OfferCredentialMessage,
     })
   }
 
-  public async getRequestMessage(credentialRecordId: string): Promise<AgentMessage | null> {
+  public async findRequestMessage(credentialExchangeId: string) {
     return await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: credentialRecordId,
+      associatedRecordId: credentialExchangeId,
       messageClass: V2RequestCredentialMessage,
     })
   }
 
-  public async getCredentialMessage(credentialRecordId: string): Promise<AgentMessage | null> {
+  public async findCredentialMessage(credentialExchangeId: string) {
     return await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: credentialRecordId,
+      associatedRecordId: credentialExchangeId,
       messageClass: V2IssueCredentialMessage,
     })
   }
@@ -969,7 +1048,6 @@ export class V2CredentialService<CFs extends CredentialFormat[] = CredentialForm
     this.dispatcher.registerHandler(new V2IssueCredentialHandler(this, this.agentConfig, this.didCommMessageRepository))
     this.dispatcher.registerHandler(new V2CredentialAckHandler(this))
     this.dispatcher.registerHandler(new V2CredentialProblemReportHandler(this))
-    this.dispatcher.registerHandler(new V2RevocationNotificationHandler(this.revocationService))
   }
 
   /**

@@ -3,7 +3,7 @@ import type { ConnectionRecord } from '../../../../connections'
 import type { AcceptOfferOptions, AcceptProposalOptions } from '../../../CredentialsModuleOptions'
 import type { Schema } from 'indy-sdk'
 
-import { AriesFrameworkError } from '../../../../../../src/error/AriesFrameworkError'
+import { AriesFrameworkError } from '../../../../../error/AriesFrameworkError'
 import { setupCredentialTests, waitForCredentialRecord } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
 import { JsonTransformer } from '../../../../../utils/JsonTransformer'
@@ -165,7 +165,7 @@ describe('credentials', () => {
     // ==============================
     // TESTS v1 BEGIN
     // ==========================
-    test('vAlice starts with V1 credential proposal to Faber, both with autoAcceptCredential on `contentApproved`', async () => {
+    test('Alice starts with V1 credential proposal to Faber, both with autoAcceptCredential on `contentApproved`', async () => {
       testLogger.test('Alice sends credential proposal to Faber')
       const schemaId = schema.id
       let faberCredentialExchangeRecord: CredentialExchangeRecord

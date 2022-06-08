@@ -122,10 +122,27 @@ export class CredentialFormatCoordinator<CFs extends CredentialFormat[]> {
     const offerAttachments: Attachment[] = []
     let credentialPreview: V2CredentialPreview | undefined
 
+    const proposalMessage = await this.didCommMessageRepository.getAgentMessage({
+      associatedRecordId: credentialRecord.id,
+      messageClass: V2ProposeCredentialMessage,
+    })
+
+    // NOTE: We set the credential attributes from the proposal on the record as we've 'accepted' them
+    // and can now use them to create the offer in the format services. It may be overwritten later on
+    // if the user provided other attributes in the credentialFormats array.
+    credentialRecord.credentialAttributes = proposalMessage.credentialProposal?.attributes
+
     for (const formatService of formatServices) {
+      const proposalAttachment = this.getAttachmentForService(
+        formatService,
+        proposalMessage.formats,
+        proposalMessage.messageAttachment
+      )
+
       const { attachment, format, previewAttributes } = await formatService.acceptProposal({
         credentialRecord,
         credentialFormats,
+        proposalAttachment,
       })
 
       if (previewAttributes) {
@@ -466,13 +483,12 @@ export class CredentialFormatCoordinator<CFs extends CredentialFormat[]> {
     })
   }
 
-  private getAttachmentForService(
+  public getAttachmentForService(
     credentialFormatService: CredentialFormatService,
     formats: CredentialFormatSpec[],
     attachments: Attachment[]
   ) {
     const attachmentId = this.getAttachmentIdForService(credentialFormatService, formats)
-
     const attachment = attachments.find((attachment) => attachment.id === attachmentId)
 
     if (!attachment) {

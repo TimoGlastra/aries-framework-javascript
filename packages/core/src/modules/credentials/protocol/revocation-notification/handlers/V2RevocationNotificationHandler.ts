@@ -1,13 +1,13 @@
 import type { Handler, HandlerInboundMessage } from '../../../../../agent/Handler'
-import type { RevocationService } from '../../../services'
+import type { RevocationNotificationService } from '../../../services'
 
 import { V2RevocationNotificationMessage } from '../messages/V2RevocationNotificationMessage'
 
 export class V2RevocationNotificationHandler implements Handler {
-  private revocationService: RevocationService
+  private revocationService: RevocationNotificationService
   public supportedMessages = [V2RevocationNotificationMessage]
 
-  public constructor(revocationService: RevocationService) {
+  public constructor(revocationService: RevocationNotificationService) {
     this.revocationService = revocationService
   }
 

@@ -1,7 +1,6 @@
 import type { AgentConfig } from '../../../../../agent/AgentConfig'
 import type { Handler, HandlerInboundMessage } from '../../../../../agent/Handler'
 import type { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
-import type { HandlerAutoAcceptOptions } from '../../../formats/CredentialFormatServiceOptions'
 import type { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
 import type { V2CredentialService } from '../V2CredentialService'
 
@@ -22,12 +21,11 @@ export class V2ProposeCredentialHandler implements Handler {
   public async handle(messageContext: InboundMessageContext<V2ProposeCredentialMessage>) {
     const credentialRecord = await this.credentialService.processProposal(messageContext)
 
-    const handlerOptions: HandlerAutoAcceptOptions = {
+    const shouldAutoRespond = await this.credentialService.shouldAutoRespondToProposal({
       credentialRecord,
-      autoAcceptType: this.agentConfig.autoAcceptCredentials,
-    }
+      proposalMessage: messageContext.message,
+    })
 
-    const shouldAutoRespond = await this.credentialService.shouldAutoRespondToProposal(handlerOptions)
     if (shouldAutoRespond) {
       return await this.acceptProposal(credentialRecord, messageContext)
     }

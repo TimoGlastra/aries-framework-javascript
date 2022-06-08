@@ -1,7 +1,19 @@
+import { Lifecycle, scoped } from 'tsyringe'
+import { AgentConfig } from '../../../../agent/AgentConfig'
 import type { AgentMessage } from '../../../../agent/AgentMessage'
+import { Dispatcher } from '../../../../agent/Dispatcher'
+import { EventEmitter } from '../../../../agent/EventEmitter'
 import type { HandlerInboundMessage } from '../../../../agent/Handler'
 import type { InboundMessageContext } from '../../../../agent/models/InboundMessageContext'
-import type { Attachment } from '../../../../decorators/attachment/Attachment'
+import { Attachment, AttachmentData } from '../../../../decorators/attachment/Attachment'
+import { AriesFrameworkError } from '../../../../error'
+import { DidCommMessageRepository, DidCommMessageRole } from '../../../../storage'
+import { JsonTransformer } from '../../../../utils'
+import { isLinkedAttachment } from '../../../../utils/attachment'
+import { uuid } from '../../../../utils/uuid'
+import { AckStatus } from '../../../common'
+import { ConnectionService } from '../../../connections/services'
+import { MediationRecipientService } from '../../../routing'
 import type {
   AcceptCredentialOptions,
   AcceptOfferOptions,
@@ -13,31 +25,16 @@ import type {
   NegotiateOfferOptions,
   NegotiateProposalOptions,
 } from '../../CredentialServiceOptions'
-import type { HandlerAutoAcceptOptions } from '../../formats/CredentialFormatServiceOptions'
 import type { IndyCredentialFormat } from '../../formats/indy/IndyCredentialFormat'
-import type { CredentialPreviewAttribute } from '../../models/CredentialPreviewAttribute'
-import type { CredOffer } from 'indy-sdk'
-
-import { Lifecycle, scoped } from 'tsyringe'
-
-import { AgentConfig } from '../../../../agent/AgentConfig'
-import { Dispatcher } from '../../../../agent/Dispatcher'
-import { EventEmitter } from '../../../../agent/EventEmitter'
-import { AriesFrameworkError } from '../../../../error'
-import { DidCommMessageRepository, DidCommMessageRole } from '../../../../storage'
-import { isLinkedAttachment } from '../../../../utils/attachment'
-import { uuid } from '../../../../utils/uuid'
-import { AckStatus } from '../../../common'
-import { ConnectionService } from '../../../connections/services'
-import { MediationRecipientService } from '../../../routing'
 import { IndyCredentialFormatService } from '../../formats/indy/IndyCredentialFormatService'
 import { IndyCredentialUtils } from '../../formats/indy/IndyCredentialUtils'
+import { IndyCredPropose } from '../../formats/indy/models'
 import { AutoAcceptCredential } from '../../models/CredentialAutoAcceptType'
+import type { CredentialPreviewAttribute } from '../../models/CredentialPreviewAttribute'
 import { CredentialState } from '../../models/CredentialState'
 import { CredentialExchangeRecord, CredentialMetadataKeys, CredentialRepository } from '../../repository'
-import { CredentialService, RevocationService } from '../../services'
+import { CredentialService } from '../../services'
 import { composeAutoAccept } from '../../util/composeAutoAccept'
-
 import {
   V1CredentialAckHandler,
   V1CredentialProblemReportHandler,
@@ -45,7 +42,6 @@ import {
   V1OfferCredentialHandler,
   V1ProposeCredentialHandler,
   V1RequestCredentialHandler,
-  V1RevocationNotificationHandler,
 } from './handlers'
 import {
   INDY_CREDENTIAL_ATTACHMENT_ID,
@@ -65,7 +61,6 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
   private formatService: IndyCredentialFormatService
   private didCommMessageRepository: DidCommMessageRepository
   private mediationRecipientService: MediationRecipientService
-  private revocationService: RevocationService
 
   public constructor(
     connectionService: ConnectionService,
@@ -75,15 +70,13 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     dispatcher: Dispatcher,
     eventEmitter: EventEmitter,
     credentialRepository: CredentialRepository,
-    formatService: IndyCredentialFormatService,
-    revocationService: RevocationService
+    formatService: IndyCredentialFormatService
   ) {
     super(credentialRepository, eventEmitter, dispatcher, agentConfig)
     this.connectionService = connectionService
     this.formatService = formatService
     this.didCommMessageRepository = didCommMessageRepository
     this.mediationRecipientService = mediationRecipientService
-    this.revocationService = revocationService
 
     this.registerHandlers()
   }
@@ -125,7 +118,7 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
 
     // T-TODO: linked attachments are broken currently...
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { attributes, linkedAttachments, ...indyCredentialProposal } = credentialFormats.indy
+    const { linkedAttachments } = credentialFormats.indy
 
     // Create record
     const credentialRecord = new CredentialExchangeRecord({
@@ -138,11 +131,13 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     })
 
     // call create proposal for validation of the proposal and addition of linked attachments
-    // As the format is different for v1 of the issue credential protocol we won't be using the attachment
-    const { previewAttributes } = await this.formatService.createProposal({
+    const { previewAttributes, attachment } = await this.formatService.createProposal({
       credentialFormats,
       credentialRecord,
     })
+
+    // Transform the attachment into the attachment payload and use that to construct the v1 message
+    const indyCredentialProposal = JsonTransformer.fromJSON(attachment.getDataAsJson(), IndyCredPropose)
 
     const credentialProposal = previewAttributes
       ? new V1CredentialPreview({
@@ -211,6 +206,11 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
         previousSentMessage: offerCredentialMessage ?? undefined,
       })
 
+      await this.formatService.processProposal({
+        credentialRecord,
+        attachment: this.rfc0592ProposalAttachmentFromV1ProposeMessage(proposalMessage),
+      })
+
       // Update record
       await this.updateState(credentialRecord, CredentialState.ProposalReceived)
       await this.didCommMessageRepository.saveOrUpdateAgentMessage({
@@ -229,6 +229,8 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
         protocolVersion: 'v1',
       })
 
+      // T-TODO: I think we should only set these attributes in create/accept/negotiate methods
+      // not the process methods, this way the record is always the source our truth.
       credentialRecord.metadata.set(CredentialMetadataKeys.IndyCredential, {
         schemaId: proposalMessage.schemaId,
         credentialDefinitionId: proposalMessage.credentialDefinitionId,
@@ -267,10 +269,21 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     credentialRecord.assertState(CredentialState.ProposalReceived)
     if (credentialFormats) this.assertOnlyIndyFormat(credentialFormats)
 
+    const proposalMessage = await this.didCommMessageRepository.getAgentMessage({
+      associatedRecordId: credentialRecord.id,
+      messageClass: V1ProposeCredentialMessage,
+    })
+
+    // NOTE: We set the credential attributes from the proposal on the record as we've 'accepted' them
+    // and can now use them to create the offer in the format services. It may be overwritten later on
+    // if the user provided other attributes in the credentialFormats array.
+    credentialRecord.credentialAttributes = proposalMessage.credentialProposal?.attributes
+
     const { attachment, previewAttributes } = await this.formatService.acceptProposal({
       attachId: INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
       credentialFormats,
       credentialRecord,
+      proposalAttachment: this.rfc0592ProposalAttachmentFromV1ProposeMessage(proposalMessage),
     })
 
     if (!previewAttributes) {
@@ -523,7 +536,7 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     credentialFormats,
     comment,
     autoAcceptCredential,
-  }: AcceptOfferOptions<[IndyCredentialFormat]>): Promise<CredentialProtocolMsgReturnType<AgentMessage>> {
+  }: AcceptOfferOptions<[IndyCredentialFormat]>): Promise<CredentialProtocolMsgReturnType<V1RequestCredentialMessage>> {
     // Assert credential
     credentialRecord.assertState(CredentialState.OfferReceived)
 
@@ -585,6 +598,7 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     comment,
   }: NegotiateOfferOptions<[IndyCredentialFormat]>): Promise<CredentialProtocolMsgReturnType<AgentMessage>> {
     // Assert
+    // T-TODO: call assertProtocolVersion everywhere
     credentialRecord.assertState(CredentialState.OfferReceived)
     this.assertOnlyIndyFormat(credentialFormats)
     if (!credentialRecord.connectionId) {
@@ -598,15 +612,19 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     }
 
     // T-TODO: linked attachments are broken currently...
+    // T-TODO: should we set the linked attachments on the record?
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { attributes, linkedAttachments, ...indyCredentialProposal } = credentialFormats.indy
+    const { linkedAttachments } = credentialFormats.indy
 
     // call create proposal for validation of the proposal and addition of linked attachments
     // As the format is different for v1 of the issue credential protocol we won't be using the attachment
-    const { previewAttributes } = await this.formatService.createProposal({
+    const { previewAttributes, attachment } = await this.formatService.createProposal({
       credentialFormats,
       credentialRecord,
     })
+
+    // Transform the attachment into the attachment payload and use that to construct the v1 message
+    const indyCredentialProposal = JsonTransformer.fromJSON(attachment.getDataAsJson(), IndyCredPropose)
 
     const credentialProposal = previewAttributes
       ? new V1CredentialPreview({
@@ -883,131 +901,152 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
   }
 
   // AUTO RESPOND METHODS
-  public shouldAutoRespondToCredential(
-    credentialRecord: CredentialExchangeRecord,
-    credentialMessage: V1IssueCredentialMessage
-  ): boolean {
-    let credentialAttachment: Attachment | undefined
-    if (credentialMessage) {
-      credentialAttachment = credentialMessage.getAttachmentById(INDY_CREDENTIAL_ATTACHMENT_ID)
-    }
-    const handlerOptions: HandlerAutoAcceptOptions = {
-      credentialRecord,
-      autoAcceptType: this.agentConfig.autoAcceptCredentials,
-      credentialAttachment,
-    }
-
-    const shouldAutoReturn =
-      this.agentConfig.autoAcceptCredentials === AutoAcceptCredential.Always ||
-      credentialRecord.autoAcceptCredential === AutoAcceptCredential.Always ||
-      this.formatService.shouldAutoRespondToCredential(handlerOptions)
-
-    return shouldAutoReturn
-  }
-
-  public async shouldAutoRespondToProposal({
-    credentialRecord,
-    proposalMessage,
-  }: {
+  public async shouldAutoRespondToProposal(options: {
     credentialRecord: CredentialExchangeRecord
     proposalMessage: V1ProposeCredentialMessage
   }): Promise<boolean> {
+    const { credentialRecord, proposalMessage } = options
     const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
 
     // Handle always / never cases
     if (autoAccept === AutoAcceptCredential.Always) return true
     if (autoAccept === AutoAcceptCredential.Never) return false
 
-    const offerMessage = await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: credentialRecord.id,
-      messageClass: V1OfferCredentialMessage,
-    })
+    const offerMessage = await this.findOfferMessage(credentialRecord.id)
 
-    return (
-      proposalMessage.credentialProposal?.attributes !== undefined &&
-      offerMessage?.credentialPreview !== undefined &&
-      this.arePreviewAttributesEqual(
-        proposalMessage.credentialProposal.attributes,
-        offerMessage.credentialPreview.attributes
-      ) &&
-      this.areProposalAndOfferDefinitionIdEqual(proposalMessage, offerMessage)
+    // Do not auto accept if missing properties
+    if (!offerMessage || !offerMessage.credentialPreview) return false
+    if (!proposalMessage.credentialProposal || !proposalMessage.credentialDefinitionId) return false
+
+    const credentialOfferJson = offerMessage.indyCredentialOffer
+
+    // Check if credential definition id matches
+    if (!credentialOfferJson) return false
+    if (credentialOfferJson.cred_def_id !== proposalMessage.credentialDefinitionId) return false
+
+    // Check if preview values match
+    return this.arePreviewAttributesEqual(
+      proposalMessage.credentialProposal.attributes,
+      offerMessage.credentialPreview.attributes
     )
   }
 
-  public shouldAutoRespondToRequest(
-    credentialRecord: CredentialExchangeRecord,
-    requestMessage: V1RequestCredentialMessage,
-    proposeMessage?: V1ProposeCredentialMessage,
-    offerMessage?: V1OfferCredentialMessage
-  ): boolean {
+  public async shouldAutoRespondToOffer(options: {
+    credentialRecord: CredentialExchangeRecord
+    offerMessage: V1OfferCredentialMessage
+  }) {
+    const { credentialRecord, offerMessage } = options
     const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
 
     // Handle always / never cases
     if (autoAccept === AutoAcceptCredential.Always) return true
     if (autoAccept === AutoAcceptCredential.Never) return false
 
-    const offerAttachment = offerMessage?.getAttachmentById(INDY_CREDENTIAL_OFFER_ATTACHMENT_ID)
-    const requestAttachment = requestMessage?.getAttachmentById(INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID)
+    const proposalMessage = await this.findProposalMessage(credentialRecord.id)
 
-    // T-TODO: should be async
+    // Do not auto accept if missing properties
+    if (!offerMessage.credentialPreview) return false
+    if (!proposalMessage || !proposalMessage.credentialProposal || !proposalMessage.credentialDefinitionId) return false
+
+    const credentialOfferJson = offerMessage.indyCredentialOffer
+
+    // Check if credential definition id matches
+    if (!credentialOfferJson) return false
+    if (credentialOfferJson.cred_def_id !== proposalMessage.credentialDefinitionId) return false
+
+    // Check if preview values match
+    return this.arePreviewAttributesEqual(
+      proposalMessage.credentialProposal.attributes,
+      offerMessage.credentialPreview.attributes
+    )
+  }
+
+  public async shouldAutoRespondToRequest(options: {
+    credentialRecord: CredentialExchangeRecord
+    requestMessage: V1RequestCredentialMessage
+  }) {
+    const { credentialRecord, requestMessage } = options
+    const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
+
+    // Handle always / never cases
+    if (autoAccept === AutoAcceptCredential.Always) return true
+    if (autoAccept === AutoAcceptCredential.Never) return false
+
+    const offerMessage = await this.findOfferMessage(credentialRecord.id)
+    if (!offerMessage) return false
+
+    const offerAttachment = offerMessage.getAttachmentById(INDY_CREDENTIAL_OFFER_ATTACHMENT_ID)
+    const requestAttachment = requestMessage.getAttachmentById(INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID)
+
+    if (!offerAttachment || !requestAttachment) return false
+
     return this.formatService.shouldAutoRespondToRequest({
-      autoAcceptType,
+      credentialRecord,
+      offerAttachment,
+      requestAttachment,
     })
   }
 
-  public shouldAutoRespondToOffer(
-    credentialRecord: CredentialExchangeRecord,
-    offerMessage: V1OfferCredentialMessage,
-    proposeMessage?: V1ProposeCredentialMessage
-  ): boolean {
-    let proposalAttachment: Attachment | undefined
+  public async shouldAutoRespondToCredential(options: {
+    credentialRecord: CredentialExchangeRecord
+    credentialMessage: V1IssueCredentialMessage
+  }) {
+    const { credentialRecord, credentialMessage } = options
+    const autoAccept = composeAutoAccept(credentialRecord.autoAcceptCredential, this.agentConfig.autoAcceptCredentials)
 
-    const offerAttachment = offerMessage.getAttachmentById(INDY_CREDENTIAL_OFFER_ATTACHMENT_ID)
-    if (proposeMessage && proposeMessage.appendedAttachments) {
-      proposalAttachment = proposeMessage.getAttachment()
-    }
-    const offerValues = offerMessage.credentialPreview?.attributes
+    // Handle always / never cases
+    if (autoAccept === AutoAcceptCredential.Always) return true
+    if (autoAccept === AutoAcceptCredential.Never) return false
 
-    const handlerOptions: HandlerAutoAcceptOptions = {
+    const requestMessage = await this.findRequestMessage(credentialRecord.id)
+    const offerMessage = await this.findOfferMessage(credentialRecord.id)
+
+    const credentialAttachment = credentialMessage.getAttachmentById(INDY_CREDENTIAL_ATTACHMENT_ID)
+    if (!credentialAttachment) return false
+
+    const requestAttachment = requestMessage?.getAttachmentById(INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID)
+    if (!requestAttachment) return false
+
+    const offerAttachment = offerMessage?.getAttachmentById(INDY_CREDENTIAL_OFFER_ATTACHMENT_ID)
+
+    return this.formatService.shouldAutoRespondToCredential({
       credentialRecord,
-      autoAcceptType: this.agentConfig.autoAcceptCredentials,
-      messageAttributes: offerValues,
-      proposalAttachment,
+      credentialAttachment,
+      requestAttachment,
       offerAttachment,
-    }
-    const shouldAutoReturn =
-      this.agentConfig.autoAcceptCredentials === AutoAcceptCredential.Always ||
-      credentialRecord.autoAcceptCredential === AutoAcceptCredential.Always ||
-      this.formatService.shouldAutoRespondToProposal(handlerOptions)
-
-    return shouldAutoReturn
+    })
   }
 
-  public async getOfferMessage(id: string): Promise<AgentMessage | null> {
+  public async findProposalMessage(credentialExchangeId: string) {
     return await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: id,
+      associatedRecordId: credentialExchangeId,
+      messageClass: V1ProposeCredentialMessage,
+    })
+  }
+
+  public async findOfferMessage(credentialExchangeId: string) {
+    return await this.didCommMessageRepository.findAgentMessage({
+      associatedRecordId: credentialExchangeId,
       messageClass: V1OfferCredentialMessage,
     })
   }
 
-  public async getRequestMessage(id: string): Promise<AgentMessage | null> {
+  public async findRequestMessage(credentialExchangeId: string) {
     return await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: id,
+      associatedRecordId: credentialExchangeId,
       messageClass: V1RequestCredentialMessage,
     })
   }
 
-  public async getCredentialMessage(id: string): Promise<AgentMessage | null> {
+  public async findCredentialMessage(credentialExchangeId: string) {
     return await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: id,
+      associatedRecordId: credentialExchangeId,
       messageClass: V1IssueCredentialMessage,
     })
   }
 
   protected registerHandlers() {
-    this.dispatcher.registerHandler(
-      new V1ProposeCredentialHandler(this, this.agentConfig, this.didCommMessageRepository)
-    )
+    this.dispatcher.registerHandler(new V1ProposeCredentialHandler(this, this.agentConfig))
     this.dispatcher.registerHandler(
       new V1OfferCredentialHandler(
         this,
@@ -1022,8 +1061,23 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
     this.dispatcher.registerHandler(new V1IssueCredentialHandler(this, this.agentConfig, this.didCommMessageRepository))
     this.dispatcher.registerHandler(new V1CredentialAckHandler(this))
     this.dispatcher.registerHandler(new V1CredentialProblemReportHandler(this))
+  }
 
-    this.dispatcher.registerHandler(new V1RevocationNotificationHandler(this.revocationService))
+  private rfc0592ProposalAttachmentFromV1ProposeMessage(proposalMessage: V1ProposeCredentialMessage) {
+    const indyCredentialProposal = new IndyCredPropose({
+      credentialDefinitionId: proposalMessage.credentialDefinitionId,
+      schemaId: proposalMessage.schemaId,
+      issuerDid: proposalMessage.issuerDid,
+      schemaIssuerDid: proposalMessage.schemaIssuerDid,
+      schemaName: proposalMessage.schemaName,
+      schemaVersion: proposalMessage.schemaVersion,
+    })
+
+    return new Attachment({
+      data: new AttachmentData({
+        json: JsonTransformer.toJSON(indyCredentialProposal),
+      }),
+    })
   }
 
   private arePreviewAttributesEqual(

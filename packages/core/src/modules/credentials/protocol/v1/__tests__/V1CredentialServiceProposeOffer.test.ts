@@ -6,15 +6,15 @@ import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
 import type { CreateOfferOptions, CreateProposalOptions } from '../../../CredentialServiceOptions'
 import type { IndyCredentialFormat } from '../../../formats/indy/IndyCredentialFormat'
 
+import { getAgentConfig, getBaseConfig, getMockConnection, mockFunction } from '../../../../../../tests/helpers'
 import { Agent } from '../../../../../agent/Agent'
 import { Dispatcher } from '../../../../../agent/Dispatcher'
-import { DidCommMessageRepository } from '../../../../../storage'
-import { getAgentConfig, getBaseConfig, getMockConnection, mockFunction } from '../../../../../../tests/helpers'
 import { EventEmitter } from '../../../../../agent/EventEmitter'
 import { MessageSender } from '../../../../../agent/MessageSender'
 import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
 import { InjectionSymbols } from '../../../../../constants'
 import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
+import { DidCommMessageRepository } from '../../../../../storage'
 import { DidExchangeState } from '../../../../connections'
 import { DidResolverService } from '../../../../dids'
 import { IndyHolderService } from '../../../../indy/services/IndyHolderService'
@@ -22,16 +22,14 @@ import { IndyIssuerService } from '../../../../indy/services/IndyIssuerService'
 import { IndyLedgerService } from '../../../../ledger/services'
 import { MediationRecipientService } from '../../../../routing/services/MediationRecipientService'
 import { CredentialEventTypes } from '../../../CredentialEvents'
+import { schema, credDef } from '../../../__tests__/fixtures'
 import { IndyCredentialFormatService } from '../../../formats'
 import { CredentialState } from '../../../models/CredentialState'
+import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
+import { CredentialRepository } from '../../../repository/CredentialRepository'
 import { V1CredentialService } from '../V1CredentialService'
 import { INDY_CREDENTIAL_OFFER_ATTACHMENT_ID, V1OfferCredentialMessage } from '../messages'
 import { V1CredentialPreview } from '../messages/V1CredentialPreview'
-import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
-import { CredentialRepository } from '../../../repository/CredentialRepository'
-import { RevocationService } from '../../../services'
-
-import { schema, credDef } from '../../../__tests__/fixtures'
 
 // Mock classes
 jest.mock('../repository/CredentialRepository')
@@ -89,7 +87,6 @@ describe('CredentialService', () => {
 
   let dispatcher: Dispatcher
   let credentialService: V1CredentialService
-  let revocationService: RevocationService
   let didResolverService: DidResolverService
   let didRepository: DidRepository
 
@@ -106,7 +103,6 @@ describe('CredentialService', () => {
     eventEmitter = new EventEmitter(agentConfig)
 
     dispatcher = new Dispatcher(messageSender, eventEmitter, agentConfig)
-    revocationService = new RevocationService(credentialRepository, eventEmitter, agentConfig)
     didResolverService = new DidResolverService(agentConfig, indyLedgerService, didRepository)
 
     const connectionService = {
@@ -134,8 +130,7 @@ describe('CredentialService', () => {
         didResolverService,
         agentConfig,
         wallet
-      ),
-      revocationService
+      )
     )
     mockFunction(indyLedgerService.getSchema).mockReturnValue(Promise.resolve(schema))
   })
@@ -401,8 +396,7 @@ describe('CredentialService', () => {
           didResolverService,
           agentConfig,
           wallet
-        ),
-        revocationService
+        )
       )
       // when
       const returnedCredentialRecord = await credentialService.processOffer(messageContext)

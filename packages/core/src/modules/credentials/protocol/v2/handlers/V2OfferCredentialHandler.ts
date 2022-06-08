@@ -8,10 +8,8 @@ import type { V2CredentialService } from '../V2CredentialService'
 
 import { createOutboundMessage, createOutboundServiceMessage } from '../../../../../agent/helpers'
 import { ServiceDecorator } from '../../../../../decorators/service/ServiceDecorator'
-import { AriesFrameworkError } from '../../../../../error/AriesFrameworkError'
 import { DidCommMessageRole } from '../../../../../storage'
 import { V2OfferCredentialMessage } from '../messages/V2OfferCredentialMessage'
-import { V2ProposeCredentialMessage } from '../messages/V2ProposeCredentialMessage'
 
 export class V2OfferCredentialHandler implements Handler {
   private credentialService: V2CredentialService
@@ -35,28 +33,13 @@ export class V2OfferCredentialHandler implements Handler {
   public async handle(messageContext: InboundMessageContext<V2OfferCredentialMessage>) {
     const credentialRecord = await this.credentialService.processOffer(messageContext)
 
-    const offerMessage = await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: credentialRecord.id,
-      messageClass: V2OfferCredentialMessage,
-    })
-
-    const proposeMessage = await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: credentialRecord.id,
-      messageClass: V2ProposeCredentialMessage,
-    })
-
-    if (!offerMessage) {
-      throw new AriesFrameworkError('Missing offer message in V2OfferCredentialHandler')
-    }
-
-    const shouldAutoRespond = this.credentialService.shouldAutoRespondToOffer(
+    const shouldAutoRespond = await this.credentialService.shouldAutoRespondToOffer({
       credentialRecord,
-      offerMessage,
-      proposeMessage ?? undefined
-    )
+      offerMessage: messageContext.message,
+    })
 
     if (shouldAutoRespond) {
-      return await this.acceptOffer(credentialRecord, messageContext, offerMessage)
+      return await this.acceptOffer(credentialRecord, messageContext)
     }
   }
 

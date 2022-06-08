@@ -8,7 +8,7 @@ import type { V1CredentialService } from '../V1CredentialService'
 import { createOutboundMessage, createOutboundServiceMessage } from '../../../../../agent/helpers'
 import { ServiceDecorator } from '../../../../../decorators/service/ServiceDecorator'
 import { DidCommMessageRole } from '../../../../../storage'
-import { V1OfferCredentialMessage, V1ProposeCredentialMessage } from '../messages'
+import { V1OfferCredentialMessage } from '../messages'
 
 export class V1OfferCredentialHandler implements Handler {
   private credentialService: V1CredentialService
@@ -32,31 +32,19 @@ export class V1OfferCredentialHandler implements Handler {
   public async handle(messageContext: HandlerInboundMessage<V1OfferCredentialHandler>) {
     const credentialRecord = await this.credentialService.processOffer(messageContext)
 
-    const offerMessage = await this.didCommMessageRepository.getAgentMessage({
-      associatedRecordId: credentialRecord.id,
-      messageClass: V1OfferCredentialMessage,
-    })
-
-    const proposeMessage = await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: credentialRecord.id,
-      messageClass: V1ProposeCredentialMessage,
-    })
-
-    const shouldAutoRespond = this.credentialService.shouldAutoRespondToOffer(
+    const shouldAutoRespond = await this.credentialService.shouldAutoRespondToOffer({
       credentialRecord,
-      offerMessage,
-      proposeMessage ?? undefined
-    )
+      offerMessage: messageContext.message,
+    })
 
     if (shouldAutoRespond) {
-      return await this.acceptOffer(credentialRecord, messageContext, offerMessage)
+      return await this.acceptOffer(credentialRecord, messageContext)
     }
   }
 
   private async acceptOffer(
     credentialRecord: CredentialExchangeRecord,
-    messageContext: HandlerInboundMessage<V1OfferCredentialHandler>,
-    offerMessage?: V1OfferCredentialMessage
+    messageContext: HandlerInboundMessage<V1OfferCredentialHandler>
   ) {
     this.agentConfig.logger.info(
       `Automatically sending request with autoAccept on ${this.agentConfig.autoAcceptCredentials}`
@@ -65,14 +53,14 @@ export class V1OfferCredentialHandler implements Handler {
       const { message } = await this.credentialService.acceptOffer({ credentialRecord })
 
       return createOutboundMessage(messageContext.connection, message)
-    } else if (offerMessage?.service) {
+    } else if (messageContext.message.service) {
       const routing = await this.mediationRecipientService.getRouting()
       const ourService = new ServiceDecorator({
         serviceEndpoint: routing.endpoints[0],
         recipientKeys: [routing.recipientKey.publicKeyBase58],
         routingKeys: routing.routingKeys.map((key) => key.publicKeyBase58),
       })
-      const recipientService = offerMessage.service
+      const recipientService = messageContext.message.service
 
       const { message } = await this.credentialService.acceptOffer({
         credentialRecord,

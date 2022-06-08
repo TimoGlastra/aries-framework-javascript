@@ -4,10 +4,10 @@ import type { ConnectionService } from '../../../../connections/services/Connect
 import type { DidRepository } from '../../../../dids/repository'
 import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
 import type { CredentialPreviewAttribute } from '../../../models/CredentialPreviewAttribute'
+import type { CustomCredentialTags } from '../../../repository/CredentialExchangeRecord'
 import type { V2IssueCredentialMessageProps } from '../messages/V2IssueCredentialMessage'
 import type { V2OfferCredentialMessageOptions } from '../messages/V2OfferCredentialMessage'
 import type { V2RequestCredentialMessageOptions } from '../messages/V2RequestCredentialMessage'
-import type { CustomCredentialTags } from '../../../repository/CredentialExchangeRecord'
 
 import { getAgentConfig, getBaseConfig, getMockConnection, mockFunction } from '../../../../../../tests/helpers'
 import { Agent } from '../../../../../agent/Agent'
@@ -26,10 +26,14 @@ import { IndyIssuerService } from '../../../../indy/services/IndyIssuerService'
 import { IndyLedgerService } from '../../../../ledger/services'
 import { MediationRecipientService } from '../../../../routing/services/MediationRecipientService'
 import { CredentialEventTypes } from '../../../CredentialEvents'
+import { credDef, credReq, credOffer } from '../../../__tests__/fixtures'
 import { CredentialProblemReportReason } from '../../../errors/CredentialProblemReportReason'
 import { IndyCredentialFormatService } from '../../../formats'
 import { IndyCredentialUtils } from '../../../formats/indy/IndyCredentialUtils'
 import { CredentialState } from '../../../models/CredentialState'
+import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
+import { CredentialMetadataKeys } from '../../../repository/CredentialMetadataTypes'
+import { CredentialRepository } from '../../../repository/CredentialRepository'
 import {
   INDY_CREDENTIAL_ATTACHMENT_ID,
   INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
@@ -43,12 +47,6 @@ import { V2CredentialProblemReportMessage } from '../messages/V2CredentialProble
 import { V2IssueCredentialMessage } from '../messages/V2IssueCredentialMessage'
 import { V2OfferCredentialMessage } from '../messages/V2OfferCredentialMessage'
 import { V2RequestCredentialMessage } from '../messages/V2RequestCredentialMessage'
-import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
-import { CredentialMetadataKeys } from '../../../repository/CredentialMetadataTypes'
-import { CredentialRepository } from '../../../repository/CredentialRepository'
-import { RevocationService } from '../../../services'
-
-import { credDef, credReq, credOffer } from '../../../__tests__/fixtures'
 
 // Mock classes
 jest.mock('../repository/CredentialRepository')
@@ -204,7 +202,6 @@ describe('CredentialService', () => {
   let credentialService: V2CredentialService
   let didResolverService: DidResolverService
   let didRepository: DidRepository
-  let revocationService: RevocationService
 
   const initMessages = () => {
     credentialRequestMessage = new V2RequestCredentialMessage(requestOptions)
@@ -231,7 +228,6 @@ describe('CredentialService', () => {
     eventEmitter = new EventEmitter(agentConfig)
     dispatcher = agent.injectionContainer.resolve<Dispatcher>(Dispatcher)
     didCommMessageRepository = new DidCommMessageRepositoryMock()
-    revocationService = new RevocationService(credentialRepository, eventEmitter, agentConfig)
 
     didResolverService = new DidResolverService(agentConfig, indyLedgerService, didRepository)
 
@@ -259,8 +255,7 @@ describe('CredentialService', () => {
         didResolverService,
         agentConfig,
         wallet
-      ),
-      revocationService
+      )
     )
   })
 

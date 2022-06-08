@@ -22,18 +22,16 @@ import { IndyIssuerService } from '../../../../indy/services/IndyIssuerService'
 import { IndyLedgerService } from '../../../../ledger/services'
 import { MediationRecipientService } from '../../../../routing/services/MediationRecipientService'
 import { CredentialEventTypes } from '../../../CredentialEvents'
+import { credDef, schema } from '../../../__tests__/fixtures'
 import { IndyCredentialFormatService } from '../../../formats/indy/IndyCredentialFormatService'
 import { CredentialState } from '../../../models/CredentialState'
+import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
+import { CredentialRepository } from '../../../repository/CredentialRepository'
 import { INDY_CREDENTIAL_OFFER_ATTACHMENT_ID } from '../../v1/messages'
 import { V1CredentialPreview } from '../../v1/messages/V1CredentialPreview'
 import { V2CredentialService } from '../V2CredentialService'
 import { V2CredentialPreview } from '../messages/V2CredentialPreview'
 import { V2OfferCredentialMessage } from '../messages/V2OfferCredentialMessage'
-import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
-import { CredentialRepository } from '../../../repository/CredentialRepository'
-import { RevocationService } from '../../../services'
-
-import { credDef, schema } from '../../../__tests__/fixtures'
 
 // Mock classes
 jest.mock('../repository/CredentialRepository')
@@ -89,7 +87,6 @@ describe('CredentialService', () => {
   let credentialService: V2CredentialService
   let didResolverService: DidResolverService
   let didRepository: DidRepository
-  let revocationService: RevocationService
 
   beforeEach(async () => {
     credentialRepository = new CredentialRepositoryMock()
@@ -102,7 +99,6 @@ describe('CredentialService', () => {
     mockFunction(indyLedgerService.getCredentialDefinition).mockReturnValue(Promise.resolve(credDef))
     agentConfig = getAgentConfig('CredentialServiceTest')
     eventEmitter = new EventEmitter(agentConfig)
-    revocationService = new RevocationService(credentialRepository, eventEmitter, agentConfig)
 
     dispatcher = new Dispatcher(messageSender, eventEmitter, agentConfig)
     didResolverService = new DidResolverService(agentConfig, indyLedgerService, didRepository)
@@ -131,8 +127,7 @@ describe('CredentialService', () => {
         didResolverService,
         agentConfig,
         wallet
-      ),
-      revocationService
+      )
     )
     mockFunction(indyLedgerService.getSchema).mockReturnValue(Promise.resolve(schema))
   })
@@ -318,8 +313,7 @@ describe('CredentialService', () => {
           didResolverService,
           agentConfig,
           wallet
-        ),
-        revocationService
+        )
       )
       // when
       const returnedCredentialRecord = await credentialService.processOffer(messageContext)

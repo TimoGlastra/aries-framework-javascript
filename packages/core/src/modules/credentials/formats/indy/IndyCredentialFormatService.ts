@@ -3,6 +3,7 @@ import type { Logger } from '../../../../logger'
 import type { CredentialPreviewAttributeOptions } from '../../models/CredentialPreviewAttribute'
 import type { CredentialExchangeRecord } from '../../repository/CredentialExchangeRecord'
 import type {
+  FormatAutoRespondCredentialOptions,
   FormatAcceptOfferOptions,
   FormatAcceptProposalOptions,
   FormatAcceptRequestOptions,
@@ -12,7 +13,9 @@ import type {
   FormatCreateProposalReturn,
   FormatCreateReturn,
   FormatProcessOptions,
-  HandlerAutoAcceptOptions,
+  FormatAutoRespondOfferOptions,
+  FormatAutoRespondProposalOptions,
+  FormatAutoRespondRequestOptions,
 } from '../CredentialFormatServiceOptions'
 import type { IndyCredentialFormat, IndyProposeCredentialFormat } from './IndyCredentialFormat'
 import type * as Indy from 'indy-sdk'
@@ -33,12 +36,10 @@ import { DidResolverService, findVerificationMethodByKeyType } from '../../../di
 import { IndyHolderService, IndyIssuerService } from '../../../indy'
 import { IndyLedgerService } from '../../../ledger'
 import { CredentialProblemReportError, CredentialProblemReportReason } from '../../errors'
-import { AutoAcceptCredential } from '../../models/CredentialAutoAcceptType'
 import { CredentialFormatSpec } from '../../models/CredentialFormatSpec'
 import { CredentialPreviewAttribute } from '../../models/CredentialPreviewAttribute'
 import { CredentialMetadataKeys } from '../../repository/CredentialMetadataTypes'
 import { CredentialRepository } from '../../repository/CredentialRepository'
-import { composeAutoAccept } from '../../util/composeAutoAccept'
 import { CredentialFormatService } from '../CredentialFormatService'
 
 import { IndyCredentialUtils } from './IndyCredentialUtils'
@@ -370,59 +371,55 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
     await this.indyHolderService.deleteCredential(credentialRecordId)
   }
 
-  /**
-   * Checks whether it should automatically respond to a proposal. Moved from CredentialResponseCoordinator
-   * as this contains format-specific logic
-   * @param credentialRecord The credential record for which we are testing whether or not to auto respond
-   * @param agentConfig config object for the agent, used to hold auto accept state for the agent
-   * @returns true if we should auto respond, false otherwise
-   */
+  // T-TODO: handle preview attributes match in the credential service itself
+  public shouldAutoRespondToProposal({ offerAttachment, proposalAttachment }: FormatAutoRespondProposalOptions) {
+    const credentialProposalJson = proposalAttachment.getDataAsJson()
+    const credentialProposal = JsonTransformer.fromJSON(credentialProposalJson, IndyCredPropose)
 
-  public shouldAutoRespondToProposal(handlerOptions: HandlerAutoAcceptOptions): boolean {
-    return (
-      this.areProposalValuesValid(handlerOptions.credentialRecord, handlerOptions.messageAttributes) &&
-      this.areProposalAndOfferDefinitionIdEqual(handlerOptions.proposalAttachment, handlerOptions.offerAttachment)
-    )
+    const credentialOfferJson = offerAttachment.getDataAsJson<Indy.CredOffer>()
+
+    // We want to make sure the credential definition matches.
+    // TODO: If no credential definition is present on the proposal, we could check whether the other fields
+    // of the proposal match with the credential definition id.
+    return credentialProposal.credentialDefinitionId === credentialOfferJson.cred_def_id
   }
 
-  /**
-   * Checks whether it should automatically respond to an indy request.
-   *
-   * @returns true if we should auto respond, false otherwise
-   */
-  public shouldAutoRespondToRequest(options: HandlerAutoAcceptOptions): boolean {
-    const autoAccept = composeAutoAccept(options.credentialRecord.autoAcceptCredential, options.autoAcceptType)
+  public shouldAutoRespondToOffer({ offerAttachment, proposalAttachment }: FormatAutoRespondOfferOptions) {
+    const credentialProposalJson = proposalAttachment.getDataAsJson()
+    const credentialProposal = JsonTransformer.fromJSON(credentialProposalJson, IndyCredPropose)
 
-    if (!options.requestAttachment) {
-      throw new AriesFrameworkError(`Missing Request Attachment for Credential Record ${options.credentialRecord.id}`)
-    }
-    if (autoAccept === AutoAcceptCredential.ContentApproved) {
-      return this.isRequestDefinitionIdValid(
-        options.requestAttachment,
-        options.offerAttachment,
-        options.proposalAttachment
-      )
-    }
-    return false
+    const credentialOfferJson = offerAttachment.getDataAsJson<Indy.CredOffer>()
+
+    // We want to make sure the credential definition matches.
+    // TODO: If no credential definition is present on the proposal, we could check whether the other fields
+    // of the proposal match with the credential definition id.
+    return credentialProposal.credentialDefinitionId === credentialOfferJson.cred_def_id
   }
 
-  /**
-   * Checks whether it should automatically respond to a request. Moved from CredentialResponseCoordinator
-   * as this contains format-specific logic
-   * @param credentialRecord The credential record for which we are testing whether or not to auto respond
-   * @param autoAcceptType auto accept type for this credential exchange - normal auto or content approved
-   * @returns true if we should auto respond, false otherwise
-   */
+  public shouldAutoRespondToRequest({ offerAttachment, requestAttachment }: FormatAutoRespondRequestOptions) {
+    const credentialOfferJson = offerAttachment.getDataAsJson<Indy.CredOffer>()
+    const credentialRequestJson = requestAttachment.getDataAsJson<Indy.CredReq>()
 
-  public shouldAutoRespondToCredential(options: HandlerAutoAcceptOptions): boolean {
-    const autoAccept = composeAutoAccept(options.credentialRecord.autoAcceptCredential, options.autoAcceptType)
+    return credentialOfferJson.cred_def_id == credentialRequestJson.cred_def_id
+  }
 
-    if (autoAccept === AutoAcceptCredential.ContentApproved) {
-      if (options.credentialAttachment) {
-        return this.areCredentialValuesValid(options.credentialRecord, options.credentialAttachment)
-      }
-    }
-    return false
+  public shouldAutoRespondToCredential({
+    credentialRecord,
+    requestAttachment,
+    credentialAttachment,
+  }: FormatAutoRespondCredentialOptions) {
+    const credentialJson = credentialAttachment.getDataAsJson<Indy.Cred>()
+    const credentialRequestJson = requestAttachment.getDataAsJson<Indy.CredReq>()
+
+    // make sure the credential definition matches
+    if (credentialJson.cred_def_id !== credentialRequestJson.cred_def_id) return false
+
+    // If we don't have any attributes stored we can't compare so always return false.
+    if (!credentialRecord.credentialAttributes) return false
+    const attributeValues = IndyCredentialUtils.convertAttributesToValues(credentialRecord.credentialAttributes)
+
+    // check whether the values match the values in the record
+    return IndyCredentialUtils.checkValuesMatch(attributeValues, credentialJson.values)
   }
 
   private async createIndyOffer({
@@ -455,6 +452,15 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
     const attachment = this.getFormatData(offer, format.attachId)
 
     return { format, attachment, previewAttributes }
+  }
+
+  private async assertPreviewAttributesMatchSchemaAttributes(
+    offer: Indy.CredOffer,
+    attributes: CredentialPreviewAttribute[]
+  ): Promise<void> {
+    const schema = await this.indyLedgerService.getSchema(offer.schema_id)
+
+    IndyCredentialUtils.checkAttributesMatch(schema, attributes)
   }
 
   private async getIndyHolderDid(credentialRecord: CredentialExchangeRecord) {
@@ -517,83 +523,5 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
     }
 
     return { attachments, previewAttributes }
-  }
-
-  private areProposalValuesValid(
-    credentialRecord: CredentialExchangeRecord,
-    proposeMessageAttributes?: CredentialPreviewAttribute[]
-  ) {
-    const { credentialAttributes } = credentialRecord
-
-    if (proposeMessageAttributes && credentialAttributes) {
-      const proposeValues = IndyCredentialUtils.convertAttributesToValues(proposeMessageAttributes)
-      const defaultValues = IndyCredentialUtils.convertAttributesToValues(credentialAttributes)
-      if (IndyCredentialUtils.checkValuesMatch(proposeValues, defaultValues)) {
-        return true
-      }
-    }
-    return false
-  }
-
-  private areProposalAndOfferDefinitionIdEqual(proposalAttachment?: Attachment, offerAttachment?: Attachment) {
-    const credOffer = offerAttachment?.getDataAsJson<Indy.CredOffer>()
-    let credPropose = proposalAttachment?.getDataAsJson<IndyCredPropose>()
-    credPropose = JsonTransformer.fromJSON(credPropose, IndyCredPropose)
-
-    const proposalCredentialDefinitionId = credPropose?.credentialDefinitionId
-    const offerCredentialDefinitionId = credOffer?.cred_def_id
-    return proposalCredentialDefinitionId === offerCredentialDefinitionId
-  }
-
-  private areCredentialValuesValid(credentialRecord: CredentialExchangeRecord, credentialAttachment: Attachment) {
-    const indyCredential = credentialAttachment.getDataAsJson<Indy.Cred>()
-
-    if (!indyCredential) {
-      new AriesFrameworkError(`Missing required base64 encoded attachment data for credential`)
-      return false
-    }
-
-    const credentialMessageValues = indyCredential.values
-
-    if (credentialRecord.credentialAttributes) {
-      const defaultValues = IndyCredentialUtils.convertAttributesToValues(credentialRecord.credentialAttributes)
-
-      if (IndyCredentialUtils.checkValuesMatch(credentialMessageValues, defaultValues)) {
-        return true
-      }
-    }
-    return false
-  }
-
-  private async assertPreviewAttributesMatchSchemaAttributes(
-    offer: Indy.CredOffer,
-    attributes: CredentialPreviewAttribute[]
-  ): Promise<void> {
-    const schema = await this.indyLedgerService.getSchema(offer.schema_id)
-
-    IndyCredentialUtils.checkAttributesMatch(schema, attributes)
-  }
-
-  private isRequestDefinitionIdValid(
-    requestAttachment: Attachment,
-    offerAttachment?: Attachment,
-    proposeAttachment?: Attachment
-  ) {
-    const indyCredentialRequest = requestAttachment?.getDataAsJson<Indy.CredReq>()
-    let indyCredentialProposal = proposeAttachment?.getDataAsJson<IndyCredPropose>()
-    indyCredentialProposal = JsonTransformer.fromJSON(indyCredentialProposal, IndyCredPropose)
-
-    const indyCredentialOffer = offerAttachment?.getDataAsJson<Indy.CredOffer>()
-
-    if (indyCredentialProposal || indyCredentialOffer) {
-      const previousCredentialDefinitionId =
-        indyCredentialOffer?.cred_def_id ?? indyCredentialProposal?.credentialDefinitionId
-
-      if (previousCredentialDefinitionId === indyCredentialRequest.cred_def_id) {
-        return true
-      }
-      return false
-    }
-    return false
   }
 }

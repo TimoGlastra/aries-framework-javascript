@@ -6,7 +6,7 @@ import type { V1CredentialService } from '../V1CredentialService'
 
 import { createOutboundMessage, createOutboundServiceMessage } from '../../../../../agent/helpers'
 import { DidCommMessageRole } from '../../../../../storage'
-import { V1RequestCredentialMessage, V1OfferCredentialMessage, V1ProposeCredentialMessage } from '../messages'
+import { V1RequestCredentialMessage } from '../messages'
 
 export class V1RequestCredentialHandler implements Handler {
   private agentConfig: AgentConfig
@@ -27,36 +27,25 @@ export class V1RequestCredentialHandler implements Handler {
   public async handle(messageContext: HandlerInboundMessage<V1RequestCredentialHandler>) {
     const credentialRecord = await this.credentialService.processRequest(messageContext)
 
-    const proposalMessage = await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: credentialRecord.id,
-      messageClass: V1ProposeCredentialMessage,
+    const shouldAutoRespond = await this.credentialService.shouldAutoRespondToRequest({
+      credentialRecord,
+      requestMessage: messageContext.message,
     })
 
-    const offerMessage = await this.didCommMessageRepository.findAgentMessage({
-      associatedRecordId: credentialRecord.id,
-      messageClass: V1OfferCredentialMessage,
-    })
-
-    if (
-      this.credentialService.shouldAutoRespondToRequest(
-        credentialRecord,
-        messageContext.message,
-        proposalMessage ?? undefined,
-        offerMessage ?? undefined
-      )
-    ) {
-      return await this.acceptRequest(credentialRecord, messageContext, offerMessage)
+    if (shouldAutoRespond) {
+      return await this.acceptRequest(credentialRecord, messageContext)
     }
   }
 
   private async acceptRequest(
     credentialRecord: CredentialExchangeRecord,
-    messageContext: HandlerInboundMessage<V1RequestCredentialHandler>,
-    offerMessage?: V1OfferCredentialMessage | null
+    messageContext: HandlerInboundMessage<V1RequestCredentialHandler>
   ) {
     this.agentConfig.logger.info(
       `Automatically sending credential with autoAccept on ${this.agentConfig.autoAcceptCredentials}`
     )
+
+    const offerMessage = await this.credentialService.findOfferMessage(credentialRecord.id)
 
     const { message } = await this.credentialService.acceptRequest({
       credentialRecord,
@@ -64,7 +53,7 @@ export class V1RequestCredentialHandler implements Handler {
 
     if (messageContext.connection) {
       return createOutboundMessage(messageContext.connection, message)
-    } else if (messageContext.message?.service && offerMessage?.service) {
+    } else if (messageContext.message.service && offerMessage?.service) {
       const recipientService = messageContext.message.service
       const ourService = offerMessage.service
 

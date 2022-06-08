@@ -1,8 +1,8 @@
 import type { IndyCredentialViewMetadata, CredentialPreviewAttribute } from '../../..'
-import type { Logger } from '../../../../../logger'
 import type { AgentConfig } from '../../../../../agent/AgentConfig'
+import type { Logger } from '../../../../../logger'
 import type { ConnectionRecord } from '../../../../connections'
-import type { ConnectionService } from '../../../../connections/services/ConnectionService'
+import { ConnectionService } from '../../../../connections/services/ConnectionService'
 import type { DidRepository } from '../../../../dids/repository'
 import type { StoreCredentialOptions } from '../../../../indy/services/IndyHolderService'
 import type { RevocationNotificationReceivedEvent, CredentialStateChangedEvent } from '../../../CredentialEvents'
@@ -15,20 +15,26 @@ import { EventEmitter } from '../../../../../agent/EventEmitter'
 import { MessageSender } from '../../../../../agent/MessageSender'
 import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
 import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
-import { AriesFrameworkError, RecordNotFoundError } from '../../../../../error'
-import { DidCommMessageRepository } from '../../../../../storage'
+import { AriesFrameworkError } from '../../../../../error'
+import {
+  DidCommMessageRepository,
+  GetAgentMessageOptions,
+} from '../../../../../storage/didcomm/DidCommMessageRepository'
 import { JsonEncoder } from '../../../../../utils/JsonEncoder'
-import { IndyWallet } from '../../../../../wallet/IndyWallet'
 import { AckStatus } from '../../../../common'
 import { DidExchangeState } from '../../../../connections'
-import { DidResolverService } from '../../../../dids'
+import { DidResolverService } from '../../../../dids/services/DidResolverService'
 import { IndyHolderService } from '../../../../indy/services/IndyHolderService'
 import { IndyIssuerService } from '../../../../indy/services/IndyIssuerService'
-import { IndyLedgerService } from '../../../../ledger/services'
-import { MediationRecipientService } from '../../../../routing'
+import { IndyLedgerService } from '../../../../ledger/services/IndyLedgerService'
+import { MediationRecipientService } from '../../../../routing/services/MediationRecipientService'
 import { CredentialEventTypes } from '../../../CredentialEvents'
+import { credDef, credReq, credOffer, schema } from '../../../__tests__/fixtures'
 import { CredentialProblemReportReason } from '../../../errors/CredentialProblemReportReason'
 import { IndyCredentialFormatService } from '../../../formats/indy/IndyCredentialFormatService'
+import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
+import { CredentialMetadataKeys } from '../../../repository/CredentialMetadataTypes'
+import { CredentialRepository } from '../../../repository/CredentialRepository'
 import { V1CredentialService } from '../V1CredentialService'
 import {
   V1RequestCredentialMessage,
@@ -41,22 +47,22 @@ import {
   V1CredentialProblemReportMessage,
   V1CredentialPreview,
 } from '../messages'
-import { V1RevocationNotificationMessage } from '../messages/V1RevocationNotificationMessage'
-import { V2RevocationNotificationMessage } from '../../v2/messages/V2RevocationNotificationMessage'
-import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
-import { CredentialMetadataKeys } from '../../../repository/CredentialMetadataTypes'
-import { CredentialRepository } from '../../../repository/CredentialRepository'
-import { RevocationService } from '../../../services'
-
-import { credDef, credReq, credOffer, schema } from '../../../__tests__/fixtures'
+import { uuid } from '../../../../../utils/uuid'
+import { AutoAcceptCredential, CredentialFormatSpec } from '../../../models'
+import { DidCommMessageRole } from '../../../../../storage'
+import { JsonTransformer } from '../../../../../utils'
 
 // Mock classes
-jest.mock('../repository/CredentialRepository')
-jest.mock('../../../modules/ledger/services/IndyLedgerService')
-jest.mock('../../indy/services/IndyHolderService')
-jest.mock('../../indy/services/IndyIssuerService')
-jest.mock('../../../../src/storage/didcomm/DidCommMessageRepository')
-jest.mock('../../routing/services/MediationRecipientService')
+jest.mock('../../../repository/CredentialRepository')
+jest.mock('../../../../ledger/services/IndyLedgerService')
+jest.mock('../../../../indy/services/IndyHolderService')
+jest.mock('../../../../indy/services/IndyIssuerService')
+jest.mock('../../../formats/indy/IndyCredentialFormatService')
+jest.mock('../../../../../storage/didcomm/DidCommMessageRepository')
+jest.mock('../../../../routing/services/MediationRecipientService')
+jest.mock('../../../../dids/services/DidResolverService')
+jest.mock('../../../../connections/services/ConnectionService')
+jest.mock('../../../../../agent/Dispatcher')
 
 // Mock typed object
 const CredentialRepositoryMock = CredentialRepository as jest.Mock<CredentialRepository>
@@ -66,6 +72,22 @@ const IndyIssuerServiceMock = IndyIssuerService as jest.Mock<IndyIssuerService>
 const DidCommMessageRepositoryMock = DidCommMessageRepository as jest.Mock<DidCommMessageRepository>
 const MessageSenderMock = MessageSender as jest.Mock<MessageSender>
 const MediationRecipientServiceMock = MediationRecipientService as jest.Mock<MediationRecipientService>
+const IndyCredentialFormatServiceMock = IndyCredentialFormatService as jest.Mock<IndyCredentialFormatService>
+const DidResolverServiceMock = DidResolverService as jest.Mock<DidResolverService>
+const ConnectionServiceMock = ConnectionService as jest.Mock<ConnectionService>
+const DispatcherMock = Dispatcher as jest.Mock<Dispatcher>
+
+const credentialRepository = new CredentialRepositoryMock()
+const indyIssuerService = new IndyIssuerServiceMock()
+const didCommMessageRepository = new DidCommMessageRepositoryMock()
+const messageSender = new MessageSenderMock()
+const mediationRecipientService = new MediationRecipientServiceMock()
+const indyHolderService = new IndyHolderServiceMock()
+const indyLedgerService = new IndyLedgerServiceMock()
+const indyCredentialFormatService = new IndyCredentialFormatServiceMock()
+const dispatcher = new DispatcherMock()
+const didResolverService = new DidResolverServiceMock()
+const connectionService = new ConnectionServiceMock()
 
 const connection = getMockConnection({
   id: '123',
@@ -104,6 +126,34 @@ const credentialAttachment = new Attachment({
   }),
 })
 
+const credentialRequestMessage = new V1RequestCredentialMessage({
+  comment: 'abcd',
+  requestAttachments: [requestAttachment],
+})
+const credentialOfferMessage = new V1OfferCredentialMessage({
+  comment: 'some comment',
+  credentialPreview: credentialPreview,
+  offerAttachments: [offerAttachment],
+})
+const credentialIssueMessage = new V1IssueCredentialMessage({
+  comment: 'some comment',
+  credentialAttachments: [offerAttachment],
+})
+
+const getAgentMessageMock = async (options: GetAgentMessageOptions<any>) => {
+  if (options.messageClass === V1OfferCredentialMessage) {
+    return credentialOfferMessage
+  }
+  if (options.messageClass === V1RequestCredentialMessage) {
+    return credentialRequestMessage
+  }
+  if (options.messageClass === V1IssueCredentialMessage) {
+    return credentialIssueMessage
+  }
+
+  throw new AriesFrameworkError('Could not find message')
+}
+
 // A record is deserialized to JSON when it's stored into the storage. We want to simulate this behaviour for `offer`
 // object to test our service would behave correctly. We use type assertion for `offer` attribute to `any`.
 const mockCredentialRecord = ({
@@ -129,17 +179,11 @@ const mockCredentialRecord = ({
   indyRevocationRegistryId?: string
   indyCredentialRevocationId?: string
 } = {}) => {
-  const offerMessage = new V1OfferCredentialMessage({
-    comment: 'some comment',
-    credentialPreview: credentialPreview,
-    offerAttachments: [offerAttachment],
-  })
-
   const credentialRecord = new CredentialExchangeRecord({
     id,
     credentialAttributes: credentialAttributes || credentialPreview.attributes,
     state: state || CredentialState.OfferSent,
-    threadId: threadId ?? offerMessage.id,
+    threadId: threadId ?? uuid(),
     connectionId: connectionId ?? '123',
     credentials: [
       {
@@ -167,90 +211,37 @@ const mockCredentialRecord = ({
     })
   }
 
-  credentialRecord.metadata.add(CredentialMetadataKeys.IndyCredential, {
-    indyCredentialRevocationId,
-    indyRevocationRegistryId,
-  })
+  if (indyCredentialRevocationId || indyRevocationRegistryId) {
+    credentialRecord.metadata.add(CredentialMetadataKeys.IndyCredential, {
+      indyCredentialRevocationId,
+      indyRevocationRegistryId,
+    })
+  }
 
   return credentialRecord
 }
 
-let credentialRequestMessage: V1RequestCredentialMessage
-let credentialOfferMessage: V1OfferCredentialMessage
-let credentialIssueMessage: V1IssueCredentialMessage
-let revocationService: RevocationService
-let didResolverService: DidResolverService
-
-let logger: Logger
-
-describe('CredentialService', () => {
-  let credentialRepository: CredentialRepository
-  let indyLedgerService: IndyLedgerService
-  let indyIssuerService: IndyIssuerService
-  let indyHolderService: IndyHolderService
+describe('V1CredentialService', () => {
   let eventEmitter: EventEmitter
-  let didCommMessageRepository: DidCommMessageRepository
-  let mediationRecipientService: MediationRecipientService
-  let messageSender: MessageSender
   let agentConfig: AgentConfig
-
-  let dispatcher: Dispatcher
+  let logger: Logger
   let credentialService: V1CredentialService
-  let didRepository: DidRepository
-
-  const initMessages = () => {
-    credentialRequestMessage = new V1RequestCredentialMessage({
-      comment: 'abcd',
-      requestAttachments: [requestAttachment],
-    })
-    credentialOfferMessage = new V1OfferCredentialMessage({
-      comment: 'some comment',
-      credentialPreview: credentialPreview,
-      offerAttachments: [offerAttachment],
-    })
-    credentialIssueMessage = new V1IssueCredentialMessage({
-      comment: 'some comment',
-      credentialAttachments: [offerAttachment],
-    })
-
-    mockFunction(didCommMessageRepository.findAgentMessage).mockImplementation(async (options) => {
-      if (options.messageClass === V1OfferCredentialMessage) {
-        return credentialOfferMessage
-      }
-      if (options.messageClass === V1RequestCredentialMessage) {
-        return credentialRequestMessage
-      }
-      if (options.messageClass === V1IssueCredentialMessage) {
-        return credentialIssueMessage
-      }
-      return null
-    })
-  }
 
   beforeEach(async () => {
-    credentialRepository = new CredentialRepositoryMock()
-    indyIssuerService = new IndyIssuerServiceMock()
-    didCommMessageRepository = new DidCommMessageRepositoryMock()
-    messageSender = new MessageSenderMock()
+    // real objects
     agentConfig = getAgentConfig('CredentialServiceTest')
-    mediationRecipientService = new MediationRecipientServiceMock()
-    indyHolderService = new IndyHolderServiceMock()
-    indyLedgerService = new IndyLedgerServiceMock()
-    mockFunction(indyLedgerService.getCredentialDefinition).mockReturnValue(Promise.resolve(credDef))
-
     eventEmitter = new EventEmitter(agentConfig)
-
-    dispatcher = new Dispatcher(messageSender, eventEmitter, agentConfig)
-    revocationService = new RevocationService(credentialRepository, eventEmitter, agentConfig)
-    didResolverService = new DidResolverService(agentConfig, indyLedgerService, didRepository)
     logger = agentConfig.logger
 
-    const connectionService = {
-      getById: () => Promise.resolve(connection),
-      assertConnectionOrServiceDecorator: () => true,
-    } as unknown as ConnectionService
+    // mock function implementations
+    mockFunction(connectionService.getById).mockResolvedValue(connection)
+    mockFunction(connectionService.assertConnectionOrServiceDecorator).mockReturnValue()
+    mockFunction(indyLedgerService.getCredentialDefinition).mockReturnValue(Promise.resolve(credDef))
+    mockFunction(indyLedgerService.getCredentialDefinition).mockReturnValue(Promise.resolve(credDef))
+    mockFunction(indyLedgerService.getSchema).mockReturnValue(Promise.resolve(schema))
+    mockFunction(didCommMessageRepository.findAgentMessage).mockImplementation(getAgentMessageMock)
+    mockFunction(didCommMessageRepository.getAgentMessage).mockImplementation(getAgentMessageMock)
 
-    const wallet = new IndyWallet(agentConfig)
     credentialService = new V1CredentialService(
       connectionService,
       didCommMessageRepository,
@@ -259,79 +250,102 @@ describe('CredentialService', () => {
       dispatcher,
       eventEmitter,
       credentialRepository,
-      new IndyCredentialFormatService(
-        credentialRepository,
-        eventEmitter,
-        indyIssuerService,
-        indyLedgerService,
-        indyHolderService,
-        connectionService,
-        didResolverService,
-        agentConfig,
-        wallet
-      ),
-      revocationService
+      indyCredentialFormatService
     )
-    mockFunction(indyLedgerService.getCredentialDefinition).mockReturnValue(Promise.resolve(credDef))
-    mockFunction(indyLedgerService.getSchema).mockReturnValue(Promise.resolve(schema))
   })
 
-  describe('createCredentialRequest', () => {
-    let credentialRecord: CredentialExchangeRecord
-    beforeEach(() => {
-      credentialRecord = mockCredentialRecord({
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
+  describe('acceptOffer', () => {
+    test(`calls the format service and updates state to ${CredentialState.RequestSent}`, async () => {
+      const credentialRecord = mockCredentialRecord({
+        id: '84353745-8bd9-42e1-8d81-238ca77c29d2',
         state: CredentialState.OfferReceived,
         threadId: 'fd9c5ddb-ec11-4acd-bc32-540736249746',
         connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
       })
-      initMessages()
-    })
 
-    test(`updates state to ${CredentialState.RequestSent}, set request metadata`, async () => {
-      const repositoryUpdateSpy = jest.spyOn(credentialRepository, 'update')
+      const credentialFormats = {
+        indy: {
+          holderDid: 'did:sov:123456789abcdefghi',
+        },
+      }
 
-      // mock offer so that the request works
-
-      // when
-      await credentialService.acceptOffer({ credentialRecord })
-
-      // then
-      expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
-      const [[updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
-      expect(updatedCredentialRecord.toJSON()).toMatchObject({
-        metadata: { '_internal/indyRequest': { cred_req: 'meta-data' } },
-        state: CredentialState.RequestSent,
+      // mock resolved format call
+      mockFunction(indyCredentialFormatService.acceptOffer).mockResolvedValue({
+        attachment: requestAttachment,
+        format: new CredentialFormatSpec({
+          format: 'indy',
+          attachId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
+        }),
       })
-    })
-
-    test('returns credential request message base on existing credential offer message', async () => {
-      // given
-      const comment = 'credential request comment'
 
       // when
-      const { message: credentialRequest } = await credentialService.acceptOffer({
+      const { message } = await credentialService.acceptOffer({
+        comment: 'hello',
+        autoAcceptCredential: AutoAcceptCredential.Never,
         credentialRecord,
-        comment: 'credential request comment',
+        credentialFormats,
       })
 
       // then
-      expect(credentialRequest.toJSON()).toMatchObject({
+      expect(credentialRecord).toMatchObject({
+        state: CredentialState.RequestSent,
+        autoAcceptCredential: AutoAcceptCredential.Never,
+      })
+      expect(message).toBeInstanceOf(V1RequestCredentialMessage)
+      expect(message.toJSON()).toMatchObject({
         '@id': expect.any(String),
         '@type': 'https://didcomm.org/issue-credential/1.0/request-credential',
+        comment: 'hello',
         '~thread': {
-          thid: credentialRecord.threadId,
+          thid: 'fd9c5ddb-ec11-4acd-bc32-540736249746',
         },
-        comment,
-        'requests~attach': [
-          {
-            '@id': expect.any(String),
-            'mime-type': 'application/json',
-            data: {
-              base64: expect.any(String),
-            },
-          },
-        ],
+        'requests~attach': [JsonTransformer.toJSON(requestAttachment)],
       })
+      expect(credentialRepository.update).toHaveBeenCalledTimes(1)
+      expect(indyCredentialFormatService.acceptOffer).toHaveBeenCalledWith({
+        credentialRecord,
+        attachId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
+        offerAttachment,
+        credentialFormats: {
+          indy: {
+            holderDid: 'did:sov:123456789abcdefghi',
+          },
+        },
+      })
+      expect(didCommMessageRepository.saveOrUpdateAgentMessage).toHaveBeenCalledWith({
+        agentMessage: message,
+        associatedRecordId: '84353745-8bd9-42e1-8d81-238ca77c29d2',
+        role: DidCommMessageRole.Sender,
+      })
+    })
+
+    test(`calls updateState to update the state to ${CredentialState.RequestSent}`, async () => {
+      const credentialRecord = mockCredentialRecord({
+        state: CredentialState.OfferReceived,
+      })
+
+      const updateStateSpy = jest.spyOn(credentialService, 'updateState')
+
+      // mock resolved format call
+      mockFunction(indyCredentialFormatService.acceptOffer).mockResolvedValue({
+        attachment: requestAttachment,
+        format: new CredentialFormatSpec({
+          format: 'indy',
+          attachId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
+        }),
+      })
+
+      // when
+      await credentialService.acceptOffer({
+        credentialRecord,
+      })
+
+      // then
+      expect(updateStateSpy).toHaveBeenCalledWith(credentialRecord, CredentialState.RequestSent)
     })
 
     const validState = CredentialState.OfferReceived
@@ -361,7 +375,6 @@ describe('CredentialService', () => {
       messageContext = new InboundMessageContext(credentialRequest, {
         connection,
       })
-      initMessages()
     })
 
     test(`updates state to ${CredentialState.RequestReceived}, set request and returns credential record`, async () => {
@@ -427,7 +440,6 @@ describe('CredentialService', () => {
         threadId,
         connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
       })
-      initMessages()
     })
     test(`updates state to ${CredentialState.CredentialIssued}`, async () => {
       const repositoryUpdateSpy = jest.spyOn(credentialRepository, 'update')
@@ -524,7 +536,6 @@ describe('CredentialService', () => {
       messageContext = new InboundMessageContext(credentialResponse, {
         connection,
       })
-      initMessages()
     })
 
     test('finds credential record by thread ID and saves credential attachment into the wallet', async () => {
@@ -650,7 +661,6 @@ describe('CredentialService', () => {
       messageContext = new InboundMessageContext(credentialRequest, {
         connection,
       })
-      initMessages()
     })
 
     test(`updates state to ${CredentialState.Done} and returns credential record`, async () => {
@@ -893,304 +903,6 @@ describe('CredentialService', () => {
           ).rejects.toThrowError(`Credential record is in invalid state ${state}. Valid states are: ${validState}.`)
         })
       )
-    })
-  })
-
-  describe('revocationNotification', () => {
-    let credential: CredentialExchangeRecord
-
-    beforeEach(() => {
-      credential = mockCredentialRecord({
-        state: CredentialState.Done,
-        indyRevocationRegistryId:
-          'AsB27X6KRrJFsqZ3unNAH6:4:AsB27X6KRrJFsqZ3unNAH6:3:cl:48187:default:CL_ACCUM:3b24a9b0-a979-41e0-9964-2292f2b1b7e9',
-        indyCredentialRevocationId: '1',
-        connectionId: connection.id,
-      })
-      logger = agentConfig.logger
-    })
-
-    test('Test revocation notification event being emitted for V1', async () => {
-      const eventListenerMock = jest.fn()
-      eventEmitter.on<RevocationNotificationReceivedEvent>(
-        CredentialEventTypes.RevocationNotificationReceived,
-        eventListenerMock
-      )
-      const date = new Date(2022)
-
-      mockFunction(credentialRepository.getSingleByQuery).mockReturnValueOnce(Promise.resolve(credential))
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const spy = jest.spyOn(global, 'Date').mockImplementation(() => date)
-
-      const { indyRevocationRegistryId, indyCredentialRevocationId } = credential.getTags()
-      const revocationNotificationThreadId = `indy::${indyRevocationRegistryId}::${indyCredentialRevocationId}`
-
-      const revocationNotificationMessage = new V1RevocationNotificationMessage({
-        issueThread: revocationNotificationThreadId,
-        comment: 'Credential has been revoked',
-      })
-      const messageContext = new InboundMessageContext(revocationNotificationMessage, {
-        connection,
-      })
-
-      await revocationService.v1ProcessRevocationNotification(messageContext)
-
-      expect(eventListenerMock).toHaveBeenCalledWith({
-        type: 'RevocationNotificationReceived',
-        payload: {
-          credentialRecord: {
-            ...credential,
-            revocationNotification: {
-              revocationDate: date,
-              comment: 'Credential has been revoked',
-            },
-          },
-        },
-      })
-
-      spy.mockRestore()
-    })
-
-    test('Error is logged when no matching credential found for revocation notification V1', async () => {
-      const loggerSpy = jest.spyOn(logger, 'warn')
-
-      const revocationRegistryId =
-        'ABC12D3EFgHIjKL4mnOPQ5:4:AsB27X6KRrJFsqZ3unNAH6:3:cl:48187:default:CL_ACCUM:3b24a9b0-a979-41e0-9964-2292f2b1b7e9'
-      const credentialRevocationId = '2'
-      const revocationNotificationThreadId = `indy::${revocationRegistryId}::${credentialRevocationId}`
-      const recordNotFoundError = new RecordNotFoundError(
-        `No record found for given query '${JSON.stringify({ revocationRegistryId, credentialRevocationId })}'`,
-        {
-          recordType: CredentialExchangeRecord.type,
-        }
-      )
-
-      mockFunction(credentialRepository.getSingleByQuery).mockReturnValue(Promise.reject(recordNotFoundError))
-
-      const revocationNotificationMessage = new V1RevocationNotificationMessage({
-        issueThread: revocationNotificationThreadId,
-        comment: 'Credential has been revoked',
-      })
-      const messageContext = new InboundMessageContext(revocationNotificationMessage, { connection })
-
-      await revocationService.v1ProcessRevocationNotification(messageContext)
-
-      expect(loggerSpy).toBeCalledWith('Failed to process revocation notification message', {
-        error: recordNotFoundError,
-        threadId: revocationNotificationThreadId,
-      })
-    })
-
-    test('Error is logged when invalid threadId is passed for revocation notification V1', async () => {
-      const loggerSpy = jest.spyOn(logger, 'warn')
-
-      const revocationNotificationThreadId = 'notIndy::invalidRevRegId::invalidCredRevId'
-      const invalidThreadFormatError = new AriesFrameworkError(
-        `Incorrect revocation notification threadId format: \n${revocationNotificationThreadId}\ndoes not match\n"indy::<revocation_registry_id>::<credential_revocation_id>"`
-      )
-
-      const revocationNotificationMessage = new V1RevocationNotificationMessage({
-        issueThread: revocationNotificationThreadId,
-        comment: 'Credential has been revoked',
-      })
-      const messageContext = new InboundMessageContext(revocationNotificationMessage)
-
-      await revocationService.v1ProcessRevocationNotification(messageContext)
-
-      expect(loggerSpy).toBeCalledWith('Failed to process revocation notification message', {
-        error: invalidThreadFormatError,
-        threadId: revocationNotificationThreadId,
-      })
-    })
-
-    test('Test revocation notification event being emitted for V2', async () => {
-      const eventListenerMock = jest.fn()
-      eventEmitter.on<RevocationNotificationReceivedEvent>(
-        CredentialEventTypes.RevocationNotificationReceived,
-        eventListenerMock
-      )
-      const date = new Date(2022)
-
-      mockFunction(credentialRepository.getSingleByQuery).mockReturnValueOnce(Promise.resolve(credential))
-
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const spy = jest.spyOn(global, 'Date').mockImplementation(() => date)
-
-      const { indyRevocationRegistryId, indyCredentialRevocationId } = credential.getTags()
-      const revocationNotificationCredentialId = `${indyRevocationRegistryId}::${indyCredentialRevocationId}`
-
-      const revocationNotificationMessage = new V2RevocationNotificationMessage({
-        credentialId: revocationNotificationCredentialId,
-        revocationFormat: 'indy',
-        comment: 'Credential has been revoked',
-      })
-      const messageContext = new InboundMessageContext(revocationNotificationMessage, {
-        connection,
-      })
-
-      await revocationService.v2ProcessRevocationNotification(messageContext)
-
-      expect(eventListenerMock).toHaveBeenCalledWith({
-        type: 'RevocationNotificationReceived',
-        payload: {
-          credentialRecord: {
-            ...credential,
-            revocationNotification: {
-              revocationDate: date,
-              comment: 'Credential has been revoked',
-            },
-          },
-        },
-      })
-
-      spy.mockRestore()
-    })
-
-    test('Error is logged when no matching credential found for revocation notification V2', async () => {
-      const loggerSpy = jest.spyOn(logger, 'warn')
-
-      const revocationRegistryId =
-        'ABC12D3EFgHIjKL4mnOPQ5:4:AsB27X6KRrJFsqZ3unNAH6:3:cl:48187:default:CL_ACCUM:3b24a9b0-a979-41e0-9964-2292f2b1b7e9'
-      const credentialRevocationId = '2'
-      const credentialId = `${revocationRegistryId}::${credentialRevocationId}`
-
-      const recordNotFoundError = new RecordNotFoundError(
-        `No record found for given  query '${JSON.stringify({ revocationRegistryId, credentialRevocationId })}'`,
-        {
-          recordType: CredentialExchangeRecord.type,
-        }
-      )
-
-      mockFunction(credentialRepository.getSingleByQuery).mockReturnValue(Promise.reject(recordNotFoundError))
-
-      const revocationNotificationMessage = new V2RevocationNotificationMessage({
-        credentialId,
-        revocationFormat: 'indy',
-        comment: 'Credential has been revoked',
-      })
-      const messageContext = new InboundMessageContext(revocationNotificationMessage, { connection })
-
-      await revocationService.v2ProcessRevocationNotification(messageContext)
-
-      expect(loggerSpy).toBeCalledWith('Failed to process revocation notification message', {
-        error: recordNotFoundError,
-        credentialId,
-      })
-    })
-
-    test('Error is logged when invalid credentialId is passed for revocation notification V2', async () => {
-      const loggerSpy = jest.spyOn(logger, 'warn')
-
-      const invalidCredentialId = 'notIndy::invalidRevRegId::invalidCredRevId'
-      const invalidFormatError = new AriesFrameworkError(
-        `Incorrect revocation notification credentialId format: \n${invalidCredentialId}\ndoes not match\n"<revocation_registry_id>::<credential_revocation_id>"`
-      )
-
-      const revocationNotificationMessage = new V2RevocationNotificationMessage({
-        credentialId: invalidCredentialId,
-        revocationFormat: 'indy',
-        comment: 'Credential has been revoked',
-      })
-      const messageContext = new InboundMessageContext(revocationNotificationMessage)
-
-      await revocationService.v2ProcessRevocationNotification(messageContext)
-
-      expect(loggerSpy).toBeCalledWith('Failed to process revocation notification message', {
-        error: invalidFormatError,
-        credentialId: invalidCredentialId,
-      })
-    })
-
-    test('Test error being thrown when connection does not match issuer', async () => {
-      const loggerSpy = jest.spyOn(logger, 'warn')
-      const date = new Date(2022)
-
-      const error = new AriesFrameworkError(
-        "Credential record is associated with connection '123'. Current connection is 'fd9c5ddb-ec11-4acd-bc32-540736249746'"
-      )
-
-      mockFunction(credentialRepository.getSingleByQuery).mockReturnValueOnce(Promise.resolve(credential))
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const spy = jest.spyOn(global, 'Date').mockImplementation(() => date)
-
-      const { indyRevocationRegistryId, indyCredentialRevocationId } = credential.getTags()
-      const revocationNotificationThreadId = `indy::${indyRevocationRegistryId}::${indyCredentialRevocationId}`
-
-      const revocationNotificationMessage = new V1RevocationNotificationMessage({
-        issueThread: revocationNotificationThreadId,
-        comment: 'Credential has been revoked',
-      })
-      const messageContext = new InboundMessageContext(revocationNotificationMessage, {
-        connection: {
-          id: 'fd9c5ddb-ec11-4acd-bc32-540736249746',
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
-          assertReady: () => {},
-        } as ConnectionRecord,
-      })
-
-      await revocationService.v1ProcessRevocationNotification(messageContext)
-
-      expect(loggerSpy).toBeCalledWith('Failed to process revocation notification message', {
-        error,
-        threadId: revocationNotificationThreadId,
-      })
-
-      spy.mockRestore()
-    })
-
-    describe('revocation registry id validation', () => {
-      const revocationRegistryId =
-        'ABC12D3EFgHIjKL4mnOPQ5:4:AsB27X6KRrJFsqZ3unNAH6:3:cl:48187:N4s7y-5hema_tag ;:CL_ACCUM:3b24a9b0-a979-41e0-9964-2292f2b1b7e9'
-      test('V1 allows any character in tag part of RevRegId', async () => {
-        const loggerSpy = jest.spyOn(logger, 'warn')
-        mockFunction(credentialRepository.getSingleByQuery).mockReturnValueOnce(Promise.resolve(credential))
-
-        const revocationNotificationThreadId = `indy::${revocationRegistryId}::2`
-
-        const invalidThreadFormatError = new AriesFrameworkError(
-          `Incorrect revocation notification threadId format: \n${revocationNotificationThreadId}\ndoes not match\n"indy::<revocation_registry_id>::<credential_revocation_id>"`
-        )
-
-        const revocationNotificationMessage = new V1RevocationNotificationMessage({
-          issueThread: revocationNotificationThreadId,
-          comment: 'Credential has been revoked',
-        })
-        const messageContext = new InboundMessageContext(revocationNotificationMessage)
-
-        await revocationService.v1ProcessRevocationNotification(messageContext)
-
-        expect(loggerSpy).not.toBeCalledWith('Failed to process revocation notification message', {
-          error: invalidThreadFormatError,
-          threadId: revocationNotificationThreadId,
-        })
-      })
-
-      test('V2 allows any character in tag part of credential id', async () => {
-        const loggerSpy = jest.spyOn(logger, 'warn')
-        mockFunction(credentialRepository.getSingleByQuery).mockReturnValueOnce(Promise.resolve(credential))
-
-        const credentialId = `${revocationRegistryId}::2`
-        const invalidFormatError = new AriesFrameworkError(
-          `Incorrect revocation notification credentialId format: \n${credentialId}\ndoes not match\n"<revocation_registry_id>::<credential_revocation_id>"`
-        )
-
-        const revocationNotificationMessage = new V2RevocationNotificationMessage({
-          credentialId: credentialId,
-          revocationFormat: 'indy',
-          comment: 'Credenti1al has been revoked',
-        })
-        const messageContext = new InboundMessageContext(revocationNotificationMessage)
-
-        await revocationService.v2ProcessRevocationNotification(messageContext)
-
-        expect(loggerSpy).not.toBeCalledWith('Failed to process revocation notification message', {
-          error: invalidFormatError,
-          credentialId: credentialId,
-        })
-      })
     })
   })
 })

@@ -1,5 +1,4 @@
 import type { Attachment } from '../../../decorators/attachment/Attachment'
-import type { AutoAcceptCredential } from '../models/CredentialAutoAcceptType'
 import type { CredentialFormatSpec } from '../models/CredentialFormatSpec'
 import type { CredentialPreviewAttribute } from '../models/CredentialPreviewAttribute'
 import type { CredentialExchangeRecord } from '../repository/CredentialExchangeRecord'
@@ -50,6 +49,8 @@ export interface FormatAcceptProposalOptions<CF extends CredentialFormat> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<[CF], 'acceptProposal'>
   attachId?: string
+
+  proposalAttachment: Attachment
 }
 
 export interface FormatCreateProposalReturn extends FormatCreateReturn {
@@ -90,15 +91,30 @@ export interface FormatAcceptRequestOptions<CF extends CredentialFormat> {
   offerAttachment?: Attachment
 }
 
-// OLD
-
-export interface HandlerAutoAcceptOptions {
+// Auto accept method interfaces
+export interface FormatAutoRespondProposalOptions {
   credentialRecord: CredentialExchangeRecord
-  autoAcceptType: AutoAcceptCredential
-  messageAttributes?: CredentialPreviewAttribute[]
+  proposalAttachment: Attachment
+  offerAttachment: Attachment
+}
+
+export interface FormatAutoRespondOfferOptions {
+  credentialRecord: CredentialExchangeRecord
+  proposalAttachment: Attachment
+  offerAttachment: Attachment
+}
+
+export interface FormatAutoRespondRequestOptions {
+  credentialRecord: CredentialExchangeRecord
+  proposalAttachment?: Attachment
+  offerAttachment: Attachment
+  requestAttachment: Attachment
+}
+
+export interface FormatAutoRespondCredentialOptions {
+  credentialRecord: CredentialExchangeRecord
   proposalAttachment?: Attachment
   offerAttachment?: Attachment
-  requestAttachment?: Attachment
-  credentialAttachment?: Attachment
-  credentialDefinitionId?: string
+  requestAttachment: Attachment
+  credentialAttachment: Attachment
 }
