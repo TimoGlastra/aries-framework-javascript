@@ -1,19 +1,6 @@
-import { Lifecycle, scoped } from 'tsyringe'
-import { AgentConfig } from '../../../../agent/AgentConfig'
 import type { AgentMessage } from '../../../../agent/AgentMessage'
-import { Dispatcher } from '../../../../agent/Dispatcher'
-import { EventEmitter } from '../../../../agent/EventEmitter'
 import type { HandlerInboundMessage } from '../../../../agent/Handler'
 import type { InboundMessageContext } from '../../../../agent/models/InboundMessageContext'
-import { Attachment, AttachmentData } from '../../../../decorators/attachment/Attachment'
-import { AriesFrameworkError } from '../../../../error'
-import { DidCommMessageRepository, DidCommMessageRole } from '../../../../storage'
-import { JsonTransformer } from '../../../../utils'
-import { isLinkedAttachment } from '../../../../utils/attachment'
-import { uuid } from '../../../../utils/uuid'
-import { AckStatus } from '../../../common'
-import { ConnectionService } from '../../../connections/services'
-import { MediationRecipientService } from '../../../routing'
 import type {
   AcceptCredentialOptions,
   AcceptOfferOptions,
@@ -26,15 +13,31 @@ import type {
   NegotiateProposalOptions,
 } from '../../CredentialServiceOptions'
 import type { IndyCredentialFormat } from '../../formats/indy/IndyCredentialFormat'
+import type { CredentialPreviewAttribute } from '../../models/CredentialPreviewAttribute'
+
+import { Lifecycle, scoped } from 'tsyringe'
+
+import { AgentConfig } from '../../../../agent/AgentConfig'
+import { Dispatcher } from '../../../../agent/Dispatcher'
+import { EventEmitter } from '../../../../agent/EventEmitter'
+import { Attachment, AttachmentData } from '../../../../decorators/attachment/Attachment'
+import { AriesFrameworkError } from '../../../../error'
+import { DidCommMessageRepository, DidCommMessageRole } from '../../../../storage'
+import { JsonTransformer } from '../../../../utils'
+import { isLinkedAttachment } from '../../../../utils/attachment'
+import { uuid } from '../../../../utils/uuid'
+import { AckStatus } from '../../../common'
+import { ConnectionService } from '../../../connections/services'
+import { MediationRecipientService } from '../../../routing'
 import { IndyCredentialFormatService } from '../../formats/indy/IndyCredentialFormatService'
 import { IndyCredentialUtils } from '../../formats/indy/IndyCredentialUtils'
 import { IndyCredPropose } from '../../formats/indy/models'
 import { AutoAcceptCredential } from '../../models/CredentialAutoAcceptType'
-import type { CredentialPreviewAttribute } from '../../models/CredentialPreviewAttribute'
 import { CredentialState } from '../../models/CredentialState'
 import { CredentialExchangeRecord, CredentialMetadataKeys, CredentialRepository } from '../../repository'
 import { CredentialService } from '../../services'
 import { composeAutoAccept } from '../../util/composeAutoAccept'
+
 import {
   V1CredentialAckHandler,
   V1CredentialProblemReportHandler,
@@ -89,7 +92,7 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
   public getFormatServiceForRecordType(credentialRecordType: IndyCredentialFormat['credentialRecordType']) {
     if (credentialRecordType !== this.formatService.credentialRecordType) {
       throw new AriesFrameworkError(
-        `Unsupported credential record type ${credentialRecordType} for v1 issue credential protocol`
+        `Unsupported credential record type ${credentialRecordType} for v1 issue credential protocol (need ${this.formatService.credentialRecordType})`
       )
     }
 
