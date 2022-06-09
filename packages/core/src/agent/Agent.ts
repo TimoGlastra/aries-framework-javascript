@@ -3,12 +3,14 @@ import type { InboundTransport } from '../transport/InboundTransport'
 import type { OutboundTransport } from '../transport/OutboundTransport'
 import type { InitConfig } from '../types'
 import type { Wallet } from '../wallet/Wallet'
+import type { AgentContext } from './AgentContext'
 import type { AgentDependencies } from './AgentDependencies'
 import type { AgentMessageReceivedEvent } from './Events'
 import type { TransportSession } from './TransportService'
 import type { Subscription } from 'rxjs'
 import type { DependencyContainer } from 'tsyringe'
 
+import { Subject } from 'rxjs'
 import { concatMap, takeUntil } from 'rxjs/operators'
 import { container as baseContainer } from 'tsyringe'
 
@@ -36,6 +38,7 @@ import { WalletModule } from '../wallet/WalletModule'
 import { WalletError } from '../wallet/error'
 
 import { AgentConfig } from './AgentConfig'
+import { DefaultAgentContext } from './AgentContext'
 import { EventEmitter } from './EventEmitter'
 import { AgentEventTypes } from './Events'
 import { MessageReceiver } from './MessageReceiver'
@@ -53,6 +56,8 @@ export class Agent {
   private _isInitialized = false
   public messageSubscription: Subscription
   private walletService: Wallet
+  private agentContext: AgentContext
+  private stop$ = new Subject<boolean>()
 
   public readonly connections: ConnectionsModule
   public readonly proofs: ProofsModule
@@ -80,9 +85,11 @@ export class Agent {
     this.logger = this.agentConfig.logger
 
     // Bind class based instances
+    // T-TODO: remove this binding (need to use agent context)
     this.container.registerInstance(AgentConfig, this.agentConfig)
 
     // Based on interfaces. Need to register which class to use
+    // T-TODO: remove this binding (need to use agent context)
     if (!this.container.isRegistered(InjectionSymbols.Wallet)) {
       this.container.register(InjectionSymbols.Wallet, { useToken: IndyWallet })
     }
@@ -95,6 +102,11 @@ export class Agent {
     if (!this.container.isRegistered(InjectionSymbols.MessageRepository)) {
       this.container.registerSingleton(InjectionSymbols.MessageRepository, InMemoryMessageRepository)
     }
+
+    this.container.registerInstance(InjectionSymbols.AgentDependencies, dependencies)
+    this.container.registerInstance(InjectionSymbols.FileSystem, new dependencies.FileSystem())
+
+    this.container.registerInstance(InjectionSymbols.Stop$, this.stop$)
 
     this.logger.info('Creating agent with config', {
       ...initialConfig,
@@ -118,6 +130,10 @@ export class Agent {
     this.transportService = this.container.resolve(TransportService)
     this.walletService = this.container.resolve(InjectionSymbols.Wallet)
 
+    // Bind the default agent context to the container for use in modules etc.
+    this.agentContext = new DefaultAgentContext(this.walletService, this.agentConfig)
+    this.container.registerInstance(InjectionSymbols.AgentContext, this.agentContext)
+
     // We set the modules in the constructor because that allows to set them as read-only
     this.connections = this.container.resolve(ConnectionsModule)
     this.credentials = this.container.resolve(CredentialsModule)
@@ -137,8 +153,12 @@ export class Agent {
     this.messageSubscription = this.eventEmitter
       .observable<AgentMessageReceivedEvent>(AgentEventTypes.AgentMessageReceived)
       .pipe(
-        takeUntil(this.agentConfig.stop$),
-        concatMap((e) => this.messageReceiver.receiveMessage(e.payload.message, { connection: e.payload.connection }))
+        takeUntil(this.stop$),
+        concatMap((e) =>
+          this.messageReceiver.receiveMessage(this.agentContext, e.payload.message, {
+            connection: e.payload.connection,
+          })
+        )
       )
       .subscribe()
   }
@@ -188,7 +208,7 @@ export class Agent {
 
     // Make sure the storage is up to date
     const storageUpdateService = this.container.resolve(StorageUpdateService)
-    const isStorageUpToDate = await storageUpdateService.isUpToDate()
+    const isStorageUpToDate = await storageUpdateService.isUpToDate(this.agentContext)
     this.logger.info(`Agent storage is ${isStorageUpToDate ? '' : 'not '}up to date.`)
 
     if (!isStorageUpToDate && this.agentConfig.autoUpdateStorageOnStartup) {
@@ -197,7 +217,7 @@ export class Agent {
       await updateAssistant.initialize()
       await updateAssistant.update()
     } else if (!isStorageUpToDate) {
-      const currentVersion = await storageUpdateService.getCurrentStorageVersion()
+      const currentVersion = await storageUpdateService.getCurrentStorageVersion(this.agentContext)
       // Close wallet to prevent un-initialized agent with initialized wallet
       await this.wallet.close()
       throw new AriesFrameworkError(
@@ -246,7 +266,7 @@ export class Agent {
   public async shutdown() {
     // All observables use takeUntil with the stop$ observable
     // this means all observables will stop running if a value is emitted on this observable
-    this.agentConfig.stop$.next(true)
+    this.stop$.next(true)
 
     // Stop transports
     const allTransports = [...this.inboundTransports, ...this.outboundTransports]
@@ -265,7 +285,7 @@ export class Agent {
   }
 
   public async receiveMessage(inboundMessage: unknown, session?: TransportSession) {
-    return await this.messageReceiver.receiveMessage(inboundMessage, { session })
+    return await this.messageReceiver.receiveMessage(this.agentContext, inboundMessage, { session })
   }
 
   public get injectionContainer() {
@@ -274,6 +294,10 @@ export class Agent {
 
   public get config() {
     return this.agentConfig
+  }
+
+  public get context() {
+    return this.agentContext
   }
 
   private async getMediationConnection(mediatorInvitationUrl: string) {

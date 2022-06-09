@@ -1,3 +1,4 @@
+import type { AgentContext } from '../../agent'
 import type { Logger } from '../../logger'
 import type { VersionString } from '../../utils/version'
 
@@ -21,29 +22,31 @@ export class StorageUpdateService {
     this.logger = agentConfig.logger
   }
 
-  public async isUpToDate() {
-    const currentStorageVersion = await this.getCurrentStorageVersion()
+  public async isUpToDate(agentContext: AgentContext) {
+    const currentStorageVersion = await this.getCurrentStorageVersion(agentContext)
 
     const isUpToDate = CURRENT_FRAMEWORK_STORAGE_VERSION === currentStorageVersion
 
     return isUpToDate
   }
 
-  public async getCurrentStorageVersion(): Promise<VersionString> {
-    const storageVersionRecord = await this.getStorageVersionRecord()
+  public async getCurrentStorageVersion(agentContext: AgentContext): Promise<VersionString> {
+    const storageVersionRecord = await this.getStorageVersionRecord(agentContext)
 
     return storageVersionRecord.storageVersion
   }
 
-  public async setCurrentStorageVersion(storageVersion: VersionString) {
+  public async setCurrentStorageVersion(agentContext: AgentContext, storageVersion: VersionString) {
     this.logger.debug(`Setting current agent storage version to ${storageVersion}`)
     const storageVersionRecord = await this.storageVersionRepository.findById(
+      agentContext,
       StorageUpdateService.STORAGE_VERSION_RECORD_ID
     )
 
     if (!storageVersionRecord) {
       this.logger.trace('Storage upgrade record does not exist yet. Creating.')
       await this.storageVersionRepository.save(
+        agentContext,
         new StorageVersionRecord({
           id: StorageUpdateService.STORAGE_VERSION_RECORD_ID,
           storageVersion,
@@ -52,7 +55,7 @@ export class StorageUpdateService {
     } else {
       this.logger.trace('Storage upgrade record already exists. Updating.')
       storageVersionRecord.storageVersion = storageVersion
-      await this.storageVersionRepository.update(storageVersionRecord)
+      await this.storageVersionRepository.update(agentContext, storageVersionRecord)
     }
   }
 
@@ -62,8 +65,9 @@ export class StorageUpdateService {
    * The storageVersion will be set to the INITIAL_STORAGE_VERSION if it doesn't exist yet,
    * as we can assume the wallet was created before the udpate record existed
    */
-  public async getStorageVersionRecord() {
+  public async getStorageVersionRecord(agentContext: AgentContext) {
     let storageVersionRecord = await this.storageVersionRepository.findById(
+      agentContext,
       StorageUpdateService.STORAGE_VERSION_RECORD_ID
     )
 
@@ -72,7 +76,7 @@ export class StorageUpdateService {
         id: StorageUpdateService.STORAGE_VERSION_RECORD_ID,
         storageVersion: INITIAL_STORAGE_VERSION,
       })
-      await this.storageVersionRepository.save(storageVersionRecord)
+      await this.storageVersionRepository.save(agentContext, storageVersionRecord)
     }
 
     return storageVersionRecord

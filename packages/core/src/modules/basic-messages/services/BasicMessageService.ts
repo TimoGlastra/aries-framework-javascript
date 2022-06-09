@@ -1,3 +1,4 @@
+import type { AgentContext } from '../../../agent'
 import type { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
 import type { ConnectionRecord } from '../../connections/repository/ConnectionRecord'
 import type { BasicMessageStateChangedEvent } from '../BasicMessageEvents'
@@ -22,8 +23,7 @@ export class BasicMessageService {
     this.eventEmitter = eventEmitter
   }
 
-  public async createMessage(message: string, connectionRecord: ConnectionRecord) {
-    connectionRecord.assertReady()
+  public async createMessage(agentContext: AgentContext, message: string, connectionRecord: ConnectionRecord) {
     const basicMessage = new BasicMessage({ content: message })
 
     const basicMessageRecord = new BasicMessageRecord({
@@ -33,8 +33,8 @@ export class BasicMessageService {
       role: BasicMessageRole.Sender,
     })
 
-    await this.basicMessageRepository.save(basicMessageRecord)
-    this.emitStateChangedEvent(basicMessageRecord, basicMessage)
+    await this.basicMessageRepository.save(agentContext, basicMessageRecord)
+    this.emitStateChangedEvent(agentContext, basicMessageRecord, basicMessage)
 
     return basicMessage
   }
@@ -42,7 +42,7 @@ export class BasicMessageService {
   /**
    * @todo use connection from message context
    */
-  public async save({ message }: InboundMessageContext<BasicMessage>, connection: ConnectionRecord) {
+  public async save({ message, agentContext }: InboundMessageContext<BasicMessage>, connection: ConnectionRecord) {
     const basicMessageRecord = new BasicMessageRecord({
       sentTime: message.sentTime.toISOString(),
       content: message.content,
@@ -50,19 +50,23 @@ export class BasicMessageService {
       role: BasicMessageRole.Receiver,
     })
 
-    await this.basicMessageRepository.save(basicMessageRecord)
-    this.emitStateChangedEvent(basicMessageRecord, message)
+    await this.basicMessageRepository.save(agentContext, basicMessageRecord)
+    this.emitStateChangedEvent(agentContext, basicMessageRecord, message)
   }
 
-  private emitStateChangedEvent(basicMessageRecord: BasicMessageRecord, basicMessage: BasicMessage) {
+  private emitStateChangedEvent(
+    agentContext: AgentContext,
+    basicMessageRecord: BasicMessageRecord,
+    basicMessage: BasicMessage
+  ) {
     const clonedBasicMessageRecord = JsonTransformer.clone(basicMessageRecord)
-    this.eventEmitter.emit<BasicMessageStateChangedEvent>({
+    this.eventEmitter.emit<BasicMessageStateChangedEvent>(agentContext, {
       type: BasicMessageEventTypes.BasicMessageStateChanged,
       payload: { message: basicMessage, basicMessageRecord: clonedBasicMessageRecord },
     })
   }
 
-  public async findAllByQuery(query: Partial<BasicMessageTags>) {
-    return this.basicMessageRepository.findByQuery(query)
+  public async findAllByQuery(agentContext: AgentContext, query: Partial<BasicMessageTags>) {
+    return this.basicMessageRepository.findByQuery(agentContext, query)
   }
 }

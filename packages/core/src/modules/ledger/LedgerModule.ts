@@ -3,78 +3,81 @@ import type { NymRole } from 'indy-sdk'
 
 import { inject, scoped, Lifecycle } from 'tsyringe'
 
+import { AgentContext } from '../../agent'
 import { InjectionSymbols } from '../../constants'
 import { AriesFrameworkError } from '../../error'
-import { Wallet } from '../../wallet/Wallet'
 
 import { IndyLedgerService } from './services'
 
 @scoped(Lifecycle.ContainerScoped)
 export class LedgerModule {
   private ledgerService: IndyLedgerService
-  private wallet: Wallet
+  private agentContext: AgentContext
 
-  public constructor(@inject(InjectionSymbols.Wallet) wallet: Wallet, ledgerService: IndyLedgerService) {
+  public constructor(
+    ledgerService: IndyLedgerService,
+    @inject(InjectionSymbols.AgentContext) agentContext: AgentContext
+  ) {
     this.ledgerService = ledgerService
-    this.wallet = wallet
+    this.agentContext = agentContext
   }
 
   /**
    * Connect to all the ledger pools
    */
   public async connectToPools() {
-    await this.ledgerService.connectToPools()
+    await this.ledgerService.connectToPools(this.agentContext.config.indyLedgers)
   }
 
   public async registerPublicDid(did: string, verkey: string, alias: string, role?: NymRole) {
-    const myPublicDid = this.wallet.publicDid?.did
+    const myPublicDid = this.agentContext.wallet.publicDid?.did
 
     if (!myPublicDid) {
       throw new AriesFrameworkError('Agent has no public DID.')
     }
 
-    return this.ledgerService.registerPublicDid(myPublicDid, did, verkey, alias, role)
+    return this.ledgerService.registerPublicDid(this.agentContext, myPublicDid, did, verkey, alias, role)
   }
 
   public async getPublicDid(did: string) {
-    return this.ledgerService.getPublicDid(did)
+    return this.ledgerService.getPublicDid(this.agentContext, did)
   }
 
   public async registerSchema(schema: SchemaTemplate) {
-    const did = this.wallet.publicDid?.did
+    const did = this.agentContext.wallet.publicDid?.did
 
     if (!did) {
       throw new AriesFrameworkError('Agent has no public DID.')
     }
 
-    return this.ledgerService.registerSchema(did, schema)
+    return this.ledgerService.registerSchema(this.agentContext, did, schema)
   }
 
   public async getSchema(id: string) {
-    return this.ledgerService.getSchema(id)
+    return this.ledgerService.getSchema(this.agentContext, id)
   }
 
   public async registerCredentialDefinition(
     credentialDefinitionTemplate: Omit<CredentialDefinitionTemplate, 'signatureType'>
   ) {
-    const did = this.wallet.publicDid?.did
+    const did = this.agentContext.wallet.publicDid?.did
 
     if (!did) {
       throw new AriesFrameworkError('Agent has no public DID.')
     }
 
-    return this.ledgerService.registerCredentialDefinition(did, {
+    return this.ledgerService.registerCredentialDefinition(this.agentContext, did, {
       ...credentialDefinitionTemplate,
       signatureType: 'CL',
     })
   }
 
   public async getCredentialDefinition(id: string) {
-    return this.ledgerService.getCredentialDefinition(id)
+    return this.ledgerService.getCredentialDefinition(this.agentContext, id)
   }
 
   public async getRevocationRegistryDefinition(revocationRegistryDefinitionId: string) {
-    return this.ledgerService.getRevocationRegistryDefinition(revocationRegistryDefinitionId)
+    return this.ledgerService.getRevocationRegistryDefinition(this.agentContext, revocationRegistryDefinitionId)
   }
 
   public async getRevocationRegistryDelta(
@@ -82,6 +85,11 @@ export class LedgerModule {
     fromSeconds = 0,
     toSeconds = new Date().getTime()
   ) {
-    return this.ledgerService.getRevocationRegistryDelta(revocationRegistryDefinitionId, fromSeconds, toSeconds)
+    return this.ledgerService.getRevocationRegistryDelta(
+      this.agentContext,
+      revocationRegistryDefinitionId,
+      fromSeconds,
+      toSeconds
+    )
   }
 }

@@ -122,7 +122,7 @@ describe('0.1-0.2 | Connection', () => {
 
       expect(connectionRepository.getAll).toHaveBeenCalledTimes(1)
       expect(connectionRepository.update).toHaveBeenCalledTimes(records.length)
-      const [[updatedConnectionRecord]] = mockFunction(connectionRepository.update).mock.calls
+      const [[, updatedConnectionRecord]] = mockFunction(connectionRepository.update).mock.calls
 
       // Check first object is transformed correctly.
       //  - removed invitation, theirDidDoc, didDoc
@@ -210,7 +210,7 @@ describe('0.1-0.2 | Connection', () => {
 
       expect(didRepository.save).toHaveBeenCalledTimes(2)
 
-      const [[didRecord], [theirDidRecord]] = mockFunction(didRepository.save).mock.calls
+      const [[, didRecord], [, theirDidRecord]] = mockFunction(didRepository.save).mock.calls
 
       expect(didRecord.toJSON()).toMatchObject({
         id: didPeerR1xKJw17sUoXhejEpugMYJ.id,
@@ -314,7 +314,7 @@ describe('0.1-0.2 | Connection', () => {
       )
 
       // Both did records already exist
-      mockFunction(didRepository.findById).mockImplementation((id) =>
+      mockFunction(didRepository.findById).mockImplementation((_, id) =>
         Promise.resolve(id === didPeerR1xKJw17sUoXhejEpugMYJ.id ? didRecord : theirDidRecord)
       )
 
@@ -376,7 +376,7 @@ describe('0.1-0.2 | Connection', () => {
 
       await testModule.migrateToOobRecord(agent, connectionRecord)
 
-      const [[outOfBandRecord]] = mockFunction(outOfBandRepository.save).mock.calls
+      const [[, outOfBandRecord]] = mockFunction(outOfBandRepository.save).mock.calls
 
       expect(outOfBandRepository.save).toHaveBeenCalledTimes(1)
       expect(connectionRecord.outOfBandId).toEqual(outOfBandRecord.id)

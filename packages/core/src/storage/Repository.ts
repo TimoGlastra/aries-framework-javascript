@@ -1,3 +1,4 @@
+import type { AgentContext } from '../agent'
 import type { BaseRecord } from './BaseRecord'
 import type { BaseRecordConstructor, Query, StorageService } from './StorageService'
 
@@ -14,23 +15,23 @@ export class Repository<T extends BaseRecord<any, any, any>> {
   }
 
   /** @inheritDoc {StorageService#save} */
-  public async save(record: T): Promise<void> {
-    return this.storageService.save(record)
+  public async save(agentContext: AgentContext, record: T): Promise<void> {
+    return this.storageService.save(agentContext, record)
   }
 
   /** @inheritDoc {StorageService#update} */
-  public async update(record: T): Promise<void> {
-    return this.storageService.update(record)
+  public async update(agentContext: AgentContext, record: T): Promise<void> {
+    return this.storageService.update(agentContext, record)
   }
 
   /** @inheritDoc {StorageService#delete} */
-  public async delete(record: T): Promise<void> {
-    return this.storageService.delete(record)
+  public async delete(agentContext: AgentContext, record: T): Promise<void> {
+    return this.storageService.delete(agentContext, record)
   }
 
   /** @inheritDoc {StorageService#getById} */
-  public async getById(id: string): Promise<T> {
-    return this.storageService.getById(this.recordClass, id)
+  public async getById(agentContext: AgentContext, id: string): Promise<T> {
+    return this.storageService.getById(agentContext, this.recordClass, id)
   }
 
   /**
@@ -38,9 +39,9 @@ export class Repository<T extends BaseRecord<any, any, any>> {
    * @param id the id of the record to retrieve
    * @returns
    */
-  public async findById(id: string): Promise<T | null> {
+  public async findById(agentContext: AgentContext, id: string): Promise<T | null> {
     try {
-      return await this.storageService.getById(this.recordClass, id)
+      return await this.storageService.getById(agentContext, this.recordClass, id)
     } catch (error) {
       if (error instanceof RecordNotFoundError) return null
 
@@ -49,13 +50,13 @@ export class Repository<T extends BaseRecord<any, any, any>> {
   }
 
   /** @inheritDoc {StorageService#getAll} */
-  public async getAll(): Promise<T[]> {
-    return this.storageService.getAll(this.recordClass)
+  public async getAll(agentContext: AgentContext): Promise<T[]> {
+    return this.storageService.getAll(agentContext, this.recordClass)
   }
 
   /** @inheritDoc {StorageService#findByQuery} */
-  public async findByQuery(query: Query<T>): Promise<T[]> {
-    return this.storageService.findByQuery(this.recordClass, query)
+  public async findByQuery(agentContext: AgentContext, query: Query<T>): Promise<T[]> {
+    return this.storageService.findByQuery(agentContext, this.recordClass, query)
   }
 
   /**
@@ -64,8 +65,8 @@ export class Repository<T extends BaseRecord<any, any, any>> {
    * @returns the record, or null if not found
    * @throws {RecordDuplicateError} if multiple records are found for the given query
    */
-  public async findSingleByQuery(query: Query<T>): Promise<T | null> {
-    const records = await this.findByQuery(query)
+  public async findSingleByQuery(agentContext: AgentContext, query: Query<T>): Promise<T | null> {
+    const records = await this.findByQuery(agentContext, query)
 
     if (records.length > 1) {
       throw new RecordDuplicateError(`Multiple records found for given query '${JSON.stringify(query)}'`, {
@@ -87,8 +88,8 @@ export class Repository<T extends BaseRecord<any, any, any>> {
    * @throws {RecordDuplicateError} if multiple records are found for the given query
    * @throws {RecordNotFoundError} if no record is found for the given query
    */
-  public async getSingleByQuery(query: Query<T>): Promise<T> {
-    const record = await this.findSingleByQuery(query)
+  public async getSingleByQuery(agentContext: AgentContext, query: Query<T>): Promise<T> {
+    const record = await this.findSingleByQuery(agentContext, query)
 
     if (!record) {
       throw new RecordNotFoundError(`No record found for given query '${JSON.stringify(query)}'`, {

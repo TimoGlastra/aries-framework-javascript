@@ -1,4 +1,3 @@
-import type { AgentConfig } from '../../../agent/AgentConfig'
 import type { Handler, HandlerInboundMessage } from '../../../agent/Handler'
 import type { DidResolverService } from '../../dids'
 import type { OutOfBandService } from '../../oob/OutOfBandService'
@@ -12,7 +11,6 @@ import { DidExchangeResponseMessage } from '../messages'
 import { HandshakeProtocol } from '../models'
 
 export class DidExchangeResponseHandler implements Handler {
-  private agentConfig: AgentConfig
   private didExchangeProtocol: DidExchangeProtocol
   private outOfBandService: OutOfBandService
   private connectionService: ConnectionService
@@ -20,13 +18,11 @@ export class DidExchangeResponseHandler implements Handler {
   public supportedMessages = [DidExchangeResponseMessage]
 
   public constructor(
-    agentConfig: AgentConfig,
     didExchangeProtocol: DidExchangeProtocol,
     outOfBandService: OutOfBandService,
     connectionService: ConnectionService,
     didResolverService: DidResolverService
   ) {
-    this.agentConfig = agentConfig
     this.didExchangeProtocol = didExchangeProtocol
     this.outOfBandService = outOfBandService
     this.connectionService = connectionService
@@ -40,7 +36,7 @@ export class DidExchangeResponseHandler implements Handler {
       throw new AriesFrameworkError('Unable to process connection response without sender key or recipient key')
     }
 
-    const connectionRecord = await this.connectionService.getByThreadId(message.threadId)
+    const connectionRecord = await this.connectionService.getByThreadId(messageContext.agentContext, message.threadId)
     if (!connectionRecord) {
       throw new AriesFrameworkError(`Connection for thread ID ${message.threadId} not found!`)
     }
@@ -49,7 +45,10 @@ export class DidExchangeResponseHandler implements Handler {
       throw new AriesFrameworkError(`Connection record ${connectionRecord.id} has no 'did'`)
     }
 
-    const ourDidDocument = await this.didResolverService.resolveDidDocument(connectionRecord.did)
+    const ourDidDocument = await this.didResolverService.resolveDidDocument(
+      messageContext.agentContext,
+      connectionRecord.did
+    )
     if (!ourDidDocument) {
       throw new AriesFrameworkError(`Did document for did ${connectionRecord.did} was not resolved`)
     }
@@ -95,8 +94,12 @@ export class DidExchangeResponseHandler implements Handler {
     // TODO: should we only send complete message in case of autoAcceptConnection or always?
     // In AATH we have a separate step to send the complete. So for now we'll only do it
     // if auto accept is enable
-    if (connection.autoAcceptConnection ?? this.agentConfig.autoAcceptConnections) {
-      const message = await this.didExchangeProtocol.createComplete(connection, outOfBandRecord)
+    if (connection.autoAcceptConnection ?? messageContext.agentContext.config.autoAcceptConnections) {
+      const message = await this.didExchangeProtocol.createComplete(
+        messageContext.agentContext,
+        connection,
+        outOfBandRecord
+      )
       if (!outOfBandRecord.reusable) {
         await this.outOfBandService.updateState(outOfBandRecord, OutOfBandState.Done)
       }

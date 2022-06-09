@@ -1,6 +1,8 @@
+import type { AgentContext } from '../../../agent'
 import type { IndyLedgerService } from '../../ledger'
 
 import { getAgentConfig } from '../../../../tests/helpers'
+import { MockAgentContext } from '../../../../tests/mocks'
 import { KeyType } from '../../../crypto'
 import { IndyStorageService } from '../../../storage/IndyStorageService'
 import { JsonTransformer } from '../../../utils'
@@ -23,17 +25,19 @@ describe('peer dids', () => {
   let didRepository: DidRepository
   let didResolverService: DidResolverService
   let wallet: IndyWallet
+  let agentContext: AgentContext
 
   beforeEach(async () => {
     wallet = new IndyWallet(config)
+    agentContext = new MockAgentContext(config, wallet)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await wallet.createAndOpen(config.walletConfig!)
 
-    const storageService = new IndyStorageService<DidRecord>(wallet, config)
+    const storageService = new IndyStorageService<DidRecord>(config.agentDependencies)
     didRepository = new DidRepository(storageService)
 
     // Mocking IndyLedgerService as we're only interested in the did:peer resolver
-    didResolverService = new DidResolverService(config, {} as unknown as IndyLedgerService, didRepository)
+    didResolverService = new DidResolverService({} as unknown as IndyLedgerService, didRepository, config.logger)
   })
 
   afterEach(async () => {
@@ -121,7 +125,7 @@ describe('peer dids', () => {
       },
     })
 
-    await didRepository.save(didDocumentRecord)
+    await didRepository.save(agentContext, didDocumentRecord)
   })
 
   test('receive a did and did document', async () => {
@@ -158,13 +162,13 @@ describe('peer dids', () => {
       },
     })
 
-    await didRepository.save(didDocumentRecord)
+    await didRepository.save(agentContext, didDocumentRecord)
 
     // Then we save the did (not the did document) in the connection record
     // connectionRecord.theirDid = didPeer.did
 
     // Then when we want to send a message we can resolve the did document
-    const { didDocument: resolvedDidDocument } = await didResolverService.resolve(did)
+    const { didDocument: resolvedDidDocument } = await didResolverService.resolve(agentContext, did)
     expect(resolvedDidDocument).toBeInstanceOf(DidDocument)
     expect(resolvedDidDocument?.toJSON()).toMatchObject(didPeer1zQmY)
   })

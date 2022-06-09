@@ -2,6 +2,7 @@ import type { Logger } from '../logger'
 import type { ConnectionRecord } from '../modules/connections'
 import type { InboundTransport } from '../transport'
 import type { PlaintextMessage, EncryptedMessage } from '../types'
+import type { AgentContext } from './AgentContext'
 import type { AgentMessage } from './AgentMessage'
 import type { DecryptedMessageContext } from './EnvelopeService'
 import type { TransportSession } from './TransportService'
@@ -9,7 +10,7 @@ import type { TransportSession } from './TransportService'
 import { Lifecycle, scoped } from 'tsyringe'
 
 import { AriesFrameworkError } from '../error'
-import { ConnectionsModule } from '../modules/connections'
+import { ConnectionService } from '../modules/connections'
 import { ProblemReportError, ProblemReportMessage, ProblemReportReason } from '../modules/problem-reports'
 import { isValidJweStructure } from '../utils/JWE'
 import { JsonTransformer } from '../utils/JsonTransformer'
@@ -32,7 +33,7 @@ export class MessageReceiver {
   private messageSender: MessageSender
   private dispatcher: Dispatcher
   private logger: Logger
-  private connectionsModule: ConnectionsModule
+  private connectionService: ConnectionService
   public readonly inboundTransports: InboundTransport[] = []
 
   public constructor(
@@ -40,14 +41,14 @@ export class MessageReceiver {
     envelopeService: EnvelopeService,
     transportService: TransportService,
     messageSender: MessageSender,
-    connectionsModule: ConnectionsModule,
+    connectionService: ConnectionService,
     dispatcher: Dispatcher
   ) {
     this.config = config
     this.envelopeService = envelopeService
     this.transportService = transportService
     this.messageSender = messageSender
-    this.connectionsModule = connectionsModule
+    this.connectionService = connectionService
     this.dispatcher = dispatcher
     this.logger = this.config.logger
   }
@@ -63,27 +64,36 @@ export class MessageReceiver {
    * @param inboundMessage the message to receive and handle
    */
   public async receiveMessage(
+    agentContext: AgentContext,
     inboundMessage: unknown,
     { session, connection }: { session?: TransportSession; connection?: ConnectionRecord }
   ) {
     this.logger.debug(`Agent ${this.config.label} received message`)
     if (this.isEncryptedMessage(inboundMessage)) {
-      await this.receiveEncryptedMessage(inboundMessage as EncryptedMessage, session)
+      await this.receiveEncryptedMessage(agentContext, inboundMessage as EncryptedMessage, session)
     } else if (this.isPlaintextMessage(inboundMessage)) {
-      await this.receivePlaintextMessage(inboundMessage, connection)
+      await this.receivePlaintextMessage(agentContext, inboundMessage, connection)
     } else {
       throw new AriesFrameworkError('Unable to parse incoming message: unrecognized format')
     }
   }
 
-  private async receivePlaintextMessage(plaintextMessage: PlaintextMessage, connection?: ConnectionRecord) {
-    const message = await this.transformAndValidate(plaintextMessage)
-    const messageContext = new InboundMessageContext(message, { connection })
+  private async receivePlaintextMessage(
+    agentContext: AgentContext,
+    plaintextMessage: PlaintextMessage,
+    connection?: ConnectionRecord
+  ) {
+    const message = await this.transformAndValidate(agentContext, plaintextMessage)
+    const messageContext = new InboundMessageContext(message, { connection, agentContext })
     await this.dispatcher.dispatch(messageContext)
   }
 
-  private async receiveEncryptedMessage(encryptedMessage: EncryptedMessage, session?: TransportSession) {
-    const decryptedMessage = await this.decryptMessage(encryptedMessage)
+  private async receiveEncryptedMessage(
+    agentContext: AgentContext,
+    encryptedMessage: EncryptedMessage,
+    session?: TransportSession
+  ) {
+    const decryptedMessage = await this.decryptMessage(agentContext, encryptedMessage)
     const { plaintextMessage, senderKey, recipientKey } = decryptedMessage
 
     this.logger.info(
@@ -91,9 +101,9 @@ export class MessageReceiver {
       plaintextMessage
     )
 
-    const connection = await this.findConnectionByMessageKeys(decryptedMessage)
+    const connection = await this.findConnectionByMessageKeys(agentContext, decryptedMessage)
 
-    const message = await this.transformAndValidate(plaintextMessage, connection)
+    const message = await this.transformAndValidate(agentContext, plaintextMessage, connection)
 
     const messageContext = new InboundMessageContext(message, {
       // Only make the connection available in message context if the connection is ready
@@ -102,6 +112,7 @@ export class MessageReceiver {
       connection: connection?.isReady ? connection : undefined,
       senderKey,
       recipientKey,
+      agentContext,
     })
 
     // We want to save a session if there is a chance of returning outbound message via inbound transport.
@@ -135,9 +146,12 @@ export class MessageReceiver {
    *
    * @param message the received inbound message to decrypt
    */
-  private async decryptMessage(message: EncryptedMessage): Promise<DecryptedMessageContext> {
+  private async decryptMessage(
+    agentContext: AgentContext,
+    message: EncryptedMessage
+  ): Promise<DecryptedMessageContext> {
     try {
-      return await this.envelopeService.unpackMessage(message)
+      return await this.envelopeService.unpackMessage(agentContext, message)
     } catch (error) {
       this.logger.error('Error while decrypting message', {
         error,
@@ -162,6 +176,7 @@ export class MessageReceiver {
   }
 
   private async transformAndValidate(
+    agentContext: AgentContext,
     plaintextMessage: PlaintextMessage,
     connection?: ConnectionRecord | null
   ): Promise<AgentMessage> {
@@ -170,21 +185,21 @@ export class MessageReceiver {
       message = await this.transformMessage(plaintextMessage)
       await this.validateMessage(message)
     } catch (error) {
-      if (connection) await this.sendProblemReportMessage(error.message, connection, plaintextMessage)
+      if (connection) await this.sendProblemReportMessage(agentContext, error.message, connection, plaintextMessage)
       throw error
     }
     return message
   }
 
-  private async findConnectionByMessageKeys({
-    recipientKey,
-    senderKey,
-  }: DecryptedMessageContext): Promise<ConnectionRecord | null> {
+  private async findConnectionByMessageKeys(
+    agentContext: AgentContext,
+    { recipientKey, senderKey }: DecryptedMessageContext
+  ): Promise<ConnectionRecord | null> {
     // We only fetch connections that are sent in AuthCrypt mode
     if (!recipientKey || !senderKey) return null
 
     // Try to find the did records that holds the sender and recipient keys
-    return this.connectionsModule.findByKeys({
+    return this.connectionService.findByKeys(agentContext, {
       senderKey,
       recipientKey,
     })
@@ -237,6 +252,7 @@ export class MessageReceiver {
    * @param plaintextMessage received inbound message
    */
   private async sendProblemReportMessage(
+    agentContext: AgentContext,
     message: string,
     connection: ConnectionRecord,
     plaintextMessage: PlaintextMessage
@@ -256,7 +272,7 @@ export class MessageReceiver {
     })
     const outboundMessage = createOutboundMessage(connection, problemReportMessage)
     if (outboundMessage) {
-      await this.messageSender.sendMessage(outboundMessage)
+      await this.messageSender.sendMessage(agentContext, outboundMessage)
     }
   }
 }

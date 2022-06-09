@@ -1,3 +1,5 @@
+import type { AgentContext } from '../../../agent'
+
 import { inject, scoped, Lifecycle } from 'tsyringe'
 
 import { InjectionSymbols } from '../../../constants'
@@ -12,14 +14,14 @@ export class ConnectionRepository extends Repository<ConnectionRecord> {
     super(ConnectionRecord, storageService)
   }
 
-  public async findByDids({ ourDid, theirDid }: { ourDid: string; theirDid: string }) {
-    return this.findSingleByQuery({
+  public async findByDids(agentContext: AgentContext, { ourDid, theirDid }: { ourDid: string; theirDid: string }) {
+    return this.findSingleByQuery(agentContext, {
       did: ourDid,
       theirDid,
     })
   }
 
-  public getByThreadId(threadId: string): Promise<ConnectionRecord> {
-    return this.getSingleByQuery({ threadId })
+  public getByThreadId(agentContext: AgentContext, threadId: string): Promise<ConnectionRecord> {
+    return this.getSingleByQuery(agentContext, { threadId })
   }
 }

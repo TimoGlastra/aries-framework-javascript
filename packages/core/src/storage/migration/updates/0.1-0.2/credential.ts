@@ -18,7 +18,7 @@ export async function migrateCredentialRecordToV0_2(agent: Agent) {
   const credentialRepository = agent.injectionContainer.resolve(CredentialRepository)
 
   agent.config.logger.debug(`Fetching all credential records from storage`)
-  const allCredentials = await credentialRepository.getAll()
+  const allCredentials = await credentialRepository.getAll(agent.context)
 
   agent.config.logger.debug(`Found a total of ${allCredentials.length} credential records to update.`)
   for (const credentialRecord of allCredentials) {
@@ -26,7 +26,7 @@ export async function migrateCredentialRecordToV0_2(agent: Agent) {
 
     await updateIndyMetadata(agent, credentialRecord)
 
-    await credentialRepository.update(credentialRecord)
+    await credentialRepository.update(agent.context, credentialRecord)
 
     agent.config.logger.debug(
       `Successfully migrated credential record with id ${credentialRecord.id} to storage version 0.2`

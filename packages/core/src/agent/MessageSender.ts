@@ -1,3 +1,4 @@
+import type { AgentContext } from '.'
 import type { ConnectionRecord } from '../modules/connections'
 import type { DidDocument, Key } from '../modules/dids'
 import type { OutOfBandRecord } from '../modules/oob/repository'
@@ -65,16 +66,19 @@ export class MessageSender {
     this.outboundTransports.push(outboundTransport)
   }
 
-  public async packMessage({
-    keys,
-    message,
-    endpoint,
-  }: {
-    keys: EnvelopeKeys
-    message: AgentMessage
-    endpoint: string
-  }): Promise<OutboundPackage> {
-    const encryptedMessage = await this.envelopeService.packMessage(message, keys)
+  public async packMessage(
+    agentContext: AgentContext,
+    {
+      keys,
+      message,
+      endpoint,
+    }: {
+      keys: EnvelopeKeys
+      message: AgentMessage
+      endpoint: string
+    }
+  ): Promise<OutboundPackage> {
+    const encryptedMessage = await this.envelopeService.packMessage(agentContext, message, keys)
 
     return {
       payload: encryptedMessage,
@@ -83,14 +87,14 @@ export class MessageSender {
     }
   }
 
-  private async sendMessageToSession(session: TransportSession, message: AgentMessage) {
+  private async sendMessageToSession(agentContext: AgentContext, session: TransportSession, message: AgentMessage) {
     this.logger.debug(`Existing ${session.type} transport session has been found.`, {
       keys: session.keys,
     })
     if (!session.keys) {
       throw new AriesFrameworkError(`There are no keys for the given ${session.type} transport session.`)
     }
-    const encryptedMessage = await this.envelopeService.packMessage(message, session.keys)
+    const encryptedMessage = await this.envelopeService.packMessage(agentContext, message, session.keys)
     await session.send(encryptedMessage)
   }
 
@@ -169,6 +173,7 @@ export class MessageSender {
   }
 
   public async sendMessage(
+    agentContext: AgentContext,
     outboundMessage: OutboundMessage,
     options?: {
       transportPriority?: TransportPriorityOptions
@@ -195,7 +200,7 @@ export class MessageSender {
     if (session?.inboundMessage?.hasReturnRouting(payload.threadId)) {
       this.logger.debug(`Found session with return routing for message '${payload.id}' (connection '${connection.id}'`)
       try {
-        await this.sendMessageToSession(session, payload)
+        await this.sendMessageToSession(agentContext, session, payload)
         return
       } catch (error) {
         errors.push(error)
@@ -236,7 +241,7 @@ export class MessageSender {
     for await (const service of services) {
       try {
         // Enable return routing if the our did document does not have any inbound endpoint for given sender key
-        await this.sendMessageToService({
+        await this.sendMessageToService(agentContext, {
           message: payload,
           service,
           senderKey: firstOurAuthenticationKey,
@@ -267,7 +272,7 @@ export class MessageSender {
         senderKey: firstOurAuthenticationKey,
       }
 
-      const encryptedMessage = await this.envelopeService.packMessage(payload, keys)
+      const encryptedMessage = await this.envelopeService.packMessage(agentContext, payload, keys)
       this.messageRepository.add(connection.id, encryptedMessage)
       return
     }
@@ -281,19 +286,22 @@ export class MessageSender {
     throw new AriesFrameworkError(`Message is undeliverable to connection ${connection.id} (${connection.theirLabel})`)
   }
 
-  public async sendMessageToService({
-    message,
-    service,
-    senderKey,
-    returnRoute,
-    connectionId,
-  }: {
-    message: AgentMessage
-    service: ResolvedDidCommService
-    senderKey: Key
-    returnRoute?: boolean
-    connectionId?: string
-  }) {
+  public async sendMessageToService(
+    agentContext: AgentContext,
+    {
+      message,
+      service,
+      senderKey,
+      returnRoute,
+      connectionId,
+    }: {
+      message: AgentMessage
+      service: ResolvedDidCommService
+      senderKey: Key
+      returnRoute?: boolean
+      connectionId?: string
+    }
+  ) {
     if (this.outboundTransports.length === 0) {
       throw new AriesFrameworkError('Agent has no outbound transport!')
     }
@@ -328,7 +336,7 @@ export class MessageSender {
       throw error
     }
 
-    const outboundPackage = await this.packMessage({ message, keys, endpoint: service.serviceEndpoint })
+    const outboundPackage = await this.packMessage(agentContext, { message, keys, endpoint: service.serviceEndpoint })
     outboundPackage.endpoint = service.serviceEndpoint
     outboundPackage.connectionId = connectionId
     for (const transport of this.outboundTransports) {

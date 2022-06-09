@@ -1,12 +1,11 @@
+import type { AgentContext } from '../agent'
 import type { Buffer } from '../utils'
 import type { Jws, JwsGeneralFormat } from './JwsTypes'
 
-import { inject, Lifecycle, scoped } from 'tsyringe'
+import { Lifecycle, scoped } from 'tsyringe'
 
-import { InjectionSymbols } from '../constants'
 import { AriesFrameworkError } from '../error'
 import { JsonEncoder, TypedArrayEncoder } from '../utils'
-import { Wallet } from '../wallet'
 import { WalletError } from '../wallet/error'
 
 // TODO: support more key types, more generic jws format
@@ -16,18 +15,15 @@ const JWS_ALG = 'EdDSA'
 
 @scoped(Lifecycle.ContainerScoped)
 export class JwsService {
-  private wallet: Wallet
-
-  public constructor(@inject(InjectionSymbols.Wallet) wallet: Wallet) {
-    this.wallet = wallet
-  }
-
-  public async createJws({ payload, verkey, header }: CreateJwsOptions): Promise<JwsGeneralFormat> {
+  public async createJws(
+    agentContext: AgentContext,
+    { payload, verkey, header }: CreateJwsOptions
+  ): Promise<JwsGeneralFormat> {
     const base64Payload = TypedArrayEncoder.toBase64URL(payload)
     const base64Protected = JsonEncoder.toBase64URL(this.buildProtected(verkey))
 
     const signature = TypedArrayEncoder.toBase64URL(
-      await this.wallet.sign(TypedArrayEncoder.fromString(`${base64Protected}.${base64Payload}`), verkey)
+      await agentContext.wallet.sign(TypedArrayEncoder.fromString(`${base64Protected}.${base64Payload}`), verkey)
     )
 
     return {
@@ -40,7 +36,7 @@ export class JwsService {
   /**
    * Verify a a JWS
    */
-  public async verifyJws({ jws, payload }: VerifyJwsOptions): Promise<VerifyJwsResult> {
+  public async verifyJws(agentContext: AgentContext, { jws, payload }: VerifyJwsOptions): Promise<VerifyJwsResult> {
     const base64Payload = TypedArrayEncoder.toBase64URL(payload)
     const signatures = 'signatures' in jws ? jws.signatures : [jws]
 
@@ -67,7 +63,7 @@ export class JwsService {
       signerVerkeys.push(verkey)
 
       try {
-        const isValid = await this.wallet.verify(verkey, data, signature)
+        const isValid = await agentContext.wallet.verify(verkey, data, signature)
 
         if (!isValid) {
           return {
