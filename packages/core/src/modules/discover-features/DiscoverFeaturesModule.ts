@@ -1,16 +1,17 @@
 import type { AgentMessageProcessedEvent } from '../../agent/Events'
 import type { ParsedMessageType } from '../../utils/messageType'
 
-import { firstValueFrom, of, ReplaySubject } from 'rxjs'
+import { firstValueFrom, of, ReplaySubject, Subject } from 'rxjs'
 import { filter, takeUntil, timeout, catchError, map } from 'rxjs/operators'
-import { Lifecycle, scoped } from 'tsyringe'
+import { inject, Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../../agent/AgentConfig'
+import { AgentContext } from '../../agent'
 import { Dispatcher } from '../../agent/Dispatcher'
 import { EventEmitter } from '../../agent/EventEmitter'
 import { AgentEventTypes } from '../../agent/Events'
 import { MessageSender } from '../../agent/MessageSender'
 import { createOutboundMessage } from '../../agent/helpers'
+import { InjectionSymbols } from '../../constants'
 import { canHandleMessageType, parseMessageType } from '../../utils/messageType'
 import { ConnectionService } from '../connections/services'
 
@@ -24,7 +25,8 @@ export class DiscoverFeaturesModule {
   private messageSender: MessageSender
   private discoverFeaturesService: DiscoverFeaturesService
   private eventEmitter: EventEmitter
-  private agentConfig: AgentConfig
+  private stop$: Subject<boolean>
+  private agentContext: AgentContext
 
   public constructor(
     dispatcher: Dispatcher,
@@ -32,14 +34,16 @@ export class DiscoverFeaturesModule {
     messageSender: MessageSender,
     discoverFeaturesService: DiscoverFeaturesService,
     eventEmitter: EventEmitter,
-    agentConfig: AgentConfig
+    @inject(InjectionSymbols.Stop$) stop$: Subject<boolean>,
+    @inject(InjectionSymbols.AgentContext) agentContext: AgentContext
   ) {
     this.connectionService = connectionService
     this.messageSender = messageSender
     this.discoverFeaturesService = discoverFeaturesService
     this.registerHandlers(dispatcher)
     this.eventEmitter = eventEmitter
-    this.agentConfig = agentConfig
+    this.stop$ = stop$
+    this.agentContext = agentContext
   }
 
   public async isProtocolSupported(connectionId: string, message: { type: ParsedMessageType }) {
@@ -51,7 +55,7 @@ export class DiscoverFeaturesModule {
       .observable<AgentMessageProcessedEvent>(AgentEventTypes.AgentMessageProcessed)
       .pipe(
         // Stop when the agent shuts down
-        takeUntil(this.agentConfig.stop$),
+        takeUntil(this.stop$),
         // filter by connection id and query disclose message type
         filter(
           (e) =>
@@ -81,12 +85,12 @@ export class DiscoverFeaturesModule {
   }
 
   public async queryFeatures(connectionId: string, options: { query: string; comment?: string }) {
-    const connection = await this.connectionService.getById(connectionId)
+    const connection = await this.connectionService.getById(this.agentContext, connectionId)
 
     const queryMessage = await this.discoverFeaturesService.createQuery(options)
 
     const outbound = createOutboundMessage(connection, queryMessage)
-    await this.messageSender.sendMessage(outbound)
+    await this.messageSender.sendMessage(this.agentContext, outbound)
   }
 
   private registerHandlers(dispatcher: Dispatcher) {

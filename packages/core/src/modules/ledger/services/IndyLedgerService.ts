@@ -1,4 +1,3 @@
-import type { Wallet } from '../../..'
 import type { AgentContext } from '../../../agent'
 import type { AcceptanceMechanisms, AuthorAgreement, IndyPool, IndyPoolConfig } from '../IndyPool'
 import type {
@@ -15,7 +14,6 @@ import { inject, Lifecycle, scoped } from 'tsyringe'
 
 import { AgentDependencies } from '../../../agent/AgentDependencies'
 import { InjectionSymbols } from '../../../constants'
-import { AriesFrameworkError } from '../../../error'
 import { IndySdkError } from '../../../error/IndySdkError'
 import { Logger } from '../../../logger'
 import {
@@ -24,7 +22,7 @@ import {
   didFromRevocationRegistryDefinitionId,
 } from '../../../utils/did'
 import { isIndyError } from '../../../utils/indyError'
-import { IndyWallet } from '../../../wallet/IndyWallet'
+import { assertIndyWallet } from '../../../wallet/util/assertIndyWallet'
 import { IndyIssuerService } from '../../indy/services/IndyIssuerService'
 
 import { IndyPoolService } from './IndyPoolService'
@@ -456,7 +454,7 @@ export class IndyLedgerService {
   }
 
   private async signRequest(agentContext: AgentContext, did: string, request: LedgerRequest): Promise<LedgerRequest> {
-    this.assertIndyWallet(agentContext.wallet)
+    assertIndyWallet(agentContext.wallet)
 
     try {
       return this.indy.signRequest(agentContext.wallet.handle, did, request)
@@ -525,12 +523,6 @@ export class IndyLedgerService {
   private getFirstAcceptanceMechanism(authorAgreement: AuthorAgreement) {
     const [firstMechanism] = Object.keys(authorAgreement.acceptanceMechanisms.aml)
     return firstMechanism
-  }
-
-  private assertIndyWallet(wallet: Wallet): asserts wallet is IndyWallet {
-    if (!(wallet instanceof IndyWallet)) {
-      throw new AriesFrameworkError('IndyLedgerService can only be used with the `IndyWallet`')
-    }
   }
 }
 

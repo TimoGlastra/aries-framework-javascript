@@ -1,5 +1,5 @@
-import type { Wallet } from '..'
 import type { AgentContext } from '../agent'
+import type { IndyWallet } from '../wallet/IndyWallet'
 import type { BaseRecord, TagsBase } from './BaseRecord'
 import type { StorageService, BaseRecordConstructor, Query } from './StorageService'
 import type { default as Indy, WalletQuery, WalletRecord, WalletSearchOptions } from 'indy-sdk'
@@ -8,11 +8,11 @@ import { scoped, Lifecycle, inject } from 'tsyringe'
 
 import { AgentDependencies } from '../agent/AgentDependencies'
 import { InjectionSymbols } from '../constants'
-import { RecordNotFoundError, RecordDuplicateError, IndySdkError, AriesFrameworkError } from '../error'
+import { RecordNotFoundError, RecordDuplicateError, IndySdkError } from '../error'
 import { JsonTransformer } from '../utils/JsonTransformer'
 import { isIndyError } from '../utils/indyError'
 import { isBoolean } from '../utils/type'
-import { IndyWallet } from '../wallet/IndyWallet'
+import { assertIndyWallet } from '../wallet/util/assertIndyWallet'
 
 @scoped(Lifecycle.ContainerScoped)
 export class IndyStorageService<T extends BaseRecord> implements StorageService<T> {
@@ -131,7 +131,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
 
   /** @inheritDoc */
   public async save(agentContext: AgentContext, record: T) {
-    this.assertIndyWallet(agentContext.wallet)
+    assertIndyWallet(agentContext.wallet)
 
     const value = JsonTransformer.serialize(record)
     const tags = this.transformFromRecordTagValues(record.getTags()) as Record<string, string>
@@ -150,7 +150,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
 
   /** @inheritDoc */
   public async update(agentContext: AgentContext, record: T): Promise<void> {
-    this.assertIndyWallet(agentContext.wallet)
+    assertIndyWallet(agentContext.wallet)
 
     const value = JsonTransformer.serialize(record)
     const tags = this.transformFromRecordTagValues(record.getTags()) as Record<string, string>
@@ -173,7 +173,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
 
   /** @inheritDoc */
   public async delete(agentContext: AgentContext, record: T) {
-    this.assertIndyWallet(agentContext.wallet)
+    assertIndyWallet(agentContext.wallet)
 
     try {
       await this.indy.deleteWalletRecord(agentContext.wallet.handle, record.type, record.id)
@@ -192,7 +192,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
 
   /** @inheritDoc */
   public async getById(agentContext: AgentContext, recordClass: BaseRecordConstructor<T>, id: string): Promise<T> {
-    this.assertIndyWallet(agentContext.wallet)
+    assertIndyWallet(agentContext.wallet)
 
     try {
       const record = await this.indy.getWalletRecord(
@@ -216,7 +216,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
 
   /** @inheritDoc */
   public async getAll(agentContext: AgentContext, recordClass: BaseRecordConstructor<T>): Promise<T[]> {
-    this.assertIndyWallet(agentContext.wallet)
+    assertIndyWallet(agentContext.wallet)
 
     const recordIterator = this.search(
       agentContext.wallet,
@@ -237,7 +237,7 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
     recordClass: BaseRecordConstructor<T>,
     query: Query<T>
   ): Promise<T[]> {
-    this.assertIndyWallet(agentContext.wallet)
+    assertIndyWallet(agentContext.wallet)
 
     const indyQuery = this.indyQueryFromSearchQuery(query)
 
@@ -291,12 +291,6 @@ export class IndyStorageService<T extends BaseRecord> implements StorageService<
       }
     } catch (error) {
       throw new IndySdkError(error, `Searching '${type}' records for query '${JSON.stringify(query)}' failed`)
-    }
-  }
-
-  private assertIndyWallet(wallet: Wallet): asserts wallet is IndyWallet {
-    if (!(wallet instanceof IndyWallet)) {
-      throw new AriesFrameworkError('IndyStorageService can only be used with the `IndyWallet`')
     }
   }
 }
