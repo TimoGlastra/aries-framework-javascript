@@ -49,6 +49,7 @@ export class IndyHolderService {
     try {
       this.logger.debug('Creating Indy Proof')
       const revocationStates: Indy.RevStates = await this.indyRevocationService.createRevocationState(
+        agentContext,
         proofRequest,
         requestedCredentials
       )

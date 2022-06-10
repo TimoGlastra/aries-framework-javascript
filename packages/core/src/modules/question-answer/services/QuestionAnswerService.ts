@@ -1,14 +1,15 @@
+import type { AgentContext } from '../../../agent'
 import type { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
-import type { Logger } from '../../../logger'
 import type { QuestionAnswerStateChangedEvent } from '../QuestionAnswerEvents'
 import type { ValidResponse } from '../models'
 import type { QuestionAnswerTags } from '../repository'
 
-import { Lifecycle, scoped } from 'tsyringe'
+import { inject, Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../../../agent/AgentConfig'
 import { EventEmitter } from '../../../agent/EventEmitter'
+import { InjectionSymbols } from '../../../constants'
 import { AriesFrameworkError } from '../../../error'
+import { Logger } from '../../../logger'
 import { QuestionAnswerEventTypes } from '../QuestionAnswerEvents'
 import { QuestionAnswerRole } from '../QuestionAnswerRole'
 import { QuestionMessage, AnswerMessage } from '../messages'
@@ -24,11 +25,11 @@ export class QuestionAnswerService {
   public constructor(
     questionAnswerRepository: QuestionAnswerRepository,
     eventEmitter: EventEmitter,
-    agentConfig: AgentConfig
+    @inject(InjectionSymbols.Logger) logger: Logger
   ) {
     this.questionAnswerRepository = questionAnswerRepository
     this.eventEmitter = eventEmitter
-    this.logger = agentConfig.logger
+    this.logger = logger
   }
   /**
    * Create a question message and a new QuestionAnswer record for the questioner role
@@ -40,6 +41,7 @@ export class QuestionAnswerService {
    * @returns question message and QuestionAnswer record
    */
   public async createQuestion(
+    agentContext: AgentContext,
     connectionId: string,
     config: {
       question: string
@@ -65,9 +67,9 @@ export class QuestionAnswerService {
       validResponses: questionMessage.validResponses,
     })
 
-    await this.questionAnswerRepository.save(questionAnswerRecord)
+    await this.questionAnswerRepository.save(agentContext, questionAnswerRecord)
 
-    this.eventEmitter.emit<QuestionAnswerStateChangedEvent>({
+    this.eventEmitter.emit<QuestionAnswerStateChangedEvent>(agentContext, {
       type: QuestionAnswerEventTypes.QuestionAnswerStateChanged,
       payload: { previousState: null, questionAnswerRecord },
     })
@@ -89,7 +91,7 @@ export class QuestionAnswerService {
     this.logger.debug(`Receiving question message with id ${questionMessage.id}`)
 
     const connection = messageContext.assertReadyConnection()
-    const questionRecord = await this.getById(questionMessage.id)
+    const questionRecord = await this.getById(messageContext.agentContext, questionMessage.id)
     questionRecord.assertState(QuestionAnswerState.QuestionSent)
 
     const questionAnswerRecord = await this.createRecord({
@@ -103,9 +105,9 @@ export class QuestionAnswerService {
       validResponses: questionMessage.validResponses,
     })
 
-    await this.questionAnswerRepository.save(questionAnswerRecord)
+    await this.questionAnswerRepository.save(messageContext.agentContext, questionAnswerRecord)
 
-    this.eventEmitter.emit<QuestionAnswerStateChangedEvent>({
+    this.eventEmitter.emit<QuestionAnswerStateChangedEvent>(messageContext.agentContext, {
       type: QuestionAnswerEventTypes.QuestionAnswerStateChanged,
       payload: { previousState: null, questionAnswerRecord },
     })
@@ -120,7 +122,7 @@ export class QuestionAnswerService {
    * @param response response used in answer message
    * @returns answer message and QuestionAnswer record
    */
-  public async createAnswer(questionAnswerRecord: QuestionAnswerRecord, response: string) {
+  public async createAnswer(agentContext: AgentContext, questionAnswerRecord: QuestionAnswerRecord, response: string) {
     const answerMessage = new AnswerMessage({ response: response, threadId: questionAnswerRecord.threadId })
 
     questionAnswerRecord.assertState(QuestionAnswerState.QuestionReceived)
@@ -128,7 +130,7 @@ export class QuestionAnswerService {
     questionAnswerRecord.response = response
 
     if (questionAnswerRecord.validResponses.some((e) => e.text === response)) {
-      await this.updateState(questionAnswerRecord, QuestionAnswerState.AnswerSent)
+      await this.updateState(agentContext, questionAnswerRecord, QuestionAnswerState.AnswerSent)
     } else {
       throw new AriesFrameworkError(`Response does not match valid responses`)
     }
@@ -147,17 +149,18 @@ export class QuestionAnswerService {
     this.logger.debug(`Receiving answer message with id ${answerMessage.id}`)
 
     const connection = messageContext.assertReadyConnection()
-    const answerRecord = await this.getById(answerMessage.id)
+    const answerRecord = await this.getById(messageContext.agentContext, answerMessage.id)
     answerRecord.assertState(QuestionAnswerState.AnswerSent)
 
     const questionAnswerRecord: QuestionAnswerRecord = await this.getByThreadAndConnectionId(
+      messageContext.agentContext,
       answerMessage.threadId,
       connection?.id
     )
 
     questionAnswerRecord.response = answerMessage.response
 
-    await this.updateState(questionAnswerRecord, QuestionAnswerState.AnswerReceived)
+    await this.updateState(messageContext.agentContext, questionAnswerRecord, QuestionAnswerState.AnswerReceived)
 
     return questionAnswerRecord
   }
@@ -170,12 +173,16 @@ export class QuestionAnswerService {
    * @param newState The state to update to
    *
    */
-  private async updateState(questionAnswerRecord: QuestionAnswerRecord, newState: QuestionAnswerState) {
+  private async updateState(
+    agentContext: AgentContext,
+    questionAnswerRecord: QuestionAnswerRecord,
+    newState: QuestionAnswerState
+  ) {
     const previousState = questionAnswerRecord.state
     questionAnswerRecord.state = newState
-    await this.questionAnswerRepository.update(questionAnswerRecord)
+    await this.questionAnswerRepository.update(agentContext, questionAnswerRecord)
 
-    this.eventEmitter.emit<QuestionAnswerStateChangedEvent>({
+    this.eventEmitter.emit<QuestionAnswerStateChangedEvent>(agentContext, {
       type: QuestionAnswerEventTypes.QuestionAnswerStateChanged,
       payload: {
         previousState,
@@ -217,8 +224,12 @@ export class QuestionAnswerService {
    * @throws {RecordDuplicateError} If multiple records are found
    * @returns The credential record
    */
-  public getByThreadAndConnectionId(connectionId: string, threadId: string): Promise<QuestionAnswerRecord> {
-    return this.questionAnswerRepository.getSingleByQuery({
+  public getByThreadAndConnectionId(
+    agentContext: AgentContext,
+    connectionId: string,
+    threadId: string
+  ): Promise<QuestionAnswerRecord> {
+    return this.questionAnswerRepository.getSingleByQuery(agentContext, {
       connectionId,
       threadId,
     })
@@ -232,8 +243,8 @@ export class QuestionAnswerService {
    * @return The connection record
    *
    */
-  public getById(questionAnswerId: string): Promise<QuestionAnswerRecord> {
-    return this.questionAnswerRepository.getById(questionAnswerId)
+  public getById(agentContext: AgentContext, questionAnswerId: string): Promise<QuestionAnswerRecord> {
+    return this.questionAnswerRepository.getById(agentContext, questionAnswerId)
   }
 
   /**
@@ -241,11 +252,11 @@ export class QuestionAnswerService {
    *
    * @returns List containing all QuestionAnswer records
    */
-  public getAll() {
-    return this.questionAnswerRepository.getAll()
+  public getAll(agentContext: AgentContext) {
+    return this.questionAnswerRepository.getAll(agentContext)
   }
 
-  public async findAllByQuery(query: Partial<QuestionAnswerTags>) {
-    return this.questionAnswerRepository.findByQuery(query)
+  public async findAllByQuery(agentContext: AgentContext, query: Partial<QuestionAnswerTags>) {
+    return this.questionAnswerRepository.findByQuery(agentContext, query)
   }
 }
