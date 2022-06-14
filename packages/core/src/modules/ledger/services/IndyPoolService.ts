@@ -52,14 +52,16 @@ export class IndyPoolService {
     this.didCache = new PersistedLruCache(DID_POOL_CACHE_ID, DID_POOL_CACHE_LIMIT, cacheRepository)
   }
 
-  /**
-   * Create connections to all ledger pools
-   */
-  public async connectToPools(poolConfigs: IndyPoolConfig[]) {
+  public setPools(poolConfigs: IndyPoolConfig[]) {
     this.pools = poolConfigs.map(
       (poolConfig) => new IndyPool(poolConfig, this.agentDependencies, this.logger, this.stop$, this.fileSystem)
     )
+  }
 
+  /**
+   * Create connections to all ledger pools
+   */
+  public async connectToPools() {
     const handleArray: number[] = []
     // Sequentially connect to pools so we don't use up too many resources connecting in parallel
     for (const pool of this.pools) {

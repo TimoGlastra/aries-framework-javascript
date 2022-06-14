@@ -20,7 +20,6 @@ import { JsonEncoder } from '../../../utils/JsonEncoder'
 import { JsonTransformer } from '../../../utils/JsonTransformer'
 import { checkProofRequestForDuplicates } from '../../../utils/indyProofRequest'
 import { uuid } from '../../../utils/uuid'
-import { Wallet } from '../../../wallet/Wallet'
 import { AckStatus } from '../../common'
 import { ConnectionService } from '../../connections'
 import { IndyCredentialUtils, IndyCredential, CredentialRepository, IndyCredentialInfo } from '../../credentials'
@@ -61,7 +60,6 @@ export class ProofService {
   private proofRepository: ProofRepository
   private credentialRepository: CredentialRepository
   private ledgerService: IndyLedgerService
-  private wallet: Wallet
   private logger: Logger
   private indyHolderService: IndyHolderService
   private indyVerifierService: IndyVerifierService
@@ -72,7 +70,6 @@ export class ProofService {
   public constructor(
     proofRepository: ProofRepository,
     ledgerService: IndyLedgerService,
-    @inject(InjectionSymbols.Wallet) wallet: Wallet,
     indyHolderService: IndyHolderService,
     indyVerifierService: IndyVerifierService,
     indyRevocationService: IndyRevocationService,
@@ -84,7 +81,6 @@ export class ProofService {
     this.proofRepository = proofRepository
     this.credentialRepository = credentialRepository
     this.ledgerService = ledgerService
-    this.wallet = wallet
     this.logger = logger
     this.indyHolderService = indyHolderService
     this.indyVerifierService = indyVerifierService
@@ -614,8 +610,8 @@ export class ProofService {
     return proofRecord
   }
 
-  public async generateProofRequestNonce() {
-    return this.wallet.generateNonce()
+  public async generateProofRequestNonce(agentContext: AgentContext) {
+    return agentContext.wallet.generateNonce()
   }
 
   /**
@@ -628,10 +624,11 @@ export class ProofService {
    *
    */
   public async createProofRequestFromProposal(
+    agentContext: AgentContext,
     presentationProposal: PresentationPreview,
     config: { name: string; version: string; nonce?: string }
   ): Promise<ProofRequest> {
-    const nonce = config.nonce ?? (await this.generateProofRequestNonce())
+    const nonce = config.nonce ?? (await this.generateProofRequestNonce(agentContext))
 
     const proofRequest = new ProofRequest({
       name: config.name,

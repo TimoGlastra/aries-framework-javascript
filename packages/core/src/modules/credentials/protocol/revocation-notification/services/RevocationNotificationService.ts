@@ -1,17 +1,17 @@
 import type { AgentContext } from '../../../../../agent'
 import type { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
-import type { Logger } from '../../../../../logger'
 import type { ConnectionRecord } from '../../../../connections'
 import type { RevocationNotificationReceivedEvent } from '../../../CredentialEvents'
 import type { V1RevocationNotificationMessage } from '../messages/V1RevocationNotificationMessage'
 import type { V2RevocationNotificationMessage } from '../messages/V2RevocationNotificationMessage'
 
-import { scoped, Lifecycle } from 'tsyringe'
+import { scoped, Lifecycle, inject } from 'tsyringe'
 
-import { AgentConfig } from '../../../../../agent/AgentConfig'
 import { Dispatcher } from '../../../../../agent/Dispatcher'
 import { EventEmitter } from '../../../../../agent/EventEmitter'
+import { InjectionSymbols } from '../../../../../constants'
 import { AriesFrameworkError } from '../../../../../error/AriesFrameworkError'
+import { Logger } from '../../../../../logger'
 import { JsonTransformer } from '../../../../../utils'
 import { CredentialEventTypes } from '../../../CredentialEvents'
 import { RevocationNotification } from '../../../models/RevocationNotification'
@@ -29,13 +29,13 @@ export class RevocationNotificationService {
   public constructor(
     credentialRepository: CredentialRepository,
     eventEmitter: EventEmitter,
-    agentConfig: AgentConfig,
-    dispatcher: Dispatcher
+    dispatcher: Dispatcher,
+    @inject(InjectionSymbols.Logger) logger: Logger
   ) {
     this.credentialRepository = credentialRepository
     this.eventEmitter = eventEmitter
     this.dispatcher = dispatcher
-    this.logger = agentConfig.logger
+    this.logger = logger
 
     this.registerHandlers()
   }

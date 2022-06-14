@@ -1,5 +1,4 @@
 import type { AgentContext } from '../../../agent'
-import type { Wallet } from '../../../wallet/Wallet'
 import type { CredentialRepository } from '../../credentials/repository'
 import type { ProofStateChangedEvent } from '../ProofEvents'
 import type { CustomProofTags } from './../repository/ProofRecord'
@@ -97,7 +96,6 @@ describe('ProofService', () => {
   let proofRepository: ProofRepository
   let proofService: ProofService
   let ledgerService: IndyLedgerService
-  let wallet: Wallet
   let indyVerifierService: IndyVerifierService
   let indyHolderService: IndyHolderService
   let indyRevocationService: IndyRevocationService
@@ -120,7 +118,6 @@ describe('ProofService', () => {
     proofService = new ProofService(
       proofRepository,
       ledgerService,
-      wallet,
       indyHolderService,
       indyVerifierService,
       indyRevocationService,

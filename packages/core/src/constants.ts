@@ -1,5 +1,4 @@
 export const InjectionSymbols = {
-  Wallet: Symbol('Wallet'),
   MessageRepository: Symbol('MessageRepository'),
   StorageService: Symbol('StorageService'),
   Logger: Symbol('Logger'),

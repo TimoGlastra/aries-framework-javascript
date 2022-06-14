@@ -1,10 +1,10 @@
 import type { AgentContext } from '../../agent'
-import type { Logger } from '../../logger'
 import type { VersionString } from '../../utils/version'
 
-import { scoped, Lifecycle } from 'tsyringe'
+import { scoped, Lifecycle, inject } from 'tsyringe'
 
-import { AgentConfig } from '../../agent/AgentConfig'
+import { InjectionSymbols } from '../../constants'
+import { Logger } from '../../logger'
 
 import { StorageVersionRecord } from './repository/StorageVersionRecord'
 import { StorageVersionRepository } from './repository/StorageVersionRepository'
@@ -17,9 +17,12 @@ export class StorageUpdateService {
   private logger: Logger
   private storageVersionRepository: StorageVersionRepository
 
-  public constructor(agentConfig: AgentConfig, storageVersionRepository: StorageVersionRepository) {
+  public constructor(
+    @inject(InjectionSymbols.Logger) logger: Logger,
+    storageVersionRepository: StorageVersionRepository
+  ) {
+    this.logger = logger
     this.storageVersionRepository = storageVersionRepository
-    this.logger = agentConfig.logger
   }
 
   public async isUpToDate(agentContext: AgentContext) {

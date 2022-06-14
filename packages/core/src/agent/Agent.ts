@@ -84,15 +84,7 @@ export class Agent {
     this.agentConfig = new AgentConfig(initialConfig, dependencies)
     this.logger = this.agentConfig.logger
 
-    // Bind class based instances
-    // T-TODO: remove this binding (need to use agent context)
-    this.container.registerInstance(AgentConfig, this.agentConfig)
-
     // Based on interfaces. Need to register which class to use
-    // T-TODO: remove this binding (need to use agent context)
-    if (!this.container.isRegistered(InjectionSymbols.Wallet)) {
-      this.container.register(InjectionSymbols.Wallet, { useToken: IndyWallet })
-    }
     if (!this.container.isRegistered(InjectionSymbols.Logger)) {
       this.container.registerInstance(InjectionSymbols.Logger, this.logger)
     }
@@ -128,7 +120,7 @@ export class Agent {
     this.messageSender = this.container.resolve(MessageSender)
     this.messageReceiver = this.container.resolve(MessageReceiver)
     this.transportService = this.container.resolve(TransportService)
-    this.walletService = this.container.resolve(InjectionSymbols.Wallet)
+    this.walletService = this.container.resolve(IndyWallet)
 
     // Bind the default agent context to the container for use in modules etc.
     this.agentContext = new DefaultAgentContext(this.walletService, this.agentConfig)
@@ -234,6 +226,8 @@ export class Agent {
       await this.walletService.initPublicDid({ seed: publicDidSeed })
     }
 
+    // set the pools on the ledger.
+    this.ledger.setPools(this.agentContext.config.indyLedgers)
     // As long as value isn't false we will async connect to all genesis pools on startup
     if (connectToIndyLedgersOnStartup) {
       this.ledger.connectToPools().catch((error) => {

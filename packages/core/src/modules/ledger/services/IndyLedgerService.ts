@@ -47,8 +47,12 @@ export class IndyLedgerService {
     this.indyPoolService = indyPoolService
   }
 
-  public async connectToPools(poolConfigs: IndyPoolConfig[]) {
-    return this.indyPoolService.connectToPools(poolConfigs)
+  public setPools(poolConfigs: IndyPoolConfig[]) {
+    return this.indyPoolService.setPools(poolConfigs)
+  }
+
+  public async connectToPools() {
+    return this.indyPoolService.connectToPools()
   }
 
   public async registerPublicDid(

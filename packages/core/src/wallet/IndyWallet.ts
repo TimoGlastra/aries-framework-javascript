@@ -1,4 +1,3 @@
-import type { Logger } from '../logger'
 import type {
   EncryptedMessage,
   WalletConfig,
@@ -10,10 +9,12 @@ import type { Buffer } from '../utils/buffer'
 import type { Wallet, DidInfo, DidConfig, UnpackedMessageContext } from './Wallet'
 import type { default as Indy, WalletStorageConfig } from 'indy-sdk'
 
-import { Lifecycle, scoped } from 'tsyringe'
+import { inject, Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../agent/AgentConfig'
+import { AgentDependencies } from '../agent/AgentDependencies'
+import { InjectionSymbols } from '../constants'
 import { AriesFrameworkError } from '../error'
+import { Logger } from '../logger'
 import { JsonEncoder } from '../utils/JsonEncoder'
 import { isIndyError } from '../utils/indyError'
 
@@ -29,9 +30,12 @@ export class IndyWallet implements Wallet {
   private publicDidInfo: DidInfo | undefined
   private indy: typeof Indy
 
-  public constructor(agentConfig: AgentConfig) {
-    this.logger = agentConfig.logger
-    this.indy = agentConfig.agentDependencies.indy
+  public constructor(
+    @inject(InjectionSymbols.AgentDependencies) agentDependencies: AgentDependencies,
+    @inject(InjectionSymbols.Logger) logger: Logger
+  ) {
+    this.logger = logger
+    this.indy = agentDependencies.indy
   }
 
   public get isProvisioned() {

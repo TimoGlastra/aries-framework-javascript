@@ -1,9 +1,11 @@
 import type { Agent } from '@aries-framework/core'
+import type { Subject } from 'rxjs'
 
 import { sleep } from '../packages/core/src/utils/sleep'
 import { issueCredential, makeConnection, prepareForIssuance, presentProof } from '../packages/core/tests/helpers'
 
 import {
+  InjectionSymbols,
   V1CredentialPreview,
   AttributeFilter,
   CredentialState,

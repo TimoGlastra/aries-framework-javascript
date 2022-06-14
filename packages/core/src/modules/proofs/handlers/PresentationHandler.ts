@@ -22,7 +22,7 @@ export class PresentationHandler implements Handler {
   public async handle(messageContext: HandlerInboundMessage<PresentationHandler>) {
     const proofRecord = await this.proofService.processPresentation(messageContext)
 
-    if (this.proofResponseCoordinator.shouldAutoRespondToPresentation(proofRecord)) {
+    if (this.proofResponseCoordinator.shouldAutoRespondToPresentation(messageContext.agentContext, proofRecord)) {
       return await this.createAck(proofRecord, messageContext)
     }
   }

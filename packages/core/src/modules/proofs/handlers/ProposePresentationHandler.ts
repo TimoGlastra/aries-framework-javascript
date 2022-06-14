@@ -22,7 +22,7 @@ export class ProposePresentationHandler implements Handler {
   public async handle(messageContext: HandlerInboundMessage<ProposePresentationHandler>) {
     const proofRecord = await this.proofService.processProposal(messageContext)
 
-    if (this.proofResponseCoordinator.shouldAutoRespondToProposal(proofRecord)) {
+    if (this.proofResponseCoordinator.shouldAutoRespondToProposal(messageContext.agentContext, proofRecord)) {
       return await this.createRequest(proofRecord, messageContext)
     }
   }
@@ -44,6 +44,7 @@ export class ProposePresentationHandler implements Handler {
       return
     }
     const proofRequest = await this.proofService.createProofRequestFromProposal(
+      messageContext.agentContext,
       proofRecord.proposalMessage.presentationProposal,
       {
         name: 'proof-request',

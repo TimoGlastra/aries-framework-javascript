@@ -43,8 +43,8 @@ describe('RevocationNotificationService', () => {
     revocationNotificationService = new RevocationNotificationService(
       credentialRepository,
       eventEmitter,
-      agentConfig,
-      dispatcher
+      dispatcher,
+      agentConfig.logger
     )
   })
 

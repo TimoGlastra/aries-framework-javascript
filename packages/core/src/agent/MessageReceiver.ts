@@ -1,4 +1,3 @@
-import type { Logger } from '../logger'
 import type { ConnectionRecord } from '../modules/connections'
 import type { InboundTransport } from '../transport'
 import type { PlaintextMessage, EncryptedMessage } from '../types'
@@ -7,9 +6,11 @@ import type { AgentMessage } from './AgentMessage'
 import type { DecryptedMessageContext } from './EnvelopeService'
 import type { TransportSession } from './TransportService'
 
-import { Lifecycle, scoped } from 'tsyringe'
+import { inject, Lifecycle, scoped } from 'tsyringe'
 
+import { InjectionSymbols } from '../constants'
 import { AriesFrameworkError } from '../error'
+import { Logger } from '../logger'
 import { ConnectionService } from '../modules/connections'
 import { ProblemReportError, ProblemReportMessage, ProblemReportReason } from '../modules/problem-reports'
 import { isValidJweStructure } from '../utils/JWE'
@@ -17,7 +18,6 @@ import { JsonTransformer } from '../utils/JsonTransformer'
 import { MessageValidator } from '../utils/MessageValidator'
 import { canHandleMessageType, parseMessageType, replaceLegacyDidSovPrefixOnMessage } from '../utils/messageType'
 
-import { AgentConfig } from './AgentConfig'
 import { Dispatcher } from './Dispatcher'
 import { EnvelopeService } from './EnvelopeService'
 import { MessageSender } from './MessageSender'
@@ -27,7 +27,6 @@ import { InboundMessageContext } from './models/InboundMessageContext'
 
 @scoped(Lifecycle.ContainerScoped)
 export class MessageReceiver {
-  private config: AgentConfig
   private envelopeService: EnvelopeService
   private transportService: TransportService
   private messageSender: MessageSender
@@ -37,20 +36,19 @@ export class MessageReceiver {
   public readonly inboundTransports: InboundTransport[] = []
 
   public constructor(
-    config: AgentConfig,
     envelopeService: EnvelopeService,
     transportService: TransportService,
     messageSender: MessageSender,
     connectionService: ConnectionService,
-    dispatcher: Dispatcher
+    dispatcher: Dispatcher,
+    @inject(InjectionSymbols.Logger) logger: Logger
   ) {
-    this.config = config
     this.envelopeService = envelopeService
     this.transportService = transportService
     this.messageSender = messageSender
     this.connectionService = connectionService
     this.dispatcher = dispatcher
-    this.logger = this.config.logger
+    this.logger = logger
   }
 
   public registerInboundTransport(inboundTransport: InboundTransport) {
@@ -68,7 +66,7 @@ export class MessageReceiver {
     inboundMessage: unknown,
     { session, connection }: { session?: TransportSession; connection?: ConnectionRecord }
   ) {
-    this.logger.debug(`Agent ${this.config.label} received message`)
+    this.logger.debug(`Agent ${agentContext.config.label} received message`)
     if (this.isEncryptedMessage(inboundMessage)) {
       await this.receiveEncryptedMessage(agentContext, inboundMessage as EncryptedMessage, session)
     } else if (this.isPlaintextMessage(inboundMessage)) {

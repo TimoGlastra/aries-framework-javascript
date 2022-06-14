@@ -128,11 +128,15 @@ export class ProofsModule {
       throw new AriesFrameworkError(`Proof record with id ${proofRecordId} is missing required presentation proposal`)
     }
 
-    const proofRequest = await this.proofService.createProofRequestFromProposal(presentationProposal, {
-      name: config?.request?.name ?? 'proof-request',
-      version: config?.request?.version ?? '1.0',
-      nonce: config?.request?.nonce,
-    })
+    const proofRequest = await this.proofService.createProofRequestFromProposal(
+      this.agentContext,
+      presentationProposal,
+      {
+        name: config?.request?.name ?? 'proof-request',
+        version: config?.request?.version ?? '1.0',
+        nonce: config?.request?.nonce,
+      }
+    )
 
     const { message } = await this.proofService.createRequestAsResponse(this.agentContext, proofRecord, proofRequest, {
       comment: config?.comment,
@@ -160,7 +164,7 @@ export class ProofsModule {
   ): Promise<ProofRecord> {
     const connection = await this.connectionService.getById(this.agentContext, connectionId)
 
-    const nonce = proofRequestOptions.nonce ?? (await this.proofService.generateProofRequestNonce())
+    const nonce = proofRequestOptions.nonce ?? (await this.proofService.generateProofRequestNonce(this.agentContext))
 
     const proofRequest = new ProofRequest({
       name: proofRequestOptions.name ?? 'proof-request',
@@ -198,7 +202,7 @@ export class ProofsModule {
     requestMessage: RequestPresentationMessage
     proofRecord: ProofRecord
   }> {
-    const nonce = proofRequestOptions.nonce ?? (await this.proofService.generateProofRequestNonce())
+    const nonce = proofRequestOptions.nonce ?? (await this.proofService.generateProofRequestNonce(this.agentContext))
 
     const proofRequest = new ProofRequest({
       name: proofRequestOptions.name ?? 'proof-request',

@@ -1,20 +1,20 @@
 import type { AgentContext } from '../../agent'
 import type { ResolvedDidCommService } from '../../agent/MessageSender'
 import type { InboundMessageContext } from '../../agent/models/InboundMessageContext'
-import type { Logger } from '../../logger'
 import type { ParsedMessageType } from '../../utils/messageType'
 import type { OutOfBandDidCommService } from '../oob/domain/OutOfBandDidCommService'
 import type { OutOfBandRecord } from '../oob/repository'
 import type { ConnectionRecord } from './repository'
 import type { Routing } from './services/ConnectionService'
 
-import { Lifecycle, scoped } from 'tsyringe'
+import { inject, Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../../agent/AgentConfig'
+import { InjectionSymbols } from '../../constants'
 import { KeyType } from '../../crypto'
 import { JwsService } from '../../crypto/JwsService'
 import { Attachment, AttachmentData } from '../../decorators/attachment/Attachment'
 import { AriesFrameworkError } from '../../error'
+import { Logger } from '../../logger'
 import { JsonEncoder } from '../../utils/JsonEncoder'
 import { JsonTransformer } from '../../utils/JsonTransformer'
 import { DidDocument, Key } from '../dids'
@@ -48,23 +48,21 @@ interface DidExchangeRequestParams {
 
 @scoped(Lifecycle.ContainerScoped)
 export class DidExchangeProtocol {
-  private config: AgentConfig
   private connectionService: ConnectionService
   private jwsService: JwsService
   private didRepository: DidRepository
   private logger: Logger
 
   public constructor(
-    config: AgentConfig,
     connectionService: ConnectionService,
     didRepository: DidRepository,
-    jwsService: JwsService
+    jwsService: JwsService,
+    @inject(InjectionSymbols.Logger) logger: Logger
   ) {
-    this.config = config
     this.connectionService = connectionService
     this.didRepository = didRepository
     this.jwsService = jwsService
-    this.logger = config.logger
+    this.logger = logger
   }
 
   public async createRequest(
@@ -96,7 +94,7 @@ export class DidExchangeProtocol {
     DidExchangeStateMachine.assertCreateMessageState(DidExchangeRequestMessage.type, connectionRecord)
 
     // Create message
-    const label = params.label ?? this.config.label
+    const label = params.label ?? agentContext.config.label
     const didDocument = await this.createPeerDidDoc(agentContext, this.routingToServices(routing))
     const parentThreadId = outOfBandInvitation.id
 

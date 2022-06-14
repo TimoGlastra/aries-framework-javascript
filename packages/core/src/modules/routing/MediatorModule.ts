@@ -1,13 +1,14 @@
 import type { EncryptedMessage } from '../../types'
 import type { MediationRecord } from './repository'
 
-import { Lifecycle, scoped } from 'tsyringe'
+import { inject, Lifecycle, scoped } from 'tsyringe'
 
 import { AgentContext } from '../../agent'
 import { Dispatcher } from '../../agent/Dispatcher'
 import { EventEmitter } from '../../agent/EventEmitter'
 import { MessageSender } from '../../agent/MessageSender'
 import { createOutboundMessage } from '../../agent/helpers'
+import { InjectionSymbols } from '../../constants'
 import { ConnectionService } from '../connections/services'
 
 import { KeylistUpdateHandler, ForwardHandler, BatchPickupHandler, BatchHandler } from './handlers'
@@ -30,7 +31,7 @@ export class MediatorModule {
     messagePickupService: MessagePickupService,
     messageSender: MessageSender,
     eventEmitter: EventEmitter,
-    agentContext: AgentContext,
+    @inject(InjectionSymbols.AgentContext) agentContext: AgentContext,
     connectionService: ConnectionService
   ) {
     this.mediatorService = mediationService

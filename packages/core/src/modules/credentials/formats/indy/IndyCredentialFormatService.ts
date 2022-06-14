@@ -1,6 +1,5 @@
 import type { AgentContext } from '../../../../agent'
 import type { Attachment } from '../../../../decorators/attachment/Attachment'
-import type { Logger } from '../../../../logger'
 import type { LinkedAttachment } from '../../../../utils/LinkedAttachment'
 import type { CredentialPreviewAttributeOptions } from '../../models/CredentialPreviewAttribute'
 import type { CredentialExchangeRecord } from '../../repository/CredentialExchangeRecord'
@@ -24,15 +23,14 @@ import type * as Indy from 'indy-sdk'
 
 import { inject, Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../../../../agent/AgentConfig'
 import { EventEmitter } from '../../../../agent/EventEmitter'
 import { InjectionSymbols } from '../../../../constants'
 import { AriesFrameworkError } from '../../../../error'
+import { Logger } from '../../../../logger'
 import { JsonTransformer } from '../../../../utils/JsonTransformer'
 import { MessageValidator } from '../../../../utils/MessageValidator'
 import { getIndyDidFromVerificationMethod } from '../../../../utils/did'
 import { uuid } from '../../../../utils/uuid'
-import { Wallet } from '../../../../wallet/Wallet'
 import { ConnectionService } from '../../../connections'
 import { DidResolverService, findVerificationMethodByKeyType } from '../../../dids'
 import { IndyHolderService, IndyIssuerService } from '../../../indy'
@@ -58,7 +56,6 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
   private indyHolderService: IndyHolderService
   private connectionService: ConnectionService
   private didResolver: DidResolverService
-  private wallet: Wallet
   private logger: Logger
 
   public constructor(
@@ -69,8 +66,7 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
     indyHolderService: IndyHolderService,
     connectionService: ConnectionService,
     didResolver: DidResolverService,
-    agentConfig: AgentConfig,
-    @inject(InjectionSymbols.Wallet) wallet: Wallet
+    @inject(InjectionSymbols.Logger) logger: Logger
   ) {
     super(credentialRepository, eventEmitter)
     this.indyIssuerService = indyIssuerService
@@ -78,8 +74,7 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
     this.indyHolderService = indyHolderService
     this.connectionService = connectionService
     this.didResolver = didResolver
-    this.wallet = wallet
-    this.logger = agentConfig.logger
+    this.logger = logger
   }
 
   public readonly formatKey = 'indy' as const
@@ -525,7 +520,7 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
     // If it wasn't successful to extract the did from the connection, we'll create a new key (e.g. if using connection-less)
     // FIXME: we already create a did for the exchange when using connection-less, but this is on a higher level. We should look at
     // a way to reuse this key, but for now this is easier.
-    const { did } = await this.wallet.createDid()
+    const { did } = await agentContext.wallet.createDid()
 
     return did
   }

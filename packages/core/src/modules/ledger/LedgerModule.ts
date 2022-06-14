@@ -1,3 +1,4 @@
+import type { IndyPoolConfig } from '.'
 import type { SchemaTemplate, CredentialDefinitionTemplate } from './services'
 import type { NymRole } from 'indy-sdk'
 
@@ -22,11 +23,15 @@ export class LedgerModule {
     this.agentContext = agentContext
   }
 
+  public setPools(poolConfigs: IndyPoolConfig[]) {
+    return this.ledgerService.setPools(poolConfigs)
+  }
+
   /**
    * Connect to all the ledger pools
    */
   public async connectToPools() {
-    await this.ledgerService.connectToPools(this.agentContext.config.indyLedgers)
+    await this.ledgerService.connectToPools()
   }
 
   public async registerPublicDid(did: string, verkey: string, alias: string, role?: NymRole) {

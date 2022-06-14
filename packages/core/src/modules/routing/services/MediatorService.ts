@@ -6,13 +6,11 @@ import type { ForwardMessage, KeylistUpdateMessage, MediationRequestMessage } fr
 
 import { inject, Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../../../agent/AgentConfig'
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { InjectionSymbols } from '../../../constants'
 import { AriesFrameworkError } from '../../../error'
 import { Logger } from '../../../logger'
 import { JsonTransformer } from '../../../utils/JsonTransformer'
-import { Wallet } from '../../../wallet/Wallet'
 import { RoutingEventTypes } from '../RoutingEvents'
 import {
   KeylistUpdateAction,
@@ -39,8 +37,6 @@ export class MediatorService {
   public constructor(
     mediationRepository: MediationRepository,
     mediatorRoutingRepository: MediatorRoutingRepository,
-    agentConfig: AgentConfig,
-    @inject(InjectionSymbols.Wallet) wallet: Wallet,
     eventEmitter: EventEmitter,
     @inject(InjectionSymbols.Logger) logger: Logger
   ) {

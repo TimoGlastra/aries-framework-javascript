@@ -19,7 +19,7 @@ describe('IndyStorageService', () => {
   beforeEach(async () => {
     const config = getAgentConfig('IndyStorageServiceTest')
     indy = config.agentDependencies.indy
-    wallet = new IndyWallet(config)
+    wallet = new IndyWallet(config.agentDependencies, config.logger)
     agentContext = new MockAgentContext(config, wallet)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await wallet.createAndOpen(config.walletConfig!)
