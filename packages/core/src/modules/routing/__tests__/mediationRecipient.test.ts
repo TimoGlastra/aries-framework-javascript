@@ -1,6 +1,8 @@
+import type { AgentContext } from '../../../agent'
 import type { Wallet } from '../../../wallet/Wallet'
 
 import { getAgentConfig, getMockConnection, mockFunction } from '../../../../tests/helpers'
+import { MockAgentContext } from '../../../../tests/mocks'
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { AgentEventTypes } from '../../../agent/Events'
 import { MessageSender } from '../../../agent/MessageSender'
@@ -52,9 +54,11 @@ describe('MediationRecipientService', () => {
   let messageSender: MessageSender
   let mediationRecipientService: MediationRecipientService
   let mediationRecord: MediationRecord
+  let agentContext: AgentContext
 
   beforeAll(async () => {
     wallet = new IndyWallet(config)
+    agentContext = new MockAgentContext(config, wallet)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await wallet.createAndOpen(config.walletConfig!)
   })
@@ -67,7 +71,7 @@ describe('MediationRecipientService', () => {
     eventEmitter = new EventEmitterMock()
     connectionRepository = new ConnectionRepositoryMock()
     didRepository = new DidRepositoryMock()
-    connectionService = new ConnectionService(wallet, config, connectionRepository, didRepository, eventEmitter)
+    connectionService = new ConnectionService(config.logger, connectionRepository, didRepository, eventEmitter)
     mediationRepository = new MediationRepositoryMock()
     messageSender = new MessageSenderMock()
 
@@ -81,10 +85,8 @@ describe('MediationRecipientService', () => {
     mockFunction(mediationRepository.getByConnectionId).mockResolvedValue(mediationRecord)
 
     mediationRecipientService = new MediationRecipientService(
-      wallet,
       connectionService,
       messageSender,
-      config,
       mediationRepository,
       eventEmitter
     )
@@ -123,7 +125,7 @@ describe('MediationRecipientService', () => {
         messageCount: 0,
       })
 
-      const messageContext = new InboundMessageContext(status, { connection: mockConnection })
+      const messageContext = new InboundMessageContext(status, { connection: mockConnection, agentContext })
       const deliveryRequestMessage = await mediationRecipientService.processStatus(messageContext)
       expect(deliveryRequestMessage).toBeNull()
     })
@@ -132,7 +134,7 @@ describe('MediationRecipientService', () => {
       const status = new StatusMessage({
         messageCount: 1,
       })
-      const messageContext = new InboundMessageContext(status, { connection: mockConnection })
+      const messageContext = new InboundMessageContext(status, { connection: mockConnection, agentContext })
 
       const deliveryRequestMessage = await mediationRecipientService.processStatus(messageContext)
       expect(deliveryRequestMessage)
@@ -143,7 +145,7 @@ describe('MediationRecipientService', () => {
       const status = new StatusMessage({
         messageCount: 1,
       })
-      const messageContext = new InboundMessageContext(status, { connection: mockConnection })
+      const messageContext = new InboundMessageContext(status, { connection: mockConnection, agentContext })
 
       mediationRecord.role = MediationRole.Mediator
       await expect(mediationRecipientService.processStatus(messageContext)).rejects.toThrowError(
@@ -161,7 +163,10 @@ describe('MediationRecipientService', () => {
 
   describe('processDelivery', () => {
     it('if the delivery has no attachments expect an error', async () => {
-      const messageContext = new InboundMessageContext({} as MessageDeliveryMessage, { connection: mockConnection })
+      const messageContext = new InboundMessageContext({} as MessageDeliveryMessage, {
+        connection: mockConnection,
+        agentContext,
+      })
 
       await expect(mediationRecipientService.processDelivery(messageContext)).rejects.toThrowError(
         new AriesFrameworkError('Error processing attachments')
@@ -181,7 +186,10 @@ describe('MediationRecipientService', () => {
           }),
         ],
       })
-      const messageContext = new InboundMessageContext(messageDeliveryMessage, { connection: mockConnection })
+      const messageContext = new InboundMessageContext(messageDeliveryMessage, {
+        connection: mockConnection,
+        agentContext,
+      })
 
       const messagesReceivedMessage = await mediationRecipientService.processDelivery(messageContext)
 
@@ -214,7 +222,10 @@ describe('MediationRecipientService', () => {
           }),
         ],
       })
-      const messageContext = new InboundMessageContext(messageDeliveryMessage, { connection: mockConnection })
+      const messageContext = new InboundMessageContext(messageDeliveryMessage, {
+        connection: mockConnection,
+        agentContext,
+      })
 
       await mediationRecipientService.processDelivery(messageContext)
 
@@ -246,7 +257,10 @@ describe('MediationRecipientService', () => {
           }),
         ],
       })
-      const messageContext = new InboundMessageContext(messageDeliveryMessage, { connection: mockConnection })
+      const messageContext = new InboundMessageContext(messageDeliveryMessage, {
+        connection: mockConnection,
+        agentContext,
+      })
 
       mediationRecord.role = MediationRole.Mediator
       await expect(mediationRecipientService.processDelivery(messageContext)).rejects.toThrowError(

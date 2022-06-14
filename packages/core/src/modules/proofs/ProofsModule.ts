@@ -4,14 +4,16 @@ import type { RequestedCredentials, RetrievedCredentials } from './models'
 import type { ProofRequestOptions } from './models/ProofRequest'
 import type { ProofRecord } from './repository/ProofRecord'
 
-import { Lifecycle, scoped } from 'tsyringe'
+import { inject, Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../../agent/AgentConfig'
+import { AgentContext } from '../../agent'
 import { Dispatcher } from '../../agent/Dispatcher'
 import { MessageSender } from '../../agent/MessageSender'
 import { createOutboundMessage } from '../../agent/helpers'
+import { InjectionSymbols } from '../../constants'
 import { ServiceDecorator } from '../../decorators/service/ServiceDecorator'
 import { AriesFrameworkError } from '../../error'
+import { Logger } from '../../logger'
 import { ConnectionService } from '../connections/services/ConnectionService'
 import { MediationRecipientService } from '../routing/services/MediationRecipientService'
 
@@ -34,24 +36,27 @@ export class ProofsModule {
   private connectionService: ConnectionService
   private messageSender: MessageSender
   private mediationRecipientService: MediationRecipientService
-  private agentConfig: AgentConfig
+  private agentContext: AgentContext
   private proofResponseCoordinator: ProofResponseCoordinator
+  private logger: Logger
 
   public constructor(
     dispatcher: Dispatcher,
     proofService: ProofService,
     connectionService: ConnectionService,
     mediationRecipientService: MediationRecipientService,
-    agentConfig: AgentConfig,
+    @inject(InjectionSymbols.AgentContext) agentContext: AgentContext,
     messageSender: MessageSender,
-    proofResponseCoordinator: ProofResponseCoordinator
+    proofResponseCoordinator: ProofResponseCoordinator,
+    @inject(InjectionSymbols.Logger) logger: Logger
   ) {
     this.proofService = proofService
     this.connectionService = connectionService
     this.messageSender = messageSender
     this.mediationRecipientService = mediationRecipientService
-    this.agentConfig = agentConfig
+    this.agentContext = agentContext
     this.proofResponseCoordinator = proofResponseCoordinator
+    this.logger = logger
     this.registerHandlers(dispatcher)
   }
 
@@ -73,12 +78,17 @@ export class ProofsModule {
       autoAcceptProof?: AutoAcceptProof
     }
   ): Promise<ProofRecord> {
-    const connection = await this.connectionService.getById(connectionId)
+    const connection = await this.connectionService.getById(this.agentContext, connectionId)
 
-    const { message, proofRecord } = await this.proofService.createProposal(connection, presentationProposal, config)
+    const { message, proofRecord } = await this.proofService.createProposal(
+      this.agentContext,
+      connection,
+      presentationProposal,
+      config
+    )
 
     const outbound = createOutboundMessage(connection, message)
-    await this.messageSender.sendMessage(outbound)
+    await this.messageSender.sendMessage(this.agentContext, outbound)
 
     return proofRecord
   }
@@ -103,7 +113,7 @@ export class ProofsModule {
       comment?: string
     }
   ): Promise<ProofRecord> {
-    const proofRecord = await this.proofService.getById(proofRecordId)
+    const proofRecord = await this.proofService.getById(this.agentContext, proofRecordId)
 
     if (!proofRecord.connectionId) {
       throw new AriesFrameworkError(
@@ -111,7 +121,7 @@ export class ProofsModule {
       )
     }
 
-    const connection = await this.connectionService.getById(proofRecord.connectionId)
+    const connection = await this.connectionService.getById(this.agentContext, proofRecord.connectionId)
 
     const presentationProposal = proofRecord.proposalMessage?.presentationProposal
     if (!presentationProposal) {
@@ -124,12 +134,12 @@ export class ProofsModule {
       nonce: config?.request?.nonce,
     })
 
-    const { message } = await this.proofService.createRequestAsResponse(proofRecord, proofRequest, {
+    const { message } = await this.proofService.createRequestAsResponse(this.agentContext, proofRecord, proofRequest, {
       comment: config?.comment,
     })
 
     const outboundMessage = createOutboundMessage(connection, message)
-    await this.messageSender.sendMessage(outboundMessage)
+    await this.messageSender.sendMessage(this.agentContext, outboundMessage)
 
     return proofRecord
   }
@@ -148,7 +158,7 @@ export class ProofsModule {
     proofRequestOptions: CreateProofRequestOptions,
     config?: ProofRequestConfig
   ): Promise<ProofRecord> {
-    const connection = await this.connectionService.getById(connectionId)
+    const connection = await this.connectionService.getById(this.agentContext, connectionId)
 
     const nonce = proofRequestOptions.nonce ?? (await this.proofService.generateProofRequestNonce())
 
@@ -160,10 +170,15 @@ export class ProofsModule {
       requestedPredicates: proofRequestOptions.requestedPredicates,
     })
 
-    const { message, proofRecord } = await this.proofService.createRequest(proofRequest, connection, config)
+    const { message, proofRecord } = await this.proofService.createRequest(
+      this.agentContext,
+      proofRequest,
+      connection,
+      config
+    )
 
     const outboundMessage = createOutboundMessage(connection, message)
-    await this.messageSender.sendMessage(outboundMessage)
+    await this.messageSender.sendMessage(this.agentContext, outboundMessage)
 
     return proofRecord
   }
@@ -193,10 +208,15 @@ export class ProofsModule {
       requestedPredicates: proofRequestOptions.requestedPredicates,
     })
 
-    const { message, proofRecord } = await this.proofService.createRequest(proofRequest, undefined, config)
+    const { message, proofRecord } = await this.proofService.createRequest(
+      this.agentContext,
+      proofRequest,
+      undefined,
+      config
+    )
 
     // Create and set ~service decorator
-    const routing = await this.mediationRecipientService.getRouting()
+    const routing = await this.mediationRecipientService.getRouting(this.agentContext)
     message.service = new ServiceDecorator({
       serviceEndpoint: routing.endpoints[0],
       recipientKeys: [routing.recipientKey.publicKeyBase58],
@@ -205,7 +225,7 @@ export class ProofsModule {
 
     // Save ~service decorator to record (to remember our verkey)
     proofRecord.requestMessage = message
-    await this.proofService.update(proofRecord)
+    await this.proofService.update(this.agentContext, proofRecord)
 
     return { proofRecord, requestMessage: message }
   }
@@ -227,22 +247,27 @@ export class ProofsModule {
       comment?: string
     }
   ): Promise<ProofRecord> {
-    const record = await this.proofService.getById(proofRecordId)
-    const { message, proofRecord } = await this.proofService.createPresentation(record, requestedCredentials, config)
+    const record = await this.proofService.getById(this.agentContext, proofRecordId)
+    const { message, proofRecord } = await this.proofService.createPresentation(
+      this.agentContext,
+      record,
+      requestedCredentials,
+      config
+    )
 
     // Use connection if present
     if (proofRecord.connectionId) {
-      const connection = await this.connectionService.getById(proofRecord.connectionId)
+      const connection = await this.connectionService.getById(this.agentContext, proofRecord.connectionId)
 
       const outboundMessage = createOutboundMessage(connection, message)
-      await this.messageSender.sendMessage(outboundMessage)
+      await this.messageSender.sendMessage(this.agentContext, outboundMessage)
 
       return proofRecord
     }
     // Use ~service decorator otherwise
     else if (proofRecord.requestMessage?.service) {
       // Create ~service decorator
-      const routing = await this.mediationRecipientService.getRouting()
+      const routing = await this.mediationRecipientService.getRouting(this.agentContext)
       const ourService = new ServiceDecorator({
         serviceEndpoint: routing.endpoints[0],
         recipientKeys: [routing.recipientKey.publicKeyBase58],
@@ -254,9 +279,9 @@ export class ProofsModule {
       // Set and save ~service decorator to record (to remember our verkey)
       message.service = ourService
       proofRecord.presentationMessage = message
-      await this.proofService.update(proofRecord)
+      await this.proofService.update(this.agentContext, proofRecord)
 
-      await this.messageSender.sendMessageToService({
+      await this.messageSender.sendMessageToService(this.agentContext, {
         message,
         service: recipientService.resolvedDidCommService,
         senderKey: ourService.resolvedDidCommService.recipientKeys[0],
@@ -279,8 +304,8 @@ export class ProofsModule {
    * @returns proof record that was declined
    */
   public async declineRequest(proofRecordId: string) {
-    const proofRecord = await this.proofService.getById(proofRecordId)
-    await this.proofService.declineRequest(proofRecord)
+    const proofRecord = await this.proofService.getById(this.agentContext, proofRecordId)
+    await this.proofService.declineRequest(this.agentContext, proofRecord)
     return proofRecord
   }
 
@@ -293,21 +318,21 @@ export class ProofsModule {
    *
    */
   public async acceptPresentation(proofRecordId: string): Promise<ProofRecord> {
-    const record = await this.proofService.getById(proofRecordId)
-    const { message, proofRecord } = await this.proofService.createAck(record)
+    const record = await this.proofService.getById(this.agentContext, proofRecordId)
+    const { message, proofRecord } = await this.proofService.createAck(this.agentContext, record)
 
     // Use connection if present
     if (proofRecord.connectionId) {
-      const connection = await this.connectionService.getById(proofRecord.connectionId)
+      const connection = await this.connectionService.getById(this.agentContext, proofRecord.connectionId)
       const outboundMessage = createOutboundMessage(connection, message)
-      await this.messageSender.sendMessage(outboundMessage)
+      await this.messageSender.sendMessage(this.agentContext, outboundMessage)
     }
     // Use ~service decorator otherwise
     else if (proofRecord.requestMessage?.service && proofRecord.presentationMessage?.service) {
       const recipientService = proofRecord.presentationMessage?.service
       const ourService = proofRecord.requestMessage.service
 
-      await this.messageSender.sendMessageToService({
+      await this.messageSender.sendMessageToService(this.agentContext, {
         message,
         service: recipientService.resolvedDidCommService,
         senderKey: ourService.resolvedDidCommService.recipientKeys[0],
@@ -341,7 +366,7 @@ export class ProofsModule {
     proofRecordId: string,
     config?: GetRequestedCredentialsConfig
   ): Promise<RetrievedCredentials> {
-    const proofRecord = await this.proofService.getById(proofRecordId)
+    const proofRecord = await this.proofService.getById(this.agentContext, proofRecordId)
 
     const indyProofRequest = proofRecord.requestMessage?.indyProofRequest
     const presentationPreview = config?.filterByPresentationPreview
@@ -354,7 +379,7 @@ export class ProofsModule {
       )
     }
 
-    return this.proofService.getRequestedCredentialsForProofRequest(indyProofRequest, {
+    return this.proofService.getRequestedCredentialsForProofRequest(this.agentContext, indyProofRequest, {
       presentationProposal: presentationPreview,
       filterByNonRevocationRequirements: config?.filterByNonRevocationRequirements ?? true,
     })
@@ -381,11 +406,11 @@ export class ProofsModule {
    * @returns proof record associated with the proof problem report message
    */
   public async sendProblemReport(proofRecordId: string, message: string) {
-    const record = await this.proofService.getById(proofRecordId)
+    const record = await this.proofService.getById(this.agentContext, proofRecordId)
     if (!record.connectionId) {
       throw new AriesFrameworkError(`No connectionId found for proof record '${record.id}'.`)
     }
-    const connection = await this.connectionService.getById(record.connectionId)
+    const connection = await this.connectionService.getById(this.agentContext, record.connectionId)
     const presentationProblemReportMessage = new PresentationProblemReportMessage({
       description: {
         en: message,
@@ -396,7 +421,7 @@ export class ProofsModule {
       threadId: record.threadId,
     })
     const outboundMessage = createOutboundMessage(connection, presentationProblemReportMessage)
-    await this.messageSender.sendMessage(outboundMessage)
+    await this.messageSender.sendMessage(this.agentContext, outboundMessage)
 
     return record
   }
@@ -407,7 +432,7 @@ export class ProofsModule {
    * @returns List containing all proof records
    */
   public getAll(): Promise<ProofRecord[]> {
-    return this.proofService.getAll()
+    return this.proofService.getAll(this.agentContext)
   }
 
   /**
@@ -420,7 +445,7 @@ export class ProofsModule {
    *
    */
   public async getById(proofRecordId: string): Promise<ProofRecord> {
-    return this.proofService.getById(proofRecordId)
+    return this.proofService.getById(this.agentContext, proofRecordId)
   }
 
   /**
@@ -431,7 +456,7 @@ export class ProofsModule {
    *
    */
   public async findById(proofRecordId: string): Promise<ProofRecord | null> {
-    return this.proofService.findById(proofRecordId)
+    return this.proofService.findById(this.agentContext, proofRecordId)
   }
 
   /**
@@ -440,24 +465,22 @@ export class ProofsModule {
    * @param proofId the proof record id
    */
   public async deleteById(proofId: string) {
-    return this.proofService.deleteById(proofId)
+    return this.proofService.deleteById(this.agentContext, proofId)
   }
 
   private registerHandlers(dispatcher: Dispatcher) {
     dispatcher.registerHandler(
-      new ProposePresentationHandler(this.proofService, this.agentConfig, this.proofResponseCoordinator)
+      new ProposePresentationHandler(this.proofService, this.proofResponseCoordinator, this.logger)
     )
     dispatcher.registerHandler(
       new RequestPresentationHandler(
         this.proofService,
-        this.agentConfig,
         this.proofResponseCoordinator,
-        this.mediationRecipientService
+        this.mediationRecipientService,
+        this.logger
       )
     )
-    dispatcher.registerHandler(
-      new PresentationHandler(this.proofService, this.agentConfig, this.proofResponseCoordinator)
-    )
+    dispatcher.registerHandler(new PresentationHandler(this.proofService, this.proofResponseCoordinator, this.logger))
     dispatcher.registerHandler(new PresentationAckHandler(this.proofService))
     dispatcher.registerHandler(new PresentationProblemReportHandler(this.proofService))
   }

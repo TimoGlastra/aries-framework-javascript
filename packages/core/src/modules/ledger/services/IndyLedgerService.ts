@@ -134,7 +134,7 @@ export class IndyLedgerService {
     try {
       this.logger.debug(`Register schema on ledger '${pool.id}' with did '${did}'`, schemaTemplate)
       const { name, attributes, version } = schemaTemplate
-      const schema = await this.indyIssuer.createSchema({ originDid: did, name, version, attributes })
+      const schema = await this.indyIssuer.createSchema(agentContext, { originDid: did, name, version, attributes })
 
       const request = await this.indy.buildSchemaRequest(did, schema)
 
@@ -204,7 +204,7 @@ export class IndyLedgerService {
       )
       const { schema, tag, signatureType, supportRevocation } = credentialDefinitionTemplate
 
-      const credentialDefinition = await this.indyIssuer.createCredentialDefinition({
+      const credentialDefinition = await this.indyIssuer.createCredentialDefinition(agentContext, {
         issuerDid: did,
         schema,
         tag,

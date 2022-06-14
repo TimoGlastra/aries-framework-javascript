@@ -1,3 +1,5 @@
+import type { AgentContext } from '../../../agent'
+
 import { inject, scoped, Lifecycle } from 'tsyringe'
 
 import { InjectionSymbols } from '../../../constants'
@@ -12,13 +14,13 @@ export class MediationRepository extends Repository<MediationRecord> {
     super(MediationRecord, storageService)
   }
 
-  public getSingleByRecipientKey(recipientKey: string) {
-    return this.getSingleByQuery({
+  public getSingleByRecipientKey(agentContext: AgentContext, recipientKey: string) {
+    return this.getSingleByQuery(agentContext, {
       recipientKeys: [recipientKey],
     })
   }
 
-  public async getByConnectionId(connectionId: string): Promise<MediationRecord> {
-    return this.getSingleByQuery({ connectionId })
+  public async getByConnectionId(agentContext: AgentContext, connectionId: string): Promise<MediationRecord> {
+    return this.getSingleByQuery(agentContext, { connectionId })
   }
 }

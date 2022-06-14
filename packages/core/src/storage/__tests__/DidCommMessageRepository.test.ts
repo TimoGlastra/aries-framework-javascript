@@ -1,4 +1,7 @@
-import { mockFunction } from '../../../tests/helpers'
+import type { AgentContext } from '../../agent'
+
+import { getAgentConfig, mockFunction } from '../../../tests/helpers'
+import { MockAgentContext } from '../../../tests/mocks'
 import { ConnectionInvitationMessage } from '../../modules/connections'
 import { JsonTransformer } from '../../utils/JsonTransformer'
 import { IndyStorageService } from '../IndyStorageService'
@@ -16,13 +19,17 @@ const invitationJson = {
   label: 'test',
 }
 
+const config = getAgentConfig('DidCommMessageRepository')
+
 describe('Repository', () => {
   let repository: DidCommMessageRepository
   let storageMock: IndyStorageService<DidCommMessageRecord>
+  let agentContext: AgentContext
 
   beforeEach(async () => {
     storageMock = new StorageMock()
     repository = new DidCommMessageRepository(storageMock)
+    agentContext = new MockAgentContext(config)
   })
 
   const getRecord = ({ id }: { id?: string } = {}) => {
@@ -39,7 +46,7 @@ describe('Repository', () => {
       const record = getRecord({ id: 'test-id' })
       mockFunction(storageMock.findByQuery).mockReturnValue(Promise.resolve([record]))
 
-      const invitation = await repository.findAgentMessage({
+      const invitation = await repository.findAgentMessage(agentContext, {
         messageClass: ConnectionInvitationMessage,
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
       })
@@ -58,7 +65,7 @@ describe('Repository', () => {
       const record = getRecord({ id: 'test-id' })
       mockFunction(storageMock.findByQuery).mockReturnValue(Promise.resolve([record]))
 
-      const invitation = await repository.findAgentMessage({
+      const invitation = await repository.findAgentMessage(agentContext, {
         messageClass: ConnectionInvitationMessage,
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
       })
@@ -75,7 +82,7 @@ describe('Repository', () => {
     it("should return null because the record doesn't exist", async () => {
       mockFunction(storageMock.findByQuery).mockReturnValue(Promise.resolve([]))
 
-      const invitation = await repository.findAgentMessage({
+      const invitation = await repository.findAgentMessage(agentContext, {
         messageClass: ConnectionInvitationMessage,
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
       })
@@ -92,7 +99,7 @@ describe('Repository', () => {
 
   describe('saveAgentMessage()', () => {
     it('should transform and save the agent message', async () => {
-      await repository.saveAgentMessage({
+      await repository.saveAgentMessage(agentContext, {
         role: DidCommMessageRole.Receiver,
         agentMessage: JsonTransformer.fromJSON(invitationJson, ConnectionInvitationMessage),
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
@@ -111,7 +118,7 @@ describe('Repository', () => {
   describe('saveOrUpdateAgentMessage()', () => {
     it('should transform and save the agent message', async () => {
       mockFunction(storageMock.findByQuery).mockReturnValue(Promise.resolve([]))
-      await repository.saveOrUpdateAgentMessage({
+      await repository.saveOrUpdateAgentMessage(agentContext, {
         role: DidCommMessageRole.Receiver,
         agentMessage: JsonTransformer.fromJSON(invitationJson, ConnectionInvitationMessage),
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
@@ -129,7 +136,7 @@ describe('Repository', () => {
     it('should transform and update the agent message', async () => {
       const record = getRecord({ id: 'test-id' })
       mockFunction(storageMock.findByQuery).mockReturnValue(Promise.resolve([record]))
-      await repository.saveOrUpdateAgentMessage({
+      await repository.saveOrUpdateAgentMessage(agentContext, {
         role: DidCommMessageRole.Receiver,
         agentMessage: JsonTransformer.fromJSON(invitationJson, ConnectionInvitationMessage),
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',

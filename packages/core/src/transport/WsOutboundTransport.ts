@@ -106,7 +106,7 @@ export class WsOutboundTransport implements OutboundTransport {
     }
     this.logger.debug('Payload received from mediator:', payload)
 
-    this.agent.events.emit<AgentMessageReceivedEvent>({
+    this.agent.events.emit<AgentMessageReceivedEvent>(this.agent.context, {
       type: AgentEventTypes.AgentMessageReceived,
       payload: {
         message: payload,
@@ -148,7 +148,7 @@ export class WsOutboundTransport implements OutboundTransport {
         socket.removeEventListener('message', this.handleMessageEvent)
         this.transportTable.delete(socketId)
 
-        this.agent.events.emit<OutboundWebSocketClosedEvent>({
+        this.agent.events.emit<OutboundWebSocketClosedEvent>(this.agent.context, {
           type: TransportEventTypes.OutboundWebSocketClosedEvent,
           payload: {
             socketId,

@@ -162,7 +162,7 @@ export class OutOfBandModule {
       }
     }
 
-    const routing = config.routing ?? (await this.mediationRecipientService.getRouting({}))
+    const routing = config.routing ?? (await this.mediationRecipientService.getRouting(this.agentContext, {}))
 
     const services = routing.endpoints.map((endpoint, index) => {
       return new OutOfBandDidCommService({
@@ -233,7 +233,7 @@ export class OutOfBandModule {
     domain: string
   }): Promise<{ message: Message; invitationUrl: string }> {
     // Create keys (and optionally register them at the mediator)
-    const routing = await this.mediationRecipientService.getRouting()
+    const routing = await this.mediationRecipientService.getRouting(this.agentContext)
 
     // Set the service on the message
     config.message.service = new ServiceDecorator({
