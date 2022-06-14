@@ -1,8 +1,11 @@
 import type { AgentContext } from '../../../agent'
 import type { IndyLedgerService } from '../../ledger'
 
+import { Subject } from 'rxjs'
+
 import { getAgentConfig } from '../../../../tests/helpers'
 import { MockAgentContext } from '../../../../tests/mocks'
+import { EventEmitter } from '../../../agent/EventEmitter'
 import { KeyType } from '../../../crypto'
 import { IndyStorageService } from '../../../storage/IndyStorageService'
 import { JsonTransformer } from '../../../utils'
@@ -26,6 +29,7 @@ describe('peer dids', () => {
   let didResolverService: DidResolverService
   let wallet: IndyWallet
   let agentContext: AgentContext
+  let eventEmitter: EventEmitter
 
   beforeEach(async () => {
     wallet = new IndyWallet(config)
@@ -34,7 +38,8 @@ describe('peer dids', () => {
     await wallet.createAndOpen(config.walletConfig!)
 
     const storageService = new IndyStorageService<DidRecord>(config.agentDependencies)
-    didRepository = new DidRepository(storageService)
+    eventEmitter = new EventEmitter(config.agentDependencies, new Subject())
+    didRepository = new DidRepository(storageService, eventEmitter)
 
     // Mocking IndyLedgerService as we're only interested in the did:peer resolver
     didResolverService = new DidResolverService({} as unknown as IndyLedgerService, didRepository, config.logger)

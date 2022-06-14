@@ -1,11 +1,16 @@
 import type { AgentContext } from '../../agent'
 import type { TagsBase } from '../BaseRecord'
+import type { RecordDeletedEvent, RecordSavedEvent, RecordUpdatedEvent } from '../RepositoryEvents'
+
+import { Subject } from 'rxjs'
 
 import { getAgentConfig, mockFunction } from '../../../tests/helpers'
 import { MockAgentContext } from '../../../tests/mocks'
+import { EventEmitter } from '../../agent/EventEmitter'
 import { AriesFrameworkError, RecordDuplicateError, RecordNotFoundError } from '../../error'
 import { IndyStorageService } from '../IndyStorageService'
 import { Repository } from '../Repository'
+import { RepositoryEventTypes } from '../RepositoryEvents'
 
 import { TestRecord } from './TestRecord'
 
@@ -19,10 +24,12 @@ describe('Repository', () => {
   let repository: Repository<TestRecord>
   let storageMock: IndyStorageService<TestRecord>
   let agentContext: AgentContext
+  let eventEmitter: EventEmitter
 
   beforeEach(async () => {
     storageMock = new StorageMock()
-    repository = new Repository(TestRecord, storageMock)
+    eventEmitter = new EventEmitter(config.agentDependencies, new Subject())
+    repository = new Repository(TestRecord, storageMock, eventEmitter)
     agentContext = new MockAgentContext(config)
   })
 
@@ -41,6 +48,27 @@ describe('Repository', () => {
 
       expect(storageMock.save).toBeCalledWith(record)
     })
+
+    it(`should emit saved event`, async () => {
+      const eventListenerMock = jest.fn()
+      eventEmitter.on<RecordSavedEvent<TestRecord>>(RepositoryEventTypes.RecordSaved, eventListenerMock)
+
+      // given
+      const record = getRecord({ id: 'test-id' })
+
+      // when
+      await repository.save(agentContext, record)
+
+      // then
+      expect(eventListenerMock).toHaveBeenCalledWith({
+        type: 'RecordSaved',
+        payload: {
+          record: expect.objectContaining({
+            id: 'test-id',
+          }),
+        },
+      })
+    })
   })
 
   describe('update()', () => {
@@ -50,6 +78,27 @@ describe('Repository', () => {
 
       expect(storageMock.update).toBeCalledWith(record)
     })
+
+    it(`should emit updated event`, async () => {
+      const eventListenerMock = jest.fn()
+      eventEmitter.on<RecordUpdatedEvent<TestRecord>>(RepositoryEventTypes.RecordUpdated, eventListenerMock)
+
+      // given
+      const record = getRecord({ id: 'test-id' })
+
+      // when
+      await repository.update(agentContext, record)
+
+      // then
+      expect(eventListenerMock).toHaveBeenCalledWith({
+        type: 'RecordUpdated',
+        payload: {
+          record: expect.objectContaining({
+            id: 'test-id',
+          }),
+        },
+      })
+    })
   })
 
   describe('delete()', () => {
@@ -58,6 +107,27 @@ describe('Repository', () => {
       await repository.delete(agentContext, record)
 
       expect(storageMock.delete).toBeCalledWith(record)
+    })
+
+    it(`should emit deleted event`, async () => {
+      const eventListenerMock = jest.fn()
+      eventEmitter.on<RecordDeletedEvent<TestRecord>>(RepositoryEventTypes.RecordDeleted, eventListenerMock)
+
+      // given
+      const record = getRecord({ id: 'test-id' })
+
+      // when
+      await repository.delete(agentContext, record)
+
+      // then
+      expect(eventListenerMock).toHaveBeenCalledWith({
+        type: 'RecordDeleted',
+        payload: {
+          record: expect.objectContaining({
+            id: 'test-id',
+          }),
+        },
+      })
     })
   })
 

@@ -1,7 +1,10 @@
 import type { AgentContext } from '../../agent'
 
+import { Subject } from 'rxjs'
+
 import { getAgentConfig, mockFunction } from '../../../tests/helpers'
 import { MockAgentContext } from '../../../tests/mocks'
+import { EventEmitter } from '../../agent/EventEmitter'
 import { ConnectionInvitationMessage } from '../../modules/connections'
 import { JsonTransformer } from '../../utils/JsonTransformer'
 import { IndyStorageService } from '../IndyStorageService'
@@ -25,11 +28,13 @@ describe('Repository', () => {
   let repository: DidCommMessageRepository
   let storageMock: IndyStorageService<DidCommMessageRecord>
   let agentContext: AgentContext
+  let eventEmitter: EventEmitter
 
   beforeEach(async () => {
     storageMock = new StorageMock()
-    repository = new DidCommMessageRepository(storageMock)
+    eventEmitter = new EventEmitter(config.agentDependencies, new Subject())
     agentContext = new MockAgentContext(config)
+    repository = new DidCommMessageRepository(storageMock, eventEmitter)
   })
 
   const getRecord = ({ id }: { id?: string } = {}) => {

@@ -1,5 +1,5 @@
 import type { AgentContext } from '../../../agent'
-import type { RevocationInterval } from '../../credentials'
+import type { IndyRevocationInterval } from '../../credentials'
 import type { RequestedCredentials } from '../../proofs'
 import type { default as Indy } from 'indy-sdk'
 
@@ -151,7 +151,7 @@ export class IndyRevocationService {
     agentContext: AgentContext,
     credentialRevocationId: string,
     revocationRegistryDefinitionId: string,
-    requestRevocationInterval: RevocationInterval
+    requestRevocationInterval: IndyRevocationInterval
   ): Promise<{ revoked: boolean; deltaTimestamp: number }> {
     this.logger.trace(
       `Fetching Credential Revocation Status for Credential Revocation Id '${credentialRevocationId}' with revocation interval with to '${requestRevocationInterval.to}' & from '${requestRevocationInterval.from}'`
@@ -183,7 +183,7 @@ export class IndyRevocationService {
 
   // TODO: Add Test
   // Check revocation interval in accordance with https://github.com/hyperledger/aries-rfcs/blob/main/concepts/0441-present-proof-best-practices/README.md#semantics-of-non-revocation-interval-endpoints
-  private assertRevocationInterval(requestRevocationInterval: RevocationInterval) {
+  private assertRevocationInterval(requestRevocationInterval: IndyRevocationInterval) {
     if (!requestRevocationInterval.to) {
       throw new AriesFrameworkError(`Presentation requests proof of non-revocation with no 'to' value specified`)
     }

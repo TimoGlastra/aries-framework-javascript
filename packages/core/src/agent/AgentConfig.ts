@@ -5,7 +5,7 @@ import type { AgentDependencies } from './AgentDependencies'
 import { DID_COMM_TRANSPORT_QUEUE } from '../constants'
 import { AriesFrameworkError } from '../error'
 import { ConsoleLogger, LogLevel } from '../logger'
-import { AutoAcceptCredential } from '../modules/credentials/CredentialAutoAcceptType'
+import { AutoAcceptCredential } from '../modules/credentials/models/CredentialAutoAcceptType'
 import { AutoAcceptProof } from '../modules/proofs/ProofAutoAcceptType'
 import { DidCommMimeType } from '../types'
 

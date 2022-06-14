@@ -1,32 +1,60 @@
 import type { AgentContext } from '../agent'
+import type { EventEmitter } from '../agent/EventEmitter'
 import type { BaseRecord } from './BaseRecord'
+import type { RecordSavedEvent, RecordUpdatedEvent, RecordDeletedEvent } from './RepositoryEvents'
 import type { BaseRecordConstructor, Query, StorageService } from './StorageService'
 
 import { RecordDuplicateError, RecordNotFoundError } from '../error'
+
+import { RepositoryEventTypes } from './RepositoryEvents'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class Repository<T extends BaseRecord<any, any, any>> {
   private storageService: StorageService<T>
   private recordClass: BaseRecordConstructor<T>
+  private eventEmitter: EventEmitter
 
-  public constructor(recordClass: BaseRecordConstructor<T>, storageService: StorageService<T>) {
+  public constructor(
+    recordClass: BaseRecordConstructor<T>,
+    storageService: StorageService<T>,
+    eventEmitter: EventEmitter
+  ) {
     this.storageService = storageService
     this.recordClass = recordClass
+    this.eventEmitter = eventEmitter
   }
 
   /** @inheritDoc {StorageService#save} */
   public async save(agentContext: AgentContext, record: T): Promise<void> {
-    return this.storageService.save(agentContext, record)
+    await this.storageService.save(agentContext, record)
+    this.eventEmitter.emit<RecordSavedEvent<T>>(agentContext, {
+      type: RepositoryEventTypes.RecordSaved,
+      payload: {
+        record,
+      },
+    })
   }
 
   /** @inheritDoc {StorageService#update} */
   public async update(agentContext: AgentContext, record: T): Promise<void> {
-    return this.storageService.update(agentContext, record)
+    await this.storageService.update(agentContext, record)
+    this.eventEmitter.emit<RecordUpdatedEvent<T>>(agentContext, {
+      type: RepositoryEventTypes.RecordUpdated,
+      payload: {
+        record,
+      },
+    })
   }
 
   /** @inheritDoc {StorageService#delete} */
   public async delete(agentContext: AgentContext, record: T): Promise<void> {
-    return this.storageService.delete(agentContext, record)
+    await this.storageService.delete(agentContext, record)
+    this.eventEmitter.emit<RecordDeletedEvent<T>>(agentContext, {
+      type: RepositoryEventTypes.RecordDeleted,
+      payload: {
+        record,
+      },
+    })
   }
 
   /** @inheritDoc {StorageService#getById} */

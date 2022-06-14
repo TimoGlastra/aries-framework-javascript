@@ -60,8 +60,15 @@ export class IndyPoolService {
       (poolConfig) => new IndyPool(poolConfig, this.agentDependencies, this.logger, this.stop$, this.fileSystem)
     )
 
-    const poolsPromises = this.pools.map((pool) => pool.connect())
-    return Promise.all(poolsPromises)
+    const handleArray: number[] = []
+    // Sequentially connect to pools so we don't use up too many resources connecting in parallel
+    for (const pool of this.pools) {
+      this.logger.debug(`Connecting to pool: ${pool.id}`)
+      const poolHandle = await pool.connect()
+      this.logger.debug(`Finished connection to pool: ${pool.id}`)
+      handleArray.push(poolHandle)
+    }
+    return handleArray
   }
 
   /**
