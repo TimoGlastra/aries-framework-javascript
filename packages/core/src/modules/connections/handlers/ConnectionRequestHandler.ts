@@ -34,7 +34,7 @@ export class ConnectionRequestHandler implements Handler {
       throw new AriesFrameworkError('Unable to process connection request without senderVerkey or recipientKey')
     }
 
-    const outOfBandRecord = await this.outOfBandService.findByRecipientKey(recipientKey)
+    const outOfBandRecord = await this.outOfBandService.findByRecipientKey(messageContext.agentContext, recipientKey)
 
     if (!outOfBandRecord) {
       throw new AriesFrameworkError(`Out-of-band record for recipient key ${recipientKey.fingerprint} was not found.`)
@@ -55,7 +55,9 @@ export class ConnectionRequestHandler implements Handler {
 
     if (connectionRecord?.autoAcceptConnection ?? messageContext.agentContext.config.autoAcceptConnections) {
       // TODO: Allow rotation of keys used in the invitation for new ones not only when out-of-band is reusable
-      const routing = outOfBandRecord.reusable ? await this.mediationRecipientService.getRouting() : undefined
+      const routing = outOfBandRecord.reusable
+        ? await this.mediationRecipientService.getRouting(messageContext.agentContext)
+        : undefined
 
       const { message } = await this.connectionService.createResponse(
         messageContext.agentContext,

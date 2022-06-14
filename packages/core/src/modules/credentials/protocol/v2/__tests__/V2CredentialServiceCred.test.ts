@@ -237,7 +237,6 @@ describe('CredentialService', () => {
   beforeEach(async () => {
     agentConfig = getAgentConfig('V2CredentialServiceCredTest')
     agentContext = new MockAgentContext(agentConfig)
-
     eventEmitter = new EventEmitter(agentConfig.agentDependencies, new Subject())
 
     // mock function implementations

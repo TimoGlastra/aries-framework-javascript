@@ -2,6 +2,8 @@ import type { AgentContext } from '../../../agent'
 import type { Wallet } from '../../../wallet/Wallet'
 import type { Routing } from '../services/ConnectionService'
 
+import { Subject } from 'rxjs'
+
 import { getAgentConfig, getMockConnection, getMockOutOfBand, mockFunction } from '../../../../tests/helpers'
 import { MockAgentContext } from '../../../../tests/mocks'
 import { AgentMessage } from '../../../agent/AgentMessage'
@@ -67,7 +69,7 @@ describe('ConnectionService', () => {
   })
 
   beforeEach(async () => {
-    eventEmitter = new EventEmitter(agentConfig.agentDependencies)
+    eventEmitter = new EventEmitter(agentConfig.agentDependencies, new Subject())
     connectionRepository = new ConnectionRepositoryMock()
     didRepository = new DidRepositoryMock()
     connectionService = new ConnectionService(agentConfig.logger, connectionRepository, didRepository, eventEmitter)

@@ -232,7 +232,7 @@ export async function moveDidCommMessages(agent: Agent, credentialRecord: Creden
         associatedRecordId: credentialRecord.id,
         message,
       })
-      await didCommMessageRepository.save(didCommMessageRecord)
+      await didCommMessageRepository.save(agent.context, didCommMessageRecord)
 
       agent.config.logger.debug(
         `Successfully moved ${messageKey} from credential record with id ${credentialRecord.id} to DIDCommMessageRecord`

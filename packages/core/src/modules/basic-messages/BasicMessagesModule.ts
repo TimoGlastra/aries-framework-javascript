@@ -34,7 +34,7 @@ export class BasicMessagesModule {
   }
 
   public async sendMessage(connectionId: string, message: string) {
-    const connection = await this.connectionService.getById(connectionId)
+    const connection = await this.connectionService.getById(this.agentContext, connectionId)
 
     const basicMessage = await this.basicMessageService.createMessage(this.agentContext, message, connection)
     const outboundMessage = createOutboundMessage(connection, basicMessage)

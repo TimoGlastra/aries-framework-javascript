@@ -87,7 +87,7 @@ class Dispatcher {
     }
 
     // Emit event that allows to hook into received messages
-    this.eventEmitter.emit<AgentMessageProcessedEvent>({
+    this.eventEmitter.emit<AgentMessageProcessedEvent>(messageContext.agentContext, {
       type: AgentEventTypes.AgentMessageProcessed,
       payload: {
         message: messageContext.message,

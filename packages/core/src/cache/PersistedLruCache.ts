@@ -62,7 +62,7 @@ export class PersistedLruCache<CacheValue> {
   }
 
   private async persistCache(agentContext: AgentContext) {
-    const cache = await this.getCache()
+    const cache = await this.getCache(agentContext)
 
     await this.cacheRepository.update(
       agentContext,

@@ -75,7 +75,7 @@ describe('0.1-0.2 | Credential', () => {
       expect(credentialRepository.getAll).toHaveBeenCalledTimes(1)
       expect(credentialRepository.update).toHaveBeenCalledTimes(records.length)
 
-      const updatedRecord = mockFunction(credentialRepository.update).mock.calls[0][0]
+      const updatedRecord = mockFunction(credentialRepository.update).mock.calls[0][1]
 
       // Check first object is transformed correctly
       expect(updatedRecord.toJSON()).toMatchObject({

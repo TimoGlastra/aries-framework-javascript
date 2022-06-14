@@ -95,6 +95,7 @@ export async function e2eTest({
   // We want to stop the mediator polling before the agent is shutdown.
   // FIXME: add a way to stop mediator polling from the public api, and make sure this is
   // being handled in the agent shutdown so we don't get any errors with wallets being closed.
-  recipientAgent.config.stop$.next(true)
+  const recipientStop$ = recipientAgent.injectionContainer.resolve<Subject<boolean>>(InjectionSymbols.Stop$)
+  recipientStop$.next(true)
   await sleep(2000)
 }

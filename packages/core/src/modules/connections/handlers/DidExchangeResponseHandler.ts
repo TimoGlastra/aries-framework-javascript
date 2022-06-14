@@ -72,7 +72,10 @@ export class DidExchangeResponseHandler implements Handler {
       throw new AriesFrameworkError(`Connection ${connectionRecord.id} does not have outOfBandId!`)
     }
 
-    const outOfBandRecord = await this.outOfBandService.findById(connectionRecord.outOfBandId)
+    const outOfBandRecord = await this.outOfBandService.findById(
+      messageContext.agentContext,
+      connectionRecord.outOfBandId
+    )
 
     if (!outOfBandRecord) {
       throw new AriesFrameworkError(
@@ -101,7 +104,7 @@ export class DidExchangeResponseHandler implements Handler {
         outOfBandRecord
       )
       if (!outOfBandRecord.reusable) {
-        await this.outOfBandService.updateState(outOfBandRecord, OutOfBandState.Done)
+        await this.outOfBandService.updateState(messageContext.agentContext, outOfBandRecord, OutOfBandState.Done)
       }
       return createOutboundMessage(connection, message)
     }

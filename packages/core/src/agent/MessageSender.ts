@@ -98,15 +98,18 @@ export class MessageSender {
     await session.send(encryptedMessage)
   }
 
-  public async sendPackage({
-    connection,
-    encryptedMessage,
-    options,
-  }: {
-    connection: ConnectionRecord
-    encryptedMessage: EncryptedMessage
-    options?: { transportPriority?: TransportPriorityOptions }
-  }) {
+  public async sendPackage(
+    agentContext: AgentContext,
+    {
+      connection,
+      encryptedMessage,
+      options,
+    }: {
+      connection: ConnectionRecord
+      encryptedMessage: EncryptedMessage
+      options?: { transportPriority?: TransportPriorityOptions }
+    }
+  ) {
     const errors: Error[] = []
 
     // Try to send to already open session
@@ -122,7 +125,11 @@ export class MessageSender {
     }
 
     // Retrieve DIDComm services
-    const { services, queueService } = await this.retrieveServicesByConnection(connection, options?.transportPriority)
+    const { services, queueService } = await this.retrieveServicesByConnection(
+      agentContext,
+      connection,
+      options?.transportPriority
+    )
 
     if (this.outboundTransports.length === 0 && !queueService) {
       throw new AriesFrameworkError('Agent has no outbound transport!')
@@ -210,6 +217,7 @@ export class MessageSender {
 
     // Retrieve DIDComm services
     const { services, queueService } = await this.retrieveServicesByConnection(
+      agentContext,
       connection,
       options?.transportPriority,
       outOfBand
@@ -222,7 +230,7 @@ export class MessageSender {
       )
     }
 
-    const ourDidDocument = await this.didResolverService.resolveDidDocument(connection.did)
+    const ourDidDocument = await this.didResolverService.resolveDidDocument(agentContext, connection.did)
     const ourAuthenticationKeys = getAuthenticationKeys(ourDidDocument)
 
     // TODO We're selecting just the first authentication key. Is it ok?
@@ -351,9 +359,9 @@ export class MessageSender {
     throw new AriesFrameworkError(`Unable to send message to service: ${service.serviceEndpoint}`)
   }
 
-  private async retrieveServicesFromDid(did: string) {
+  private async retrieveServicesFromDid(agentContext: AgentContext, did: string) {
     this.logger.debug(`Resolving services for did ${did}.`)
-    const didDocument = await this.didResolverService.resolveDidDocument(did)
+    const didDocument = await this.didResolverService.resolveDidDocument(agentContext, did)
 
     const didCommServices: ResolvedDidCommService[] = []
 
@@ -372,7 +380,7 @@ export class MessageSender {
         // Resolve dids to DIDDocs to retrieve routingKeys
         const routingKeys = []
         for (const routingKey of didCommService.routingKeys ?? []) {
-          const routingDidDocument = await this.didResolverService.resolveDidDocument(routingKey)
+          const routingDidDocument = await this.didResolverService.resolveDidDocument(agentContext, routingKey)
           routingKeys.push(keyReferenceToKey(routingDidDocument, routingKey))
         }
 
@@ -395,6 +403,7 @@ export class MessageSender {
   }
 
   private async retrieveServicesByConnection(
+    agentContext: AgentContext,
     connection: ConnectionRecord,
     transportPriority?: TransportPriorityOptions,
     outOfBand?: OutOfBandRecord
@@ -408,14 +417,14 @@ export class MessageSender {
 
     if (connection.theirDid) {
       this.logger.debug(`Resolving services for connection theirDid ${connection.theirDid}.`)
-      didCommServices = await this.retrieveServicesFromDid(connection.theirDid)
+      didCommServices = await this.retrieveServicesFromDid(agentContext, connection.theirDid)
     } else if (outOfBand) {
       this.logger.debug(`Resolving services from out-of-band record ${outOfBand?.id}.`)
       if (connection.isRequester) {
         for (const service of outOfBand.outOfBandInvitation.services) {
           // Resolve dids to DIDDocs to retrieve services
           if (typeof service === 'string') {
-            didCommServices = await this.retrieveServicesFromDid(service)
+            didCommServices = await this.retrieveServicesFromDid(agentContext, service)
           } else {
             // Out of band inline service contains keys encoded as did:key references
             didCommServices.push({

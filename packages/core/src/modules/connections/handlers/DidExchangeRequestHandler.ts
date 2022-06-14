@@ -39,7 +39,10 @@ export class DidExchangeRequestHandler implements Handler {
     if (!message.thread?.parentThreadId) {
       throw new AriesFrameworkError(`Message does not contain 'pthid' attribute`)
     }
-    const outOfBandRecord = await this.outOfBandService.findByInvitationId(message.thread.parentThreadId)
+    const outOfBandRecord = await this.outOfBandService.findByInvitationId(
+      messageContext.agentContext,
+      message.thread.parentThreadId
+    )
 
     if (!outOfBandRecord) {
       throw new AriesFrameworkError(`OutOfBand record for message ID ${message.thread?.parentThreadId} not found!`)
@@ -69,7 +72,9 @@ export class DidExchangeRequestHandler implements Handler {
     if (connectionRecord?.autoAcceptConnection ?? messageContext.agentContext.config.autoAcceptConnections) {
       // TODO We should add an option to not pass routing and therefore do not rotate keys and use the keys from the invitation
       // TODO: Allow rotation of keys used in the invitation for new ones not only when out-of-band is reusable
-      const routing = outOfBandRecord.reusable ? await this.mediationRecipientService.getRouting() : undefined
+      const routing = outOfBandRecord.reusable
+        ? await this.mediationRecipientService.getRouting(messageContext.agentContext)
+        : undefined
 
       const message = await this.didExchangeProtocol.createResponse(
         messageContext.agentContext,

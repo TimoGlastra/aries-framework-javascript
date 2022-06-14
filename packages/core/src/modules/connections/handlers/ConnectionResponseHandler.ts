@@ -57,7 +57,8 @@ export class ConnectionResponseHandler implements Handler {
     }
 
     const outOfBandRecord =
-      connectionRecord.outOfBandId && (await this.outOfBandService.findById(connectionRecord.outOfBandId))
+      connectionRecord.outOfBandId &&
+      (await this.outOfBandService.findById(messageContext.agentContext, connectionRecord.outOfBandId))
 
     if (!outOfBandRecord) {
       throw new AriesFrameworkError(`Out-of-band record ${connectionRecord.outOfBandId} was not found.`)
@@ -70,7 +71,7 @@ export class ConnectionResponseHandler implements Handler {
     // TODO: should we only send ping message in case of autoAcceptConnection or always?
     // In AATH we have a separate step to send the ping. So for now we'll only do it
     // if auto accept is enable
-    if (connection.autoAcceptConnection ?? this.agentConfig.autoAcceptConnections) {
+    if (connection.autoAcceptConnection ?? messageContext.agentContext.config.autoAcceptConnections) {
       const { message } = await this.connectionService.createTrustPing(messageContext.agentContext, connection, {
         responseRequested: false,
       })

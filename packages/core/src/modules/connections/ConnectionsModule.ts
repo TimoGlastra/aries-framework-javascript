@@ -81,7 +81,8 @@ export class ConnectionsModule {
     const { protocol, label, alias, imageUrl, autoAcceptConnection } = config
 
     const routing =
-      config.routing || (await this.mediationRecipientService.getRouting({ mediatorId: outOfBandRecord.mediatorId }))
+      config.routing ||
+      (await this.mediationRecipientService.getRouting(this.agentContext, { mediatorId: outOfBandRecord.mediatorId }))
 
     let result
     if (protocol === HandshakeProtocol.DidExchange) {
@@ -125,7 +126,7 @@ export class ConnectionsModule {
       throw new AriesFrameworkError(`Connection record ${connectionId} does not have out-of-band record.`)
     }
 
-    const outOfBandRecord = await this.outOfBandService.findById(connectionRecord.outOfBandId)
+    const outOfBandRecord = await this.outOfBandService.findById(this.agentContext, connectionRecord.outOfBandId)
     if (!outOfBandRecord) {
       throw new AriesFrameworkError(`Out-of-band record ${connectionRecord.outOfBandId} not found.`)
     }
@@ -166,7 +167,7 @@ export class ConnectionsModule {
       if (!connectionRecord.outOfBandId) {
         throw new AriesFrameworkError(`Connection ${connectionRecord.id} does not have outOfBandId!`)
       }
-      const outOfBandRecord = await this.outOfBandService.findById(connectionRecord.outOfBandId)
+      const outOfBandRecord = await this.outOfBandService.findById(this.agentContext, connectionRecord.outOfBandId)
       if (!outOfBandRecord) {
         throw new AriesFrameworkError(
           `OutOfBand record for connection ${connectionRecord.id} with outOfBandId ${connectionRecord.outOfBandId} not found!`
