@@ -1,4 +1,4 @@
-import type { AgentConfig } from '../../../agent/AgentConfig'
+import type { AgentContext } from '../../../agent'
 import type { AgentMessage } from '../../../agent/AgentMessage'
 import type { Dispatcher } from '../../../agent/Dispatcher'
 import type { EventEmitter } from '../../../agent/EventEmitter'
@@ -32,20 +32,18 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
   protected credentialRepository: CredentialRepository
   protected eventEmitter: EventEmitter
   protected dispatcher: Dispatcher
-  protected agentConfig: AgentConfig
   protected logger: Logger
 
   public constructor(
     credentialRepository: CredentialRepository,
     eventEmitter: EventEmitter,
     dispatcher: Dispatcher,
-    agentConfig: AgentConfig
+    logger: Logger
   ) {
     this.credentialRepository = credentialRepository
     this.eventEmitter = eventEmitter
     this.dispatcher = dispatcher
-    this.agentConfig = agentConfig
-    this.logger = this.agentConfig.logger
+    this.logger = logger
   }
 
   abstract readonly version: CredentialProtocolVersion
@@ -55,44 +53,72 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
   ): CredentialFormatService<CFs[number]>
 
   // methods for proposal
-  abstract createProposal(options: CreateProposalOptions<CFs>): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  abstract createProposal(
+    agentContext: AgentContext,
+    options: CreateProposalOptions<CFs>
+  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   abstract processProposal(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
-  abstract acceptProposal(options: AcceptProposalOptions<CFs>): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  abstract acceptProposal(
+    agentContext: AgentContext,
+    options: AcceptProposalOptions<CFs>
+  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   abstract negotiateProposal(
+    agentContext: AgentContext,
     options: NegotiateProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for offer
-  abstract createOffer(options: CreateOfferOptions<CFs>): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  abstract createOffer(
+    agentContext: AgentContext,
+    options: CreateOfferOptions<CFs>
+  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   abstract processOffer(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
-  abstract acceptOffer(options: AcceptOfferOptions<CFs>): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
-  abstract negotiateOffer(options: NegotiateOfferOptions<CFs>): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  abstract acceptOffer(
+    agentContext: AgentContext,
+    options: AcceptOfferOptions<CFs>
+  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  abstract negotiateOffer(
+    agentContext: AgentContext,
+    options: NegotiateOfferOptions<CFs>
+  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for request
-  abstract createRequest(options: CreateRequestOptions<CFs>): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  abstract createRequest(
+    agentContext: AgentContext,
+    options: CreateRequestOptions<CFs>
+  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   abstract processRequest(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
-  abstract acceptRequest(options: AcceptRequestOptions<CFs>): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  abstract acceptRequest(
+    agentContext: AgentContext,
+    options: AcceptRequestOptions<CFs>
+  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for issue
   abstract processCredential(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
-  abstract acceptCredential(options: AcceptCredentialOptions): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  abstract acceptCredential(
+    agentContext: AgentContext,
+    options: AcceptCredentialOptions
+  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for ack
   abstract processAck(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
 
-  abstract findProposalMessage(credentialExchangeId: string): Promise<AgentMessage | null>
-  abstract findOfferMessage(credentialExchangeId: string): Promise<AgentMessage | null>
-  abstract findRequestMessage(credentialExchangeId: string): Promise<AgentMessage | null>
-  abstract findCredentialMessage(credentialExchangeId: string): Promise<AgentMessage | null>
+  abstract findProposalMessage(agentContext: AgentContext, credentialExchangeId: string): Promise<AgentMessage | null>
+  abstract findOfferMessage(agentContext: AgentContext, credentialExchangeId: string): Promise<AgentMessage | null>
+  abstract findRequestMessage(agentContext: AgentContext, credentialExchangeId: string): Promise<AgentMessage | null>
+  abstract findCredentialMessage(agentContext: AgentContext, credentialExchangeId: string): Promise<AgentMessage | null>
 
   /**
    * Decline a credential offer
    * @param credentialRecord The credential to be declined
    */
-  public async declineOffer(credentialRecord: CredentialExchangeRecord): Promise<CredentialExchangeRecord> {
+  public async declineOffer(
+    agentContext: AgentContext,
+    credentialRecord: CredentialExchangeRecord
+  ): Promise<CredentialExchangeRecord> {
     credentialRecord.assertState(CredentialState.OfferReceived)
 
-    await this.updateState(credentialRecord, CredentialState.Declined)
+    await this.updateState(agentContext, credentialRecord, CredentialState.Declined)
 
     return credentialRecord
   }
@@ -113,13 +139,14 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
     this.logger.debug(`Processing problem report with id ${credentialProblemReportMessage.id}`)
 
     const credentialRecord = await this.getByThreadAndConnectionId(
+      messageContext.agentContext,
       credentialProblemReportMessage.threadId,
       connection.id
     )
 
     // Update record
     credentialRecord.errorMessage = `${credentialProblemReportMessage.description.code}: ${credentialProblemReportMessage.description.en}`
-    await this.update(credentialRecord)
+    await this.update(messageContext.agentContext, credentialRecord)
     return credentialRecord
   }
 
@@ -131,22 +158,30 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
    * @param newState The state to update to
    *
    */
-  public async updateState(credentialRecord: CredentialExchangeRecord, newState: CredentialState) {
+  public async updateState(
+    agentContext: AgentContext,
+    credentialRecord: CredentialExchangeRecord,
+    newState: CredentialState
+  ) {
     this.logger.debug(
       `Updating credential record ${credentialRecord.id} to state ${newState} (previous=${credentialRecord.state})`
     )
 
     const previousState = credentialRecord.state
     credentialRecord.state = newState
-    await this.credentialRepository.update(credentialRecord)
+    await this.credentialRepository.update(agentContext, credentialRecord)
 
-    this.emitStateChangedEvent(credentialRecord, previousState)
+    this.emitStateChangedEvent(agentContext, credentialRecord, previousState)
   }
 
-  protected emitStateChangedEvent(credentialRecord: CredentialExchangeRecord, previousState: CredentialState | null) {
+  protected emitStateChangedEvent(
+    agentContext: AgentContext,
+    credentialRecord: CredentialExchangeRecord,
+    previousState: CredentialState | null
+  ) {
     const clonedCredential = JsonTransformer.clone(credentialRecord)
 
-    this.eventEmitter.emit<CredentialStateChangedEvent>({
+    this.eventEmitter.emit<CredentialStateChangedEvent>(agentContext, {
       type: CredentialEventTypes.CredentialStateChanged,
       payload: {
         credentialRecord: clonedCredential,
@@ -163,8 +198,8 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
    * @return The credential record
    *
    */
-  public getById(credentialRecordId: string): Promise<CredentialExchangeRecord> {
-    return this.credentialRepository.getById(credentialRecordId)
+  public getById(agentContext: AgentContext, credentialRecordId: string): Promise<CredentialExchangeRecord> {
+    return this.credentialRepository.getById(agentContext, credentialRecordId)
   }
 
   /**
@@ -172,8 +207,8 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
    *
    * @returns List containing all credential records
    */
-  public getAll(): Promise<CredentialExchangeRecord[]> {
-    return this.credentialRepository.getAll()
+  public getAll(agentContext: AgentContext): Promise<CredentialExchangeRecord[]> {
+    return this.credentialRepository.getAll(agentContext)
   }
 
   /**
@@ -182,19 +217,23 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
    * @param credentialRecordId the credential record id
    * @returns The credential record or null if not found
    */
-  public findById(connectionId: string): Promise<CredentialExchangeRecord | null> {
-    return this.credentialRepository.findById(connectionId)
+  public findById(agentContext: AgentContext, connectionId: string): Promise<CredentialExchangeRecord | null> {
+    return this.credentialRepository.findById(agentContext, connectionId)
   }
 
-  public async delete(credentialRecord: CredentialExchangeRecord, options?: DeleteCredentialOptions): Promise<void> {
-    await this.credentialRepository.delete(credentialRecord)
+  public async delete(
+    agentContext: AgentContext,
+    credentialRecord: CredentialExchangeRecord,
+    options?: DeleteCredentialOptions
+  ): Promise<void> {
+    await this.credentialRepository.delete(agentContext, credentialRecord)
 
     const deleteAssociatedCredentials = options?.deleteAssociatedCredentials ?? true
 
     if (deleteAssociatedCredentials) {
       for (const credential of credentialRecord.credentials) {
         const formatService = this.getFormatServiceForRecordType(credential.credentialRecordType)
-        await formatService.deleteCredentialById(credential.credentialRecordId)
+        await formatService.deleteCredentialById(agentContext, credential.credentialRecordId)
       }
     }
   }
@@ -208,8 +247,12 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
    * @throws {RecordDuplicateError} If multiple records are found
    * @returns The credential record
    */
-  public getByThreadAndConnectionId(threadId: string, connectionId?: string): Promise<CredentialExchangeRecord> {
-    return this.credentialRepository.getSingleByQuery({
+  public getByThreadAndConnectionId(
+    agentContext: AgentContext,
+    threadId: string,
+    connectionId?: string
+  ): Promise<CredentialExchangeRecord> {
+    return this.credentialRepository.getSingleByQuery(agentContext, {
       connectionId,
       threadId,
     })
@@ -223,16 +266,17 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
    * @returns The credential record
    */
   public findByThreadAndConnectionId(
+    agentContext: AgentContext,
     threadId: string,
     connectionId?: string
   ): Promise<CredentialExchangeRecord | null> {
-    return this.credentialRepository.findSingleByQuery({
+    return this.credentialRepository.findSingleByQuery(agentContext, {
       connectionId,
       threadId,
     })
   }
 
-  public async update(credentialRecord: CredentialExchangeRecord) {
-    return await this.credentialRepository.update(credentialRecord)
+  public async update(agentContext: AgentContext, credentialRecord: CredentialExchangeRecord) {
+    return await this.credentialRepository.update(agentContext, credentialRecord)
   }
 }

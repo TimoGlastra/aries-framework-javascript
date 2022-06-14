@@ -1,3 +1,4 @@
+import type { AgentContext } from '../../../../../agent'
 import type { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
 import type { Logger } from '../../../../../logger'
 import type { ConnectionRecord } from '../../../../connections'
@@ -40,6 +41,7 @@ export class RevocationNotificationService {
   }
 
   private async processRevocationNotification(
+    agentContext: AgentContext,
     indyRevocationRegistryId: string,
     indyCredentialRevocationId: string,
     connection: ConnectionRecord,
@@ -48,16 +50,16 @@ export class RevocationNotificationService {
     const query = { indyRevocationRegistryId, indyCredentialRevocationId, connectionId: connection.id }
 
     this.logger.trace(`Getting record by query for revocation notification:`, query)
-    const credentialRecord = await this.credentialRepository.getSingleByQuery(query)
+    const credentialRecord = await this.credentialRepository.getSingleByQuery(agentContext, query)
 
     credentialRecord.revocationNotification = new RevocationNotification(comment)
-    await this.credentialRepository.update(credentialRecord)
+    await this.credentialRepository.update(agentContext, credentialRecord)
 
     // Clone record to prevent mutations after emitting event.
     const clonedCredentialRecord = JsonTransformer.clone(credentialRecord)
 
     this.logger.trace('Emitting RevocationNotificationReceivedEvent')
-    this.eventEmitter.emit<RevocationNotificationReceivedEvent>({
+    this.eventEmitter.emit<RevocationNotificationReceivedEvent>(agentContext, {
       type: CredentialEventTypes.RevocationNotificationReceived,
       payload: {
         credentialRecord: clonedCredentialRecord,
@@ -92,6 +94,7 @@ export class RevocationNotificationService {
       const connection = messageContext.assertReadyConnection()
 
       await this.processRevocationNotification(
+        messageContext.agentContext,
         indyRevocationRegistryId,
         indyCredentialRevocationId,
         connection,
@@ -133,6 +136,7 @@ export class RevocationNotificationService {
       const comment = messageContext.message.comment
       const connection = messageContext.assertReadyConnection()
       await this.processRevocationNotification(
+        messageContext.agentContext,
         indyRevocationRegistryId,
         indyCredentialRevocationId,
         connection,
