@@ -110,7 +110,7 @@ describe('v2 credentials', () => {
     })
 
     const didCommMessageRepository = faberAgent.injectionContainer.resolve(DidCommMessageRepository)
-    const offerMessage = await didCommMessageRepository.findAgentMessage({
+    const offerMessage = await didCommMessageRepository.findAgentMessage(faberAgent.context, {
       associatedRecordId: faberCredentialRecord.id,
       messageClass: V2OfferCredentialMessage,
     })
