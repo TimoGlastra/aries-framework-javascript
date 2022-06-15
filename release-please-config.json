@@ -1,23 +1,37 @@
 {
   "bootstrap-sha": "de611c234035ab3c4ce76eedcd45fe4a3cba8fc8",
+  "group-pull-request-title-pattern": "chore: release ${version}",
   "packages": {
     "packages/core": {
       "component": "core"
     },
     "packages/react-native": {
-      "component": "react-native"
+      "component": "react-native",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.dependencies['@aries-framework/core']"
+        }
+      ]
     },
     "packages/node": {
-      "component": "node"
+      "component": "node",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.dependencies['@aries-framework/core']"
+        }
+      ]
     }
   },
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
   "plugins": [
-    "node-workspace",
     {
       "type": "linked-versions",
-      "groupName": "AFJ",
+      "groupName": "aries-framework",
       "components": ["core", "react-native", "node"]
     }
   ]
