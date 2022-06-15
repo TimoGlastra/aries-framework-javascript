@@ -13,8 +13,8 @@
   },
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
+  "separatePullRequests": true,
   "plugins": [
-    "node-workspace",
     {
       "type": "linked-versions",
       "groupName": "AFJ",
