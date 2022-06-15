@@ -1,6 +1,7 @@
 {
   "bootstrap-sha": "de611c234035ab3c4ce76eedcd45fe4a3cba8fc8",
   "packages": {
+    ".": {},
     "packages/core": {
       "component": "core"
     },

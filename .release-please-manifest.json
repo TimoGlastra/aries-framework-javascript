@@ -1,4 +1,5 @@
 {
+  ".": "0.1.0",
   "packages/core": "0.1.0",
   "packages/node": "0.1.0",
   "packages/react-native": "0.1.0"
