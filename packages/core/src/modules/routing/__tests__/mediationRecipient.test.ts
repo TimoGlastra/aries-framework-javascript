@@ -230,13 +230,13 @@ describe('MediationRecipientService', () => {
       await mediationRecipientService.processDelivery(messageContext)
 
       expect(eventEmitter.emit).toHaveBeenCalledTimes(2)
-      expect(eventEmitter.emit).toHaveBeenNthCalledWith(1, {
+      expect(eventEmitter.emit).toHaveBeenNthCalledWith(1, agentContext, {
         type: AgentEventTypes.AgentMessageReceived,
         payload: {
           message: { first: 'value' },
         },
       })
-      expect(eventEmitter.emit).toHaveBeenNthCalledWith(2, {
+      expect(eventEmitter.emit).toHaveBeenNthCalledWith(2, agentContext, {
         type: AgentEventTypes.AgentMessageReceived,
         payload: {
           message: { second: 'value' },

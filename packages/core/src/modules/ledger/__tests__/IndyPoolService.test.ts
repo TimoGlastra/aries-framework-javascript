@@ -80,6 +80,8 @@ describe('IndyLedgerService', () => {
       new Subject<boolean>(),
       new NodeFileSystem()
     )
+
+    poolService.setPools(pools)
   })
 
   describe('ledgerWritePool', () => {
@@ -87,30 +89,16 @@ describe('IndyLedgerService', () => {
       expect(poolService.ledgerWritePool).toBe(poolService.pools[0])
     })
 
-    it('should throw a LedgerNotConfiguredError error if no pools are configured on the agent', async () => {
-      const config = getAgentConfig('IndyLedgerServiceTest', { indyLedgers: [] })
-      poolService = new IndyPoolService(
-        cacheRepository,
-        agentDependencies,
-        config.logger,
-        new Subject<boolean>(),
-        new NodeFileSystem()
-      )
+    it('should throw a LedgerNotConfiguredError error if no pools are configured on the pool service', async () => {
+      poolService.setPools([])
 
       expect(() => poolService.ledgerWritePool).toThrow(LedgerNotConfiguredError)
     })
   })
 
   describe('getPoolForDid', () => {
-    it('should throw a LedgerNotConfiguredError error if no pools are configured on the agent', async () => {
-      const config = getAgentConfig('IndyLedgerServiceTest', { indyLedgers: [] })
-      poolService = new IndyPoolService(
-        cacheRepository,
-        agentDependencies,
-        config.logger,
-        new Subject<boolean>(),
-        new NodeFileSystem()
-      )
+    it('should throw a LedgerNotConfiguredError error if no pools are configured on the pool service', async () => {
+      poolService.setPools([])
 
       expect(poolService.getPoolForDid(agentContext, 'some-did')).rejects.toThrow(LedgerNotConfiguredError)
     })
@@ -258,14 +246,6 @@ describe('IndyLedgerService', () => {
         })
       )
 
-      poolService = new IndyPoolService(
-        cacheRepository,
-        agentDependencies,
-        config.logger,
-        new Subject<boolean>(),
-        new NodeFileSystem()
-      )
-
       const { pool } = await poolService.getPoolForDid(agentContext, did)
 
       expect(pool.config.id).toBe(pool.id)
@@ -287,13 +267,6 @@ describe('IndyLedgerService', () => {
 
       const spy = mockFunction(cacheRepository.update).mockResolvedValue()
 
-      poolService = new IndyPoolService(
-        cacheRepository,
-        agentDependencies,
-        config.logger,
-        new Subject<boolean>(),
-        new NodeFileSystem()
-      )
       poolService.pools.forEach((pool, index) => {
         const spy = jest.spyOn(pool, 'submitReadRequest')
         spy.mockImplementationOnce(responses[index])

@@ -10,15 +10,14 @@ jest.mock('../CacheRepository')
 const CacheRepositoryMock = CacheRepository as jest.Mock<CacheRepository>
 
 const config = getAgentConfig('PersistedLruCacheTest')
+const agentContext = new MockAgentContext(config)
 
 describe('PersistedLruCache', () => {
   let cacheRepository: CacheRepository
-  let agentContext: AgentContext
   let cache: PersistedLruCache<string>
 
   beforeEach(() => {
     cacheRepository = new CacheRepositoryMock()
-    agentContext = new MockAgentContext(config)
     mockFunction(cacheRepository.findById).mockResolvedValue(null)
 
     cache = new PersistedLruCache('cacheId', 2, cacheRepository)
@@ -39,7 +38,7 @@ describe('PersistedLruCache', () => {
 
     expect(await cache.get(agentContext, 'doesnotexist')).toBeUndefined()
     expect(await cache.get(agentContext, 'test')).toBe('somevalue')
-    expect(findMock).toHaveBeenCalledWith('cacheId')
+    expect(findMock).toHaveBeenCalledWith(agentContext, 'cacheId')
   })
 
   it('should set the value in the persisted record', async () => {

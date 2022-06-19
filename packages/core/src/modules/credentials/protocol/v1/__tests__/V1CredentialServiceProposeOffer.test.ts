@@ -55,6 +55,9 @@ const indyCredentialFormatService = new IndyCredentialFormatServiceMock()
 const dispatcher = new DispatcherMock()
 const connectionService = new ConnectionServiceMock()
 
+const agentConfig = getAgentConfig('V1CredentialServiceProposeOfferTest')
+const agentContext = new MockAgentContext(agentConfig)
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 indyCredentialFormatService.credentialRecordType = 'indy'
@@ -93,16 +96,10 @@ const proposalAttachment = new Attachment({
 
 describe('V1CredentialServiceProposeOffer', () => {
   let eventEmitter: EventEmitter
-  let agentConfig: AgentConfig
-  let agentContext: AgentContext
 
   let credentialService: V1CredentialService
 
   beforeEach(async () => {
-    // real objects
-    agentConfig = getAgentConfig('V1CredentialServiceProposeOfferTest')
-    agentContext = new MockAgentContext(agentConfig)
-
     eventEmitter = new EventEmitter(agentConfig.agentDependencies, new Subject())
 
     // mock function implementations
@@ -161,6 +158,7 @@ describe('V1CredentialServiceProposeOffer', () => {
       // then
       expect(repositorySaveSpy).toHaveBeenNthCalledWith(
         1,
+        agentContext,
         expect.objectContaining({
           type: CredentialExchangeRecord.type,
           id: expect.any(String),
@@ -367,6 +365,7 @@ describe('V1CredentialServiceProposeOffer', () => {
       // then
       expect(credentialRepository.save).toHaveBeenNthCalledWith(
         1,
+        agentContext,
         expect.objectContaining({
           type: CredentialExchangeRecord.type,
           id: expect.any(String),

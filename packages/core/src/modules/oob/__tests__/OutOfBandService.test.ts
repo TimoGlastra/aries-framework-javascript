@@ -233,7 +233,7 @@ describe('OutOfBandService', () => {
       // Non-reusable should update state
       mockOob.reusable = false
       await outOfBandService.processHandshakeReuse(messageContext)
-      expect(updateStateSpy).toHaveBeenCalledWith(mockOob, OutOfBandState.Done)
+      expect(updateStateSpy).toHaveBeenCalledWith(agentContext, mockOob, OutOfBandState.Done)
     })
 
     it('returns a handshake-reuse-accepted message', async () => {
@@ -445,7 +445,7 @@ describe('OutOfBandService', () => {
       const updateStateSpy = jest.spyOn(outOfBandService, 'updateState')
 
       await outOfBandService.processHandshakeReuseAccepted(messageContext)
-      expect(updateStateSpy).toHaveBeenCalledWith(mockOob, OutOfBandState.Done)
+      expect(updateStateSpy).toHaveBeenCalledWith(agentContext, mockOob, OutOfBandState.Done)
     })
   })
 
@@ -467,7 +467,7 @@ describe('OutOfBandService', () => {
 
       await outOfBandService.updateState(agentContext, mockOob, OutOfBandState.Done)
 
-      expect(outOfBandRepository.update).toHaveBeenCalledWith(mockOob)
+      expect(outOfBandRepository.update).toHaveBeenCalledWith(agentContext, mockOob)
     })
 
     test('emits an OutOfBandStateChangedEvent', async () => {
@@ -499,7 +499,7 @@ describe('OutOfBandService', () => {
       const expected = getMockOutOfBand()
       mockFunction(outOfBandRepository.getById).mockReturnValue(Promise.resolve(expected))
       const result = await outOfBandService.getById(agentContext, expected.id)
-      expect(outOfBandRepository.getById).toBeCalledWith(expected.id)
+      expect(outOfBandRepository.getById).toBeCalledWith(agentContext, expected.id)
 
       expect(result).toBe(expected)
     })
@@ -508,7 +508,7 @@ describe('OutOfBandService', () => {
       const expected = getMockOutOfBand()
       mockFunction(outOfBandRepository.findById).mockReturnValue(Promise.resolve(expected))
       const result = await outOfBandService.findById(agentContext, expected.id)
-      expect(outOfBandRepository.findById).toBeCalledWith(expected.id)
+      expect(outOfBandRepository.findById).toBeCalledWith(agentContext, expected.id)
 
       expect(result).toBe(expected)
     })
@@ -518,7 +518,7 @@ describe('OutOfBandService', () => {
 
       mockFunction(outOfBandRepository.getAll).mockReturnValue(Promise.resolve(expected))
       const result = await outOfBandService.getAll(agentContext)
-      expect(outOfBandRepository.getAll).toBeCalledWith()
+      expect(outOfBandRepository.getAll).toBeCalledWith(agentContext)
 
       expect(result).toEqual(expect.arrayContaining(expected))
     })

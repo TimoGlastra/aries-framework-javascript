@@ -59,6 +59,9 @@ const connectionService = new ConnectionServiceMock()
 // @ts-ignore
 indyCredentialFormatService.formatKey = 'indy'
 
+const agentConfig = getAgentConfig('V2CredentialServiceOfferTest')
+const agentContext = new MockAgentContext(agentConfig)
+
 const connection = getMockConnection({
   id: '123',
   state: DidExchangeState.Completed,
@@ -84,14 +87,10 @@ const offerAttachment = new Attachment({
 
 describe('V2CredentialServiceOffer', () => {
   let eventEmitter: EventEmitter
-  let agentConfig: AgentConfig
-  let agentContext: AgentContext
   let credentialService: V2CredentialService
 
   beforeEach(async () => {
     // real objects
-    agentConfig = getAgentConfig('V2CredentialServiceOfferTest')
-    agentContext = new MockAgentContext(agentConfig)
     eventEmitter = new EventEmitter(agentConfig.agentDependencies, new Subject())
 
     // mock function implementations
@@ -140,6 +139,7 @@ describe('V2CredentialServiceOffer', () => {
       // then
       expect(credentialRepository.save).toHaveBeenNthCalledWith(
         1,
+        agentContext,
         expect.objectContaining({
           type: CredentialExchangeRecord.type,
           id: expect.any(String),
@@ -227,6 +227,7 @@ describe('V2CredentialServiceOffer', () => {
       // then
       expect(credentialRepository.save).toHaveBeenNthCalledWith(
         1,
+        agentContext,
         expect.objectContaining({
           type: CredentialExchangeRecord.type,
           id: expect.any(String),

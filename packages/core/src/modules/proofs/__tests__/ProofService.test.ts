@@ -161,7 +161,7 @@ describe('ProofService', () => {
         connectionId: connection.id,
       }
       expect(repositorySaveSpy).toHaveBeenCalledTimes(1)
-      const [[createdProofRecord]] = repositorySaveSpy.mock.calls
+      const [[, createdProofRecord]] = repositorySaveSpy.mock.calls
       expect(createdProofRecord).toMatchObject(expectedProofRecord)
       expect(returnedProofRecord).toMatchObject(expectedProofRecord)
     })
@@ -257,12 +257,12 @@ describe('ProofService', () => {
       const expectedCredentialRecord = {
         errorMessage: 'abandoned: Indy error',
       }
-      expect(proofRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, {
+      expect(proofRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, agentContext, {
         threadId: 'somethreadid',
         connectionId: connection.id,
       })
       expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
-      const [[updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
+      const [[, updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
       expect(updatedCredentialRecord).toMatchObject(expectedCredentialRecord)
       expect(returnedCredentialRecord).toMatchObject(expectedCredentialRecord)
     })

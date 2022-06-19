@@ -198,7 +198,7 @@ describe('MessageSender', () => {
 
       await messageSender.sendMessage(agentContext, outboundMessage)
 
-      expect(didResolverServiceResolveMock).toHaveBeenCalledWith(connection.theirDid)
+      expect(didResolverServiceResolveMock).toHaveBeenCalledWith(agentContext, connection.theirDid)
       expect(sendMessageSpy).toHaveBeenCalledWith({
         connectionId: 'test-123',
         payload: encryptedMessage,

@@ -42,7 +42,9 @@ describe('DidResolverService', () => {
     expect(result).toEqual(returnValue)
 
     expect(didKeyResolveSpy).toHaveBeenCalledTimes(1)
-    expect(didKeyResolveSpy).toHaveBeenCalledWith('did:key:xxxx', parseDid('did:key:xxxx'), { someKey: 'string' })
+    expect(didKeyResolveSpy).toHaveBeenCalledWith(agentContext, 'did:key:xxxx', parseDid('did:key:xxxx'), {
+      someKey: 'string',
+    })
   })
 
   it("should return an error with 'invalidDid' if the did string couldn't be parsed", async () => {

@@ -23,17 +23,16 @@ const invitationJson = {
 }
 
 const config = getAgentConfig('DidCommMessageRepository')
+const agentContext = new MockAgentContext(config)
 
-describe('Repository', () => {
+describe('DidCommMessageRepository', () => {
   let repository: DidCommMessageRepository
   let storageMock: IndyStorageService<DidCommMessageRecord>
-  let agentContext: AgentContext
   let eventEmitter: EventEmitter
 
   beforeEach(async () => {
     storageMock = new StorageMock()
     eventEmitter = new EventEmitter(config.agentDependencies, new Subject())
-    agentContext = new MockAgentContext(config)
     repository = new DidCommMessageRepository(storageMock, eventEmitter)
   })
 
@@ -56,7 +55,7 @@ describe('Repository', () => {
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
       })
 
-      expect(storageMock.findByQuery).toBeCalledWith(DidCommMessageRecord, {
+      expect(storageMock.findByQuery).toBeCalledWith(agentContext, DidCommMessageRecord, {
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
         messageName: 'invitation',
         protocolName: 'connections',
@@ -75,7 +74,7 @@ describe('Repository', () => {
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
       })
 
-      expect(storageMock.findByQuery).toBeCalledWith(DidCommMessageRecord, {
+      expect(storageMock.findByQuery).toBeCalledWith(agentContext, DidCommMessageRecord, {
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
         messageName: 'invitation',
         protocolName: 'connections',
@@ -92,7 +91,7 @@ describe('Repository', () => {
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
       })
 
-      expect(storageMock.findByQuery).toBeCalledWith(DidCommMessageRecord, {
+      expect(storageMock.findByQuery).toBeCalledWith(agentContext, DidCommMessageRecord, {
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
         messageName: 'invitation',
         protocolName: 'connections',
@@ -111,6 +110,7 @@ describe('Repository', () => {
       })
 
       expect(storageMock.save).toBeCalledWith(
+        agentContext,
         expect.objectContaining({
           role: DidCommMessageRole.Receiver,
           message: invitationJson,
@@ -130,6 +130,7 @@ describe('Repository', () => {
       })
 
       expect(storageMock.save).toBeCalledWith(
+        agentContext,
         expect.objectContaining({
           role: DidCommMessageRole.Receiver,
           message: invitationJson,
@@ -147,13 +148,13 @@ describe('Repository', () => {
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
       })
 
-      expect(storageMock.findByQuery).toBeCalledWith(DidCommMessageRecord, {
+      expect(storageMock.findByQuery).toBeCalledWith(agentContext, DidCommMessageRecord, {
         associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
         messageName: 'invitation',
         protocolName: 'connections',
         protocolMajorVersion: '1',
       })
-      expect(storageMock.update).toBeCalledWith(record)
+      expect(storageMock.update).toBeCalledWith(agentContext, record)
     })
   })
 })

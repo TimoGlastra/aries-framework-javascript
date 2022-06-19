@@ -294,7 +294,7 @@ describe('V1CredentialService', () => {
         'requests~attach': [JsonTransformer.toJSON(requestAttachment)],
       })
       expect(credentialRepository.update).toHaveBeenCalledTimes(1)
-      expect(indyCredentialFormatService.acceptOffer).toHaveBeenCalledWith({
+      expect(indyCredentialFormatService.acceptOffer).toHaveBeenCalledWith(agentContext, {
         credentialRecord,
         attachId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
         offerAttachment,
@@ -304,7 +304,7 @@ describe('V1CredentialService', () => {
           },
         },
       })
-      expect(didCommMessageRepository.saveOrUpdateAgentMessage).toHaveBeenCalledWith({
+      expect(didCommMessageRepository.saveOrUpdateAgentMessage).toHaveBeenCalledWith(agentContext, {
         agentMessage: message,
         associatedRecordId: '84353745-8bd9-42e1-8d81-238ca77c29d2',
         role: DidCommMessageRole.Sender,
@@ -333,7 +333,7 @@ describe('V1CredentialService', () => {
       })
 
       // then
-      expect(updateStateSpy).toHaveBeenCalledWith(credentialRecord, CredentialState.RequestSent)
+      expect(updateStateSpy).toHaveBeenCalledWith(agentContext, credentialRecord, CredentialState.RequestSent)
     })
 
     const validState = CredentialState.OfferReceived
@@ -376,7 +376,7 @@ describe('V1CredentialService', () => {
       const returnedCredentialRecord = await credentialService.processRequest(messageContext)
 
       // then
-      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, {
+      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, agentContext, {
         threadId: 'somethreadid',
         connectionId: connection.id,
       })
@@ -393,7 +393,7 @@ describe('V1CredentialService', () => {
       const returnedCredentialRecord = await credentialService.processRequest(messageContext)
 
       // then
-      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, {
+      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, agentContext, {
         threadId: 'somethreadid',
         connectionId: connection.id,
       })
@@ -438,6 +438,7 @@ describe('V1CredentialService', () => {
 
       // then
       expect(credentialRepository.update).toHaveBeenCalledWith(
+        agentContext,
         expect.objectContaining({
           state: CredentialState.CredentialIssued,
         })
@@ -514,7 +515,7 @@ describe('V1CredentialService', () => {
         '~please_ack': expect.any(Object),
       })
 
-      expect(indyCredentialFormatService.acceptRequest).toHaveBeenCalledWith({
+      expect(indyCredentialFormatService.acceptRequest).toHaveBeenCalledWith(agentContext, {
         credentialRecord,
         requestAttachment,
         offerAttachment,
@@ -542,18 +543,18 @@ describe('V1CredentialService', () => {
       await credentialService.processCredential(messageContext)
 
       // then
-      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, {
+      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, agentContext, {
         threadId: 'somethreadid',
         connectionId: connection.id,
       })
 
-      expect(didCommMessageRepository.saveAgentMessage).toHaveBeenCalledWith({
+      expect(didCommMessageRepository.saveAgentMessage).toHaveBeenCalledWith(agentContext, {
         agentMessage: credentialResponse,
         role: DidCommMessageRole.Receiver,
         associatedRecordId: credentialRecord.id,
       })
 
-      expect(indyCredentialFormatService.processCredential).toHaveBeenNthCalledWith(1, {
+      expect(indyCredentialFormatService.processCredential).toHaveBeenNthCalledWith(1, agentContext, {
         attachment: credentialAttachment,
         credentialRecord,
       })
@@ -581,7 +582,7 @@ describe('V1CredentialService', () => {
 
       // then
       expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
-      const [[updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
+      const [[, updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
       expect(updatedCredentialRecord).toMatchObject({
         state: CredentialState.Done,
       })
@@ -673,12 +674,12 @@ describe('V1CredentialService', () => {
       const expectedCredentialRecord = {
         state: CredentialState.Done,
       }
-      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, {
+      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, agentContext, {
         threadId: 'somethreadid',
         connectionId: connection.id,
       })
       expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
-      const [[updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
+      const [[, updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
       expect(updatedCredentialRecord).toMatchObject(expectedCredentialRecord)
       expect(returnedCredentialRecord).toMatchObject(expectedCredentialRecord)
     })
@@ -752,12 +753,12 @@ describe('V1CredentialService', () => {
       const expectedCredentialRecord = {
         errorMessage: 'issuance-abandoned: Indy error',
       }
-      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, {
+      expect(credentialRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, agentContext, {
         threadId: 'somethreadid',
         connectionId: connection.id,
       })
       expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
-      const [[updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
+      const [[, updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
       expect(updatedCredentialRecord).toMatchObject(expectedCredentialRecord)
       expect(returnedCredentialRecord).toMatchObject(expectedCredentialRecord)
     })
@@ -768,7 +769,7 @@ describe('V1CredentialService', () => {
       const expected = mockCredentialRecord()
       mockFunction(credentialRepository.getById).mockReturnValue(Promise.resolve(expected))
       const result = await credentialService.getById(agentContext, expected.id)
-      expect(credentialRepository.getById).toBeCalledWith(expected.id)
+      expect(credentialRepository.getById).toBeCalledWith(agentContext, expected.id)
 
       expect(result).toBe(expected)
     })
@@ -777,7 +778,7 @@ describe('V1CredentialService', () => {
       const expected = mockCredentialRecord()
       mockFunction(credentialRepository.getSingleByQuery).mockReturnValue(Promise.resolve(expected))
       const result = await credentialService.getByThreadAndConnectionId(agentContext, 'threadId', 'connectionId')
-      expect(credentialRepository.getSingleByQuery).toBeCalledWith({
+      expect(credentialRepository.getSingleByQuery).toBeCalledWith(agentContext, {
         threadId: 'threadId',
         connectionId: 'connectionId',
       })
@@ -789,7 +790,7 @@ describe('V1CredentialService', () => {
       const expected = mockCredentialRecord()
       mockFunction(credentialRepository.findById).mockReturnValue(Promise.resolve(expected))
       const result = await credentialService.findById(agentContext, expected.id)
-      expect(credentialRepository.findById).toBeCalledWith(expected.id)
+      expect(credentialRepository.findById).toBeCalledWith(agentContext, expected.id)
 
       expect(result).toBe(expected)
     })
@@ -799,7 +800,7 @@ describe('V1CredentialService', () => {
 
       mockFunction(credentialRepository.getAll).mockReturnValue(Promise.resolve(expected))
       const result = await credentialService.getAll(agentContext)
-      expect(credentialRepository.getAll).toBeCalledWith()
+      expect(credentialRepository.getAll).toBeCalledWith(agentContext)
 
       expect(result).toEqual(expect.arrayContaining(expected))
     })
@@ -812,7 +813,7 @@ describe('V1CredentialService', () => {
 
       const repositoryDeleteSpy = jest.spyOn(credentialRepository, 'delete')
       await credentialService.delete(agentContext, credentialRecord)
-      expect(repositoryDeleteSpy).toHaveBeenNthCalledWith(1, credentialRecord)
+      expect(repositoryDeleteSpy).toHaveBeenNthCalledWith(1, agentContext, credentialRecord)
     })
 
     it('should call deleteCredentialById in indyCredentialFormatService if deleteAssociatedCredential is true', async () => {
@@ -825,7 +826,11 @@ describe('V1CredentialService', () => {
         deleteAssociatedCredentials: true,
       })
 
-      expect(deleteCredentialMock).toHaveBeenNthCalledWith(1, credentialRecord.credentials[0].credentialRecordId)
+      expect(deleteCredentialMock).toHaveBeenNthCalledWith(
+        1,
+        agentContext,
+        credentialRecord.credentials[0].credentialRecordId
+      )
     })
 
     it('should not call deleteCredentialById in indyCredentialFormatService if deleteAssociatedCredential is false', async () => {
@@ -849,7 +854,11 @@ describe('V1CredentialService', () => {
 
       await credentialService.delete(agentContext, credentialRecord)
 
-      expect(deleteCredentialMock).toHaveBeenNthCalledWith(1, credentialRecord.credentials[0].credentialRecordId)
+      expect(deleteCredentialMock).toHaveBeenNthCalledWith(
+        1,
+        agentContext,
+        credentialRecord.credentials[0].credentialRecordId
+      )
     })
   })
 
@@ -876,7 +885,11 @@ describe('V1CredentialService', () => {
         state: CredentialState.Declined,
       }
       expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
-      expect(repositoryUpdateSpy).toHaveBeenNthCalledWith(1, expect.objectContaining(expectedCredentialState))
+      expect(repositoryUpdateSpy).toHaveBeenNthCalledWith(
+        1,
+        agentContext,
+        expect.objectContaining(expectedCredentialState)
+      )
     })
 
     test(`emits stateChange event from ${CredentialState.OfferReceived} to ${CredentialState.Declined}`, async () => {
