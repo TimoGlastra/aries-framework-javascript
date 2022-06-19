@@ -1,5 +1,3 @@
-import type { AgentContext } from '../../agent'
-
 import { getAgentConfig, mockFunction } from '../../../tests/helpers'
 import { MockAgentContext } from '../../../tests/mocks'
 import { CacheRecord } from '../CacheRecord'

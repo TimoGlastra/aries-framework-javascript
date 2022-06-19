@@ -879,9 +879,13 @@ describe('V1CredentialService', () => {
       const credentialRecord = mockCredentialRecord()
       mockFunction(credentialRepository.getById).mockResolvedValue(credentialRecord)
 
-      await credentialService.delete(credentialRecord)
+      await credentialService.delete(agentContext, credentialRecord)
 
-      expect(deleteCredentialMock).toHaveBeenNthCalledWith(1, credentialRecord.credentials[0].credentialRecordId)
+      expect(deleteCredentialMock).toHaveBeenNthCalledWith(
+        1,
+        agentContext,
+        credentialRecord.credentials[0].credentialRecordId
+      )
       expect(didCommMessageRepository.delete).toHaveBeenCalledTimes(3)
     })
   })

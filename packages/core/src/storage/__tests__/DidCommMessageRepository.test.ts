@@ -1,5 +1,3 @@
-import type { AgentContext } from '../../agent'
-
 import { Subject } from 'rxjs'
 
 import { getAgentConfig, mockFunction } from '../../../tests/helpers'

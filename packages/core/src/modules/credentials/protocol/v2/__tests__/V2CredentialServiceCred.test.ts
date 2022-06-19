@@ -1,6 +1,5 @@
 import type { IndyCredentialViewMetadata } from '../../../../..'
 import type { AgentContext } from '../../../../../agent'
-import type { AgentConfig } from '../../../../../agent/AgentConfig'
 import type { GetAgentMessageOptions } from '../../../../../storage'
 import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
 import type { CredentialPreviewAttribute } from '../../../models/CredentialPreviewAttribute'
@@ -839,9 +838,13 @@ describe('CredentialService', () => {
       const credentialRecord = mockCredentialRecord()
       mockFunction(credentialRepository.getById).mockResolvedValue(credentialRecord)
 
-      await credentialService.delete(credentialRecord)
+      await credentialService.delete(agentContext, credentialRecord)
 
-      expect(deleteCredentialMock).toHaveBeenNthCalledWith(1, credentialRecord.credentials[0].credentialRecordId)
+      expect(deleteCredentialMock).toHaveBeenNthCalledWith(
+        1,
+        agentContext,
+        credentialRecord.credentials[0].credentialRecordId
+      )
       expect(didCommMessageRepository.delete).toHaveBeenCalledTimes(3)
     })
   })

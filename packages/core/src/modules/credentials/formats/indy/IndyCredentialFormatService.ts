@@ -360,7 +360,7 @@ export class IndyCredentialFormatService extends CredentialFormatService<IndyCre
 
     // If the credential is revocable, store the revocation identifiers in the credential record
     if (indyCredential.rev_reg_id) {
-      const credential = await this.indyHolderService.getCredential(credentialId)
+      const credential = await this.indyHolderService.getCredential(agentContext, credentialId)
 
       credentialRecord.metadata.add(CredentialMetadataKeys.IndyCredential, {
         indyCredentialRevocationId: credential.cred_rev_id,

@@ -1,5 +1,3 @@
-import type { AgentContext } from '../../../../../agent'
-import type { AgentConfig } from '../../../../../agent/AgentConfig'
 import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
 import type { CreateOfferOptions, CreateProposalOptions } from '../../../CredentialServiceOptions'
 import type { IndyCredentialFormat } from '../../../formats/indy/IndyCredentialFormat'

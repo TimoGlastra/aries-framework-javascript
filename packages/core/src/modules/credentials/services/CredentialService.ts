@@ -243,11 +243,11 @@ export abstract class CredentialService<CFs extends CredentialFormat[]> {
     }
 
     if (deleteAssociatedDidCommMessages) {
-      const didCommMessages = await this.didCommMessageRepository.findByQuery({
+      const didCommMessages = await this.didCommMessageRepository.findByQuery(agentContext, {
         associatedRecordId: credentialRecord.id,
       })
       for (const didCommMessage of didCommMessages) {
-        await this.didCommMessageRepository.delete(didCommMessage)
+        await this.didCommMessageRepository.delete(agentContext, didCommMessage)
       }
     }
   }
