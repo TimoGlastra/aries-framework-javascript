@@ -70,7 +70,10 @@ export class DidExchangeProtocol {
     outOfBandRecord: OutOfBandRecord,
     params: DidExchangeRequestParams
   ): Promise<{ message: DidExchangeRequestMessage; connectionRecord: ConnectionRecord }> {
-    this.logger.debug(`Create message ${DidExchangeRequestMessage.type} start`, { outOfBandRecord, params })
+    this.logger.debug(`Create message ${DidExchangeRequestMessage.type.messageTypeUri} start`, {
+      outOfBandRecord,
+      params,
+    })
 
     const { outOfBandInvitation } = outOfBandRecord
     const { alias, goal, goalCode, routing, autoAcceptConnection } = params
@@ -116,7 +119,7 @@ export class DidExchangeProtocol {
     }
 
     await this.updateState(agentContext, DidExchangeRequestMessage.type, connectionRecord)
-    this.logger.debug(`Create message ${DidExchangeRequestMessage.type} end`, {
+    this.logger.debug(`Create message ${DidExchangeRequestMessage.type.messageTypeUri} end`, {
       connectionRecord,
       message,
     })
@@ -127,7 +130,7 @@ export class DidExchangeProtocol {
     messageContext: InboundMessageContext<DidExchangeRequestMessage>,
     outOfBandRecord: OutOfBandRecord
   ): Promise<ConnectionRecord> {
-    this.logger.debug(`Process message ${DidExchangeRequestMessage.type} start`, messageContext)
+    this.logger.debug(`Process message ${DidExchangeRequestMessage.type.messageTypeUri} start`, messageContext)
 
     outOfBandRecord.assertRole(OutOfBandRole.Sender)
     outOfBandRecord.assertState(OutOfBandState.AwaitResponse)
@@ -199,7 +202,7 @@ export class DidExchangeProtocol {
     })
 
     await this.updateState(messageContext.agentContext, DidExchangeRequestMessage.type, connectionRecord)
-    this.logger.debug(`Process message ${DidExchangeRequestMessage.type} end`, connectionRecord)
+    this.logger.debug(`Process message ${DidExchangeRequestMessage.type.messageTypeUri} end`, connectionRecord)
     return connectionRecord
   }
 
@@ -209,7 +212,7 @@ export class DidExchangeProtocol {
     outOfBandRecord: OutOfBandRecord,
     routing?: Routing
   ): Promise<DidExchangeResponseMessage> {
-    this.logger.debug(`Create message ${DidExchangeResponseMessage.type} start`, connectionRecord)
+    this.logger.debug(`Create message ${DidExchangeResponseMessage.type.messageTypeUri} start`, connectionRecord)
     DidExchangeStateMachine.assertCreateMessageState(DidExchangeResponseMessage.type, connectionRecord)
 
     const { threadId } = connectionRecord
@@ -256,7 +259,10 @@ export class DidExchangeProtocol {
     connectionRecord.did = didDocument.id
 
     await this.updateState(agentContext, DidExchangeResponseMessage.type, connectionRecord)
-    this.logger.debug(`Create message ${DidExchangeResponseMessage.type} end`, { connectionRecord, message })
+    this.logger.debug(`Create message ${DidExchangeResponseMessage.type.messageTypeUri} end`, {
+      connectionRecord,
+      message,
+    })
     return message
   }
 
@@ -264,7 +270,7 @@ export class DidExchangeProtocol {
     messageContext: InboundMessageContext<DidExchangeResponseMessage>,
     outOfBandRecord: OutOfBandRecord
   ): Promise<ConnectionRecord> {
-    this.logger.debug(`Process message ${DidExchangeResponseMessage.type} start`, messageContext)
+    this.logger.debug(`Process message ${DidExchangeResponseMessage.type.messageTypeUri} start`, messageContext)
     const { connection: connectionRecord, message } = messageContext
 
     if (!connectionRecord) {
@@ -325,7 +331,7 @@ export class DidExchangeProtocol {
     connectionRecord.theirDid = message.did
 
     await this.updateState(messageContext.agentContext, DidExchangeResponseMessage.type, connectionRecord)
-    this.logger.debug(`Process message ${DidExchangeResponseMessage.type} end`, connectionRecord)
+    this.logger.debug(`Process message ${DidExchangeResponseMessage.type.messageTypeUri} end`, connectionRecord)
     return connectionRecord
   }
 
@@ -334,7 +340,7 @@ export class DidExchangeProtocol {
     connectionRecord: ConnectionRecord,
     outOfBandRecord: OutOfBandRecord
   ): Promise<DidExchangeCompleteMessage> {
-    this.logger.debug(`Create message ${DidExchangeCompleteMessage.type} start`, connectionRecord)
+    this.logger.debug(`Create message ${DidExchangeCompleteMessage.type.messageTypeUri} start`, connectionRecord)
     DidExchangeStateMachine.assertCreateMessageState(DidExchangeCompleteMessage.type, connectionRecord)
 
     const threadId = connectionRecord.threadId
@@ -353,7 +359,10 @@ export class DidExchangeProtocol {
     const message = new DidExchangeCompleteMessage({ threadId, parentThreadId })
 
     await this.updateState(agentContext, DidExchangeCompleteMessage.type, connectionRecord)
-    this.logger.debug(`Create message ${DidExchangeCompleteMessage.type} end`, { connectionRecord, message })
+    this.logger.debug(`Create message ${DidExchangeCompleteMessage.type.messageTypeUri} end`, {
+      connectionRecord,
+      message,
+    })
     return message
   }
 
@@ -361,7 +370,7 @@ export class DidExchangeProtocol {
     messageContext: InboundMessageContext<DidExchangeCompleteMessage>,
     outOfBandRecord: OutOfBandRecord
   ): Promise<ConnectionRecord> {
-    this.logger.debug(`Process message ${DidExchangeCompleteMessage.type} start`, messageContext)
+    this.logger.debug(`Process message ${DidExchangeCompleteMessage.type.messageTypeUri} start`, messageContext)
     const { connection: connectionRecord, message } = messageContext
 
     if (!connectionRecord) {
@@ -383,7 +392,7 @@ export class DidExchangeProtocol {
     }
 
     await this.updateState(messageContext.agentContext, DidExchangeCompleteMessage.type, connectionRecord)
-    this.logger.debug(`Process message ${DidExchangeCompleteMessage.type} end`, { connectionRecord })
+    this.logger.debug(`Process message ${DidExchangeCompleteMessage.type.messageTypeUri} end`, { connectionRecord })
     return connectionRecord
   }
 

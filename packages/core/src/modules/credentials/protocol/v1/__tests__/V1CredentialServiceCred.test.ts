@@ -15,7 +15,7 @@ import { EventEmitter } from '../../../../../agent/EventEmitter'
 import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
 import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
 import { AriesFrameworkError } from '../../../../../error'
-import { DidCommMessageRole } from '../../../../../storage'
+import { DidCommMessageRecord, DidCommMessageRole } from '../../../../../storage'
 import { DidCommMessageRepository } from '../../../../../storage/didcomm/DidCommMessageRepository'
 import { JsonTransformer } from '../../../../../utils'
 import { JsonEncoder } from '../../../../../utils/JsonEncoder'
@@ -129,6 +129,12 @@ const credentialIssueMessage = new V1IssueCredentialMessage({
   credentialAttachments: [offerAttachment],
 })
 
+const didCommMessageRecord = new DidCommMessageRecord({
+  associatedRecordId: '04a2c382-999e-4de9-a1d2-9dec0b2fa5e4',
+  message: {},
+  role: DidCommMessageRole.Receiver,
+})
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getAgentMessageMock = async (agentContext: AgentContext, options: GetAgentMessageOptions<any>) => {
   if (options.messageClass === V1ProposeCredentialMessage) {
@@ -229,6 +235,11 @@ describe('V1CredentialService', () => {
     mockFunction(connectionService.getById).mockResolvedValue(connection)
     mockFunction(didCommMessageRepository.findAgentMessage).mockImplementation(getAgentMessageMock)
     mockFunction(didCommMessageRepository.getAgentMessage).mockImplementation(getAgentMessageMock)
+    mockFunction(didCommMessageRepository.findByQuery).mockResolvedValue([
+      didCommMessageRecord,
+      didCommMessageRecord,
+      didCommMessageRecord,
+    ])
 
     credentialService = new V1CredentialService(
       connectionService,
@@ -824,6 +835,7 @@ describe('V1CredentialService', () => {
 
       await credentialService.delete(agentContext, credentialRecord, {
         deleteAssociatedCredentials: true,
+        deleteAssociatedDidCommMessages: false,
       })
 
       expect(deleteCredentialMock).toHaveBeenNthCalledWith(
@@ -841,6 +853,7 @@ describe('V1CredentialService', () => {
 
       await credentialService.delete(agentContext, credentialRecord, {
         deleteAssociatedCredentials: false,
+        deleteAssociatedDidCommMessages: false,
       })
 
       expect(deleteCredentialMock).not.toHaveBeenCalled()
@@ -859,6 +872,17 @@ describe('V1CredentialService', () => {
         agentContext,
         credentialRecord.credentials[0].credentialRecordId
       )
+    })
+    it('deleteAssociatedDidCommMessages should default to true', async () => {
+      const deleteCredentialMock = mockFunction(indyCredentialFormatService.deleteCredentialById)
+
+      const credentialRecord = mockCredentialRecord()
+      mockFunction(credentialRepository.getById).mockResolvedValue(credentialRecord)
+
+      await credentialService.delete(credentialRecord)
+
+      expect(deleteCredentialMock).toHaveBeenNthCalledWith(1, credentialRecord.credentials[0].credentialRecordId)
+      expect(didCommMessageRepository.delete).toHaveBeenCalledTimes(3)
     })
   })
 
