@@ -1,6 +1,6 @@
 import type { EncryptedMessage, PlaintextMessage } from '../types'
-import type { AgentContext } from './AgentContext'
 import type { AgentMessage } from './AgentMessage'
+import type { AgentContext } from './context'
 
 import { inject, scoped, Lifecycle } from 'tsyringe'
 

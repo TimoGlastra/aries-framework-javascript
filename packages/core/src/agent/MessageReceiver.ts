@@ -1,10 +1,10 @@
 import type { ConnectionRecord } from '../modules/connections'
 import type { InboundTransport } from '../transport'
 import type { PlaintextMessage, EncryptedMessage } from '../types'
-import type { AgentContext } from './AgentContext'
 import type { AgentMessage } from './AgentMessage'
 import type { DecryptedMessageContext } from './EnvelopeService'
 import type { TransportSession } from './TransportService'
+import type { AgentContext } from './context'
 
 import { inject, Lifecycle, scoped } from 'tsyringe'
 
@@ -22,6 +22,7 @@ import { Dispatcher } from './Dispatcher'
 import { EnvelopeService } from './EnvelopeService'
 import { MessageSender } from './MessageSender'
 import { TransportService } from './TransportService'
+import { AgentContextProvider } from './context'
 import { createOutboundMessage } from './helpers'
 import { InboundMessageContext } from './models/InboundMessageContext'
 
@@ -33,6 +34,7 @@ export class MessageReceiver {
   private dispatcher: Dispatcher
   private logger: Logger
   private connectionService: ConnectionService
+  private agentContextProvider: AgentContextProvider
   public readonly inboundTransports: InboundTransport[] = []
 
   public constructor(
@@ -41,6 +43,7 @@ export class MessageReceiver {
     messageSender: MessageSender,
     connectionService: ConnectionService,
     dispatcher: Dispatcher,
+    @inject(InjectionSymbols.AgentContextProvider) agentContextProvider: AgentContextProvider,
     @inject(InjectionSymbols.Logger) logger: Logger
   ) {
     this.envelopeService = envelopeService
@@ -48,6 +51,7 @@ export class MessageReceiver {
     this.messageSender = messageSender
     this.connectionService = connectionService
     this.dispatcher = dispatcher
+    this.agentContextProvider = agentContextProvider
     this.logger = logger
   }
 
@@ -56,17 +60,26 @@ export class MessageReceiver {
   }
 
   /**
-   * Receive and handle an inbound DIDComm message. It will decrypt the message, transform it
+   * Receive and handle an inbound DIDComm message. It will determine the agent context, decrypt the message, transform it
    * to it's corresponding message class and finally dispatch it to the dispatcher.
    *
    * @param inboundMessage the message to receive and handle
    */
   public async receiveMessage(
-    agentContext: AgentContext,
     inboundMessage: unknown,
-    { session, connection }: { session?: TransportSession; connection?: ConnectionRecord }
+    {
+      session,
+      connection,
+      contextCorrelationId,
+    }: { session?: TransportSession; connection?: ConnectionRecord; contextCorrelationId?: string } = {}
   ) {
-    this.logger.debug(`Agent ${agentContext.config.label} received message`)
+    this.logger.debug(`Agent received message`)
+
+    // Find agent context for the inbound message
+    const agentContext = await this.agentContextProvider.getContextForInboundMessage(inboundMessage, {
+      contextCorrelationId,
+    })
+
     if (this.isEncryptedMessage(inboundMessage)) {
       await this.receiveEncryptedMessage(agentContext, inboundMessage as EncryptedMessage, session)
     } else if (this.isPlaintextMessage(inboundMessage)) {
