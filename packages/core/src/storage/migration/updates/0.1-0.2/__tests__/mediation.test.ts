@@ -1,4 +1,5 @@
 import { getAgentConfig, mockFunction } from '../../../../../../tests/helpers'
+import { MockAgentContext } from '../../../../../../tests/mocks'
 import { Agent } from '../../../../../agent/Agent'
 import { MediationRole, MediationRecord } from '../../../../../modules/routing'
 import { MediationRepository } from '../../../../../modules/routing/repository/MediationRepository'
@@ -6,6 +7,7 @@ import { JsonTransformer } from '../../../../../utils'
 import * as testModule from '../mediation'
 
 const agentConfig = getAgentConfig('Migration MediationRecord 0.1-0.2')
+const agentContext = new MockAgentContext(agentConfig)
 
 jest.mock('../../../../../modules/routing/repository/MediationRepository')
 const MediationRepositoryMock = MediationRepository as jest.Mock<MediationRepository>
@@ -15,6 +17,7 @@ jest.mock('../../../../../agent/Agent', () => {
   return {
     Agent: jest.fn(() => ({
       config: agentConfig,
+      context: agentContext,
       dependencyManager: {
         resolve: jest.fn(() => mediationRepository),
       },
@@ -57,6 +60,7 @@ describe('0.1-0.2 | Mediation', () => {
       // Check second object is transformed correctly
       expect(mediationRepository.update).toHaveBeenNthCalledWith(
         2,
+        agentContext,
         getMediationRecord({
           role: MediationRole.Mediator,
           endpoint: 'secondEndpoint',

@@ -1,7 +1,15 @@
 import type { DummyRecord } from './repository/DummyRecord'
 import type { DependencyManager } from '@aries-framework/core'
 
-import { injectable, ConnectionService, Dispatcher, MessageSender } from '@aries-framework/core'
+import {
+  AgentContext,
+  ConnectionService,
+  Dispatcher,
+  injectable,
+  inject,
+  InjectionSymbols,
+  MessageSender,
+} from '@aries-framework/core'
 
 import { DummyRequestHandler, DummyResponseHandler } from './handlers'
 import { DummyRepository, DummyState } from './repository'
@@ -12,16 +20,20 @@ export class DummyModule {
   private messageSender: MessageSender
   private dummyService: DummyService
   private connectionService: ConnectionService
+  private agentContext: AgentContext
 
   public constructor(
     dispatcher: Dispatcher,
     messageSender: MessageSender,
     dummyService: DummyService,
-    connectionService: ConnectionService
+    connectionService: ConnectionService,
+    @inject(InjectionSymbols.AgentContext) agentContext: AgentContext
   ) {
     this.messageSender = messageSender
     this.dummyService = dummyService
     this.connectionService = connectionService
+    this.agentContext = agentContext
+
     this.registerHandlers(dispatcher)
   }
 
@@ -32,12 +44,12 @@ export class DummyModule {
    * @returns created Dummy Record
    */
   public async request(connectionId: string) {
-    const connection = await this.connectionService.getById(connectionId)
-    const { record, message: payload } = await this.dummyService.createRequest(connection)
+    const connection = await this.connectionService.getById(this.agentContext, connectionId)
+    const { record, message: payload } = await this.dummyService.createRequest(this.agentContext, connection)
 
-    await this.messageSender.sendMessage({ connection, payload })
+    await this.messageSender.sendMessage(this.agentContext, { connection, payload })
 
-    await this.dummyService.updateState(record, DummyState.RequestSent)
+    await this.dummyService.updateState(this.agentContext, record, DummyState.RequestSent)
 
     return record
   }
@@ -49,14 +61,14 @@ export class DummyModule {
    * @returns Updated dummy record
    */
   public async respond(dummyId: string) {
-    const record = await this.dummyService.getById(dummyId)
-    const connection = await this.connectionService.getById(record.connectionId)
+    const record = await this.dummyService.getById(this.agentContext, dummyId)
+    const connection = await this.connectionService.getById(this.agentContext, record.connectionId)
 
-    const payload = await this.dummyService.createResponse(record)
+    const payload = await this.dummyService.createResponse(this.agentContext, record)
 
-    await this.messageSender.sendMessage({ connection, payload })
+    await this.messageSender.sendMessage(this.agentContext, { connection, payload })
 
-    await this.dummyService.updateState(record, DummyState.ResponseSent)
+    await this.dummyService.updateState(this.agentContext, record, DummyState.ResponseSent)
 
     return record
   }
@@ -67,7 +79,7 @@ export class DummyModule {
    * @returns List containing all records
    */
   public getAll(): Promise<DummyRecord[]> {
-    return this.dummyService.getAll()
+    return this.dummyService.getAll(this.agentContext)
   }
 
   private registerHandlers(dispatcher: Dispatcher) {

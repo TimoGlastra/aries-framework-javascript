@@ -1,19 +1,30 @@
+import type { AgentContext } from '../../../../../agent'
+
+import { getAgentConfig } from '../../../../../../tests/helpers'
+import { MockAgentContext } from '../../../../../../tests/mocks'
 import { JsonTransformer } from '../../../../../utils/JsonTransformer'
 import didKeyEd25519Fixture from '../../../__tests__/__fixtures__/didKeyEd25519.json'
 import { DidKey } from '../DidKey'
 import { KeyDidResolver } from '../KeyDidResolver'
 
+const config = getAgentConfig('KeyDidResolver')
+
 describe('DidResolver', () => {
   describe('KeyDidResolver', () => {
     let keyDidResolver: KeyDidResolver
+    let agentContext: AgentContext
 
     beforeEach(() => {
       keyDidResolver = new KeyDidResolver()
+      agentContext = new MockAgentContext(config)
     })
 
     it('should correctly resolve a did:key document', async () => {
       const fromDidSpy = jest.spyOn(DidKey, 'fromDid')
-      const result = await keyDidResolver.resolve('did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th')
+      const result = await keyDidResolver.resolve(
+        agentContext,
+        'did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th'
+      )
 
       expect(JsonTransformer.toJSON(result)).toMatchObject({
         didDocument: didKeyEd25519Fixture,
@@ -26,7 +37,10 @@ describe('DidResolver', () => {
     })
 
     it('should return did resolution metadata with error if the did contains an unsupported multibase', async () => {
-      const result = await keyDidResolver.resolve('did:key:asdfkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th')
+      const result = await keyDidResolver.resolve(
+        agentContext,
+        'did:key:asdfkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th'
+      )
 
       expect(result).toEqual({
         didDocument: null,
@@ -39,7 +53,10 @@ describe('DidResolver', () => {
     })
 
     it('should return did resolution metadata with error if the did contains an unsupported multibase', async () => {
-      const result = await keyDidResolver.resolve('did:key:z6MkmjYasdfasfd8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th')
+      const result = await keyDidResolver.resolve(
+        agentContext,
+        'did:key:z6MkmjYasdfasfd8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th'
+      )
 
       expect(result).toEqual({
         didDocument: null,

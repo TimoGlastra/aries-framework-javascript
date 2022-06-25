@@ -1,10 +1,12 @@
 import type { DependencyManager } from '../../plugins'
 import type { BasicMessageTags } from './repository/BasicMessageRecord'
 
+import { AgentContext } from '../../agent'
 import { Dispatcher } from '../../agent/Dispatcher'
 import { MessageSender } from '../../agent/MessageSender'
 import { createOutboundMessage } from '../../agent/helpers'
-import { modulePlugin } from '../../plugins'
+import { InjectionSymbols } from '../../constants'
+import { inject, modulePlugin } from '../../plugins'
 import { ConnectionService } from '../connections'
 
 import { BasicMessageHandler } from './handlers'
@@ -16,29 +18,32 @@ export class BasicMessagesModule {
   private basicMessageService: BasicMessageService
   private messageSender: MessageSender
   private connectionService: ConnectionService
+  private agentContext: AgentContext
 
   public constructor(
     dispatcher: Dispatcher,
     basicMessageService: BasicMessageService,
     messageSender: MessageSender,
-    connectionService: ConnectionService
+    connectionService: ConnectionService,
+    @inject(InjectionSymbols.AgentContext) agentContext: AgentContext
   ) {
     this.basicMessageService = basicMessageService
     this.messageSender = messageSender
     this.connectionService = connectionService
+    this.agentContext = agentContext
     this.registerHandlers(dispatcher)
   }
 
   public async sendMessage(connectionId: string, message: string) {
-    const connection = await this.connectionService.getById(connectionId)
+    const connection = await this.connectionService.getById(this.agentContext, connectionId)
 
-    const basicMessage = await this.basicMessageService.createMessage(message, connection)
+    const basicMessage = await this.basicMessageService.createMessage(this.agentContext, message, connection)
     const outboundMessage = createOutboundMessage(connection, basicMessage)
-    await this.messageSender.sendMessage(outboundMessage)
+    await this.messageSender.sendMessage(this.agentContext, outboundMessage)
   }
 
   public async findAllByQuery(query: Partial<BasicMessageTags>) {
-    return this.basicMessageService.findAllByQuery(query)
+    return this.basicMessageService.findAllByQuery(this.agentContext, query)
   }
 
   private registerHandlers(dispatcher: Dispatcher) {

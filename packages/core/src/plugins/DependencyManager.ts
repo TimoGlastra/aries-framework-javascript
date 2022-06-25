@@ -18,7 +18,7 @@ export class DependencyManager {
 
     modulesArray.forEach((module) => {
       // Register Module class to be instantiated per container
-      this.container.register(module, module, { lifecycle: Lifecycle.ContainerScoped })
+      this.registerContextScoped(module)
 
       // Register all dependencies of this module
       module.register(this)
@@ -48,5 +48,16 @@ export class DependencyManager {
 
   public isRegistered<T>(token: InjectionToken<T>): boolean {
     return this.container.isRegistered(token)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public registerContextScoped<T = any>(token: Constructor<T>): void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public registerContextScoped<T = any>(token: InjectionToken<T>, provider: Constructor<T>): void
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public registerContextScoped(token: any, provider?: any) {
+    if (provider) this.container.register(token, provider, { lifecycle: Lifecycle.ContainerScoped })
+    else this.container.register(token, token, { lifecycle: Lifecycle.ContainerScoped })
   }
 }
