@@ -3,12 +3,14 @@ import type { InboundTransport } from '../transport/InboundTransport'
 import type { OutboundTransport } from '../transport/OutboundTransport'
 import type { InitConfig } from '../types'
 import type { Wallet } from '../wallet/Wallet'
+import type { AgentContext } from './AgentContext'
 import type { AgentDependencies } from './AgentDependencies'
 import type { AgentMessageReceivedEvent } from './Events'
 import type { TransportSession } from './TransportService'
 import type { Subscription } from 'rxjs'
 import type { DependencyContainer } from 'tsyringe'
 
+import { Subject } from 'rxjs'
 import { concatMap, takeUntil } from 'rxjs/operators'
 import { container as baseContainer } from 'tsyringe'
 
@@ -41,6 +43,7 @@ import { WalletModule } from '../wallet/WalletModule'
 import { WalletError } from '../wallet/error'
 
 import { AgentConfig } from './AgentConfig'
+import { DefaultAgentContext } from './AgentContext'
 import { Dispatcher } from './Dispatcher'
 import { EnvelopeService } from './EnvelopeService'
 import { EventEmitter } from './EventEmitter'
@@ -59,7 +62,8 @@ export class Agent {
   protected messageSender: MessageSender
   private _isInitialized = false
   public messageSubscription: Subscription
-  private walletService: Wallet
+  private agentContext: AgentContext
+  private stop$ = new Subject<boolean>()
 
   public readonly connections: ConnectionsModule
   public readonly proofs: ProofsModule
@@ -110,7 +114,16 @@ export class Agent {
     this.messageSender = this.dependencyManager.resolve(MessageSender)
     this.messageReceiver = this.dependencyManager.resolve(MessageReceiver)
     this.transportService = this.dependencyManager.resolve(TransportService)
-    this.walletService = this.dependencyManager.resolve(InjectionSymbols.Wallet)
+
+    if (!this.dependencyManager.isRegistered(InjectionSymbols.Wallet)) {
+      this.dependencyManager.registerContextScoped(InjectionSymbols.Wallet, IndyWallet)
+    }
+
+    const wallet = this.dependencyManager.resolve<Wallet>(InjectionSymbols.Wallet)
+
+    // Bind the default agent context to the container for use in modules etc.
+    this.agentContext = new DefaultAgentContext(wallet, this.agentConfig)
+    this.dependencyManager.registerInstance(InjectionSymbols.AgentContext, this.agentContext)
 
     // We set the modules in the constructor because that allows to set them as read-only
     this.connections = this.dependencyManager.resolve(ConnectionsModule)
@@ -131,8 +144,12 @@ export class Agent {
     this.messageSubscription = this.eventEmitter
       .observable<AgentMessageReceivedEvent>(AgentEventTypes.AgentMessageReceived)
       .pipe(
-        takeUntil(this.agentConfig.stop$),
-        concatMap((e) => this.messageReceiver.receiveMessage(e.payload.message, { connection: e.payload.connection }))
+        takeUntil(this.stop$),
+        concatMap((e) =>
+          this.messageReceiver.receiveMessage(this.agentContext, e.payload.message, {
+            connection: e.payload.connection,
+          })
+        )
       )
       .subscribe()
   }
@@ -182,7 +199,7 @@ export class Agent {
 
     // Make sure the storage is up to date
     const storageUpdateService = this.dependencyManager.resolve(StorageUpdateService)
-    const isStorageUpToDate = await storageUpdateService.isUpToDate()
+    const isStorageUpToDate = await storageUpdateService.isUpToDate(this.agentContext)
     this.logger.info(`Agent storage is ${isStorageUpToDate ? '' : 'not '}up to date.`)
 
     if (!isStorageUpToDate && this.agentConfig.autoUpdateStorageOnStartup) {
@@ -191,7 +208,7 @@ export class Agent {
       await updateAssistant.initialize()
       await updateAssistant.update()
     } else if (!isStorageUpToDate) {
-      const currentVersion = await storageUpdateService.getCurrentStorageVersion()
+      const currentVersion = await storageUpdateService.getCurrentStorageVersion(this.agentContext)
       // Close wallet to prevent un-initialized agent with initialized wallet
       await this.wallet.close()
       throw new AriesFrameworkError(
@@ -205,9 +222,11 @@ export class Agent {
 
     if (publicDidSeed) {
       // If an agent has publicDid it will be used as routing key.
-      await this.walletService.initPublicDid({ seed: publicDidSeed })
+      await this.agentContext.wallet.initPublicDid({ seed: publicDidSeed })
     }
 
+    // set the pools on the ledger.
+    this.ledger.setPools(this.agentContext.config.indyLedgers)
     // As long as value isn't false we will async connect to all genesis pools on startup
     if (connectToIndyLedgersOnStartup) {
       this.ledger.connectToPools().catch((error) => {
@@ -240,7 +259,7 @@ export class Agent {
   public async shutdown() {
     // All observables use takeUntil with the stop$ observable
     // this means all observables will stop running if a value is emitted on this observable
-    this.agentConfig.stop$.next(true)
+    this.stop$.next(true)
 
     // Stop transports
     const allTransports = [...this.inboundTransports, ...this.outboundTransports]
@@ -255,11 +274,11 @@ export class Agent {
   }
 
   public get publicDid() {
-    return this.walletService.publicDid
+    return this.agentContext.wallet.publicDid
   }
 
   public async receiveMessage(inboundMessage: unknown, session?: TransportSession) {
-    return await this.messageReceiver.receiveMessage(inboundMessage, { session })
+    return await this.messageReceiver.receiveMessage(this.agentContext, inboundMessage, { session })
   }
 
   public get injectionContainer() {
@@ -268,6 +287,10 @@ export class Agent {
 
   public get config() {
     return this.agentConfig
+  }
+
+  public get context() {
+    return this.agentContext
   }
 
   private async getMediationConnection(mediatorInvitationUrl: string) {
@@ -300,7 +323,7 @@ export class Agent {
   }
 
   private registerDependencies(dependencyManager: DependencyManager) {
-    dependencyManager.registerInstance(AgentConfig, this.agentConfig)
+    const dependencies = this.agentConfig.agentDependencies
 
     dependencyManager.registerSingleton(EventEmitter)
     dependencyManager.registerSingleton(MessageSender)
@@ -308,13 +331,12 @@ export class Agent {
     dependencyManager.registerSingleton(TransportService)
     dependencyManager.registerSingleton(Dispatcher)
     dependencyManager.registerSingleton(EnvelopeService)
+    dependencyManager.registerInstance(AgentConfig, this.agentConfig)
+    dependencyManager.registerInstance(InjectionSymbols.AgentDependencies, dependencies)
+    dependencyManager.registerInstance(InjectionSymbols.FileSystem, new dependencies.FileSystem())
+    dependencyManager.registerInstance(InjectionSymbols.Stop$, this.stop$)
 
     // Register possibly already defined services
-    if (!dependencyManager.isRegistered(InjectionSymbols.Wallet)) {
-      this.dependencyManager.registerSingleton(IndyWallet)
-      const wallet = this.dependencyManager.resolve(IndyWallet)
-      dependencyManager.registerInstance(InjectionSymbols.Wallet, wallet)
-    }
     if (!dependencyManager.isRegistered(InjectionSymbols.Logger)) {
       dependencyManager.registerInstance(InjectionSymbols.Logger, this.logger)
     }

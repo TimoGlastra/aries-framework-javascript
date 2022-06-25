@@ -1,9 +1,12 @@
-import type { Wallet } from '../../../wallet/Wallet'
+import type { AgentContext } from '../../../agent'
 import type { CredentialRepository } from '../../credentials/repository'
 import type { ProofStateChangedEvent } from '../ProofEvents'
 import type { CustomProofTags } from './../repository/ProofRecord'
 
+import { Subject } from 'rxjs'
+
 import { getAgentConfig, getMockConnection, mockFunction } from '../../../../tests/helpers'
+import { MockAgentContext } from '../../../../tests/mocks'
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
 import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
@@ -93,13 +96,13 @@ describe('ProofService', () => {
   let proofRepository: ProofRepository
   let proofService: ProofService
   let ledgerService: IndyLedgerService
-  let wallet: Wallet
   let indyVerifierService: IndyVerifierService
   let indyHolderService: IndyHolderService
   let indyRevocationService: IndyRevocationService
   let eventEmitter: EventEmitter
   let credentialRepository: CredentialRepository
   let connectionService: ConnectionService
+  let agentContext: AgentContext
 
   beforeEach(() => {
     const agentConfig = getAgentConfig('ProofServiceTest')
@@ -108,20 +111,20 @@ describe('ProofService', () => {
     indyHolderService = new IndyHolderServiceMock()
     indyRevocationService = new IndyRevocationServiceMock()
     ledgerService = new IndyLedgerServiceMock()
-    eventEmitter = new EventEmitter(agentConfig)
+    eventEmitter = new EventEmitter(agentConfig.agentDependencies, new Subject())
     connectionService = new connectionServiceMock()
+    agentContext = new MockAgentContext(agentConfig)
 
     proofService = new ProofService(
       proofRepository,
       ledgerService,
-      wallet,
-      agentConfig,
       indyHolderService,
       indyVerifierService,
       indyRevocationService,
       connectionService,
       eventEmitter,
-      credentialRepository
+      credentialRepository,
+      agentConfig.logger
     )
 
     mockFunction(ledgerService.getCredentialDefinition).mockReturnValue(Promise.resolve(credDef))
@@ -138,6 +141,7 @@ describe('ProofService', () => {
       })
       messageContext = new InboundMessageContext(presentationRequest, {
         connection,
+        agentContext,
       })
     })
 
@@ -157,7 +161,7 @@ describe('ProofService', () => {
         connectionId: connection.id,
       }
       expect(repositorySaveSpy).toHaveBeenCalledTimes(1)
-      const [[createdProofRecord]] = repositorySaveSpy.mock.calls
+      const [[, createdProofRecord]] = repositorySaveSpy.mock.calls
       expect(createdProofRecord).toMatchObject(expectedProofRecord)
       expect(returnedProofRecord).toMatchObject(expectedProofRecord)
     })
@@ -236,6 +240,7 @@ describe('ProofService', () => {
       presentationProblemReportMessage.setThread({ threadId: 'somethreadid' })
       messageContext = new InboundMessageContext(presentationProblemReportMessage, {
         connection,
+        agentContext,
       })
     })
 
@@ -252,12 +257,12 @@ describe('ProofService', () => {
       const expectedCredentialRecord = {
         errorMessage: 'abandoned: Indy error',
       }
-      expect(proofRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, {
+      expect(proofRepository.getSingleByQuery).toHaveBeenNthCalledWith(1, agentContext, {
         threadId: 'somethreadid',
         connectionId: connection.id,
       })
       expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
-      const [[updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
+      const [[, updatedCredentialRecord]] = repositoryUpdateSpy.mock.calls
       expect(updatedCredentialRecord).toMatchObject(expectedCredentialRecord)
       expect(returnedCredentialRecord).toMatchObject(expectedCredentialRecord)
     })

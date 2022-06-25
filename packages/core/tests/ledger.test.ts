@@ -1,10 +1,12 @@
+import type { Wallet } from '../src'
+
 import { promises } from 'fs'
 import * as indy from 'indy-sdk'
 
+import { InjectionSymbols } from '../src'
 import { Agent } from '../src/agent/Agent'
 import { DID_IDENTIFIER_REGEX, isAbbreviatedVerkey, isFullVerkey, VERKEY_REGEX } from '../src/utils/did'
 import { sleep } from '../src/utils/sleep'
-import { IndyWallet } from '../src/wallet/IndyWallet'
 
 import { genesisPath, getBaseConfig } from './helpers'
 import testLogger from './logger'
@@ -65,7 +67,7 @@ describe('ledger', () => {
       throw new Error('Agent does not have public did.')
     }
 
-    const faberWallet = faberAgent.dependencyManager.resolve(IndyWallet)
+    const faberWallet = faberAgent.dependencyManager.resolve<Wallet>(InjectionSymbols.Wallet)
     const didInfo = await faberWallet.createDid()
 
     const result = await faberAgent.ledger.registerPublicDid(didInfo.did, didInfo.verkey, 'alias', 'TRUST_ANCHOR')

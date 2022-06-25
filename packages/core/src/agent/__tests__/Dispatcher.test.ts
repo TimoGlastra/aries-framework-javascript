@@ -1,6 +1,9 @@
 import type { Handler } from '../Handler'
 
+import { Subject } from 'rxjs'
+
 import { getAgentConfig } from '../../../tests/helpers'
+import { MockAgentContext } from '../../../tests/mocks'
 import { parseMessageType } from '../../utils/messageType'
 import { AgentMessage } from '../AgentMessage'
 import { Dispatcher } from '../Dispatcher'
@@ -48,8 +51,9 @@ class TestHandler implements Handler {
 
 describe('Dispatcher', () => {
   const agentConfig = getAgentConfig('DispatcherTest')
+  const agentContext = new MockAgentContext(agentConfig)
   const MessageSenderMock = MessageSender as jest.Mock<MessageSender>
-  const eventEmitter = new EventEmitter(agentConfig)
+  const eventEmitter = new EventEmitter(agentConfig.agentDependencies, new Subject())
   const fakeProtocolHandler = new TestHandler([CustomProtocolMessage])
   const connectionHandler = new TestHandler([
     ConnectionInvitationTestMessage,
@@ -57,7 +61,7 @@ describe('Dispatcher', () => {
     ConnectionResponseTestMessage,
   ])
 
-  const dispatcher = new Dispatcher(new MessageSenderMock(), eventEmitter, agentConfig)
+  const dispatcher = new Dispatcher(new MessageSenderMock(), eventEmitter, agentConfig.logger)
 
   dispatcher.registerHandler(connectionHandler)
   dispatcher.registerHandler(new TestHandler([NotificationAckTestMessage]))
@@ -138,9 +142,9 @@ describe('Dispatcher', () => {
 
   describe('dispatch()', () => {
     it('calls the handle method of the handler', async () => {
-      const dispatcher = new Dispatcher(new MessageSenderMock(), eventEmitter, agentConfig)
+      const dispatcher = new Dispatcher(new MessageSenderMock(), eventEmitter, agentConfig.logger)
       const customProtocolMessage = new CustomProtocolMessage()
-      const inboundMessageContext = new InboundMessageContext(customProtocolMessage)
+      const inboundMessageContext = new InboundMessageContext(customProtocolMessage, { agentContext })
 
       const mockHandle = jest.fn()
       dispatcher.registerHandler({ supportedMessages: [CustomProtocolMessage], handle: mockHandle })
@@ -151,9 +155,9 @@ describe('Dispatcher', () => {
     })
 
     it('throws an error if no handler for the message could be found', async () => {
-      const dispatcher = new Dispatcher(new MessageSenderMock(), eventEmitter, agentConfig)
+      const dispatcher = new Dispatcher(new MessageSenderMock(), eventEmitter, agentConfig.logger)
       const customProtocolMessage = new CustomProtocolMessage()
-      const inboundMessageContext = new InboundMessageContext(customProtocolMessage)
+      const inboundMessageContext = new InboundMessageContext(customProtocolMessage, { agentContext })
 
       const mockHandle = jest.fn()
       dispatcher.registerHandler({ supportedMessages: [], handle: mockHandle })
