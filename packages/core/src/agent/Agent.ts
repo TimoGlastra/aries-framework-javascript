@@ -3,10 +3,10 @@ import type { InboundTransport } from '../transport/InboundTransport'
 import type { OutboundTransport } from '../transport/OutboundTransport'
 import type { InitConfig } from '../types'
 import type { Wallet } from '../wallet/Wallet'
-import type { AgentContext } from './AgentContext'
 import type { AgentDependencies } from './AgentDependencies'
 import type { AgentMessageReceivedEvent } from './Events'
 import type { TransportSession } from './TransportService'
+import type { AgentContext } from './context'
 import type { Subscription } from 'rxjs'
 import type { DependencyContainer } from 'tsyringe'
 
@@ -43,7 +43,6 @@ import { WalletModule } from '../wallet/WalletModule'
 import { WalletError } from '../wallet/error'
 
 import { AgentConfig } from './AgentConfig'
-import { DefaultAgentContext } from './AgentContext'
 import { Dispatcher } from './Dispatcher'
 import { EnvelopeService } from './EnvelopeService'
 import { EventEmitter } from './EventEmitter'
@@ -51,6 +50,7 @@ import { AgentEventTypes } from './Events'
 import { MessageReceiver } from './MessageReceiver'
 import { MessageSender } from './MessageSender'
 import { TransportService } from './TransportService'
+import { DefaultAgentContextProvider, DefaultAgentContext } from './context'
 
 export class Agent {
   protected agentConfig: AgentConfig
@@ -114,16 +114,7 @@ export class Agent {
     this.messageSender = this.dependencyManager.resolve(MessageSender)
     this.messageReceiver = this.dependencyManager.resolve(MessageReceiver)
     this.transportService = this.dependencyManager.resolve(TransportService)
-
-    if (!this.dependencyManager.isRegistered(InjectionSymbols.Wallet)) {
-      this.dependencyManager.registerContextScoped(InjectionSymbols.Wallet, IndyWallet)
-    }
-
-    const wallet = this.dependencyManager.resolve<Wallet>(InjectionSymbols.Wallet)
-
-    // Bind the default agent context to the container for use in modules etc.
-    this.agentContext = new DefaultAgentContext(wallet, this.agentConfig)
-    this.dependencyManager.registerInstance(InjectionSymbols.AgentContext, this.agentContext)
+    this.agentContext = this.dependencyManager.resolve<AgentContext>(InjectionSymbols.AgentContext)
 
     // We set the modules in the constructor because that allows to set them as read-only
     this.connections = this.dependencyManager.resolve(ConnectionsModule)
@@ -146,8 +137,9 @@ export class Agent {
       .pipe(
         takeUntil(this.stop$),
         concatMap((e) =>
-          this.messageReceiver.receiveMessage(this.agentContext, e.payload.message, {
+          this.messageReceiver.receiveMessage(e.payload.message, {
             connection: e.payload.connection,
+            contextCorrelationId: e.payload.contextCorrelationId,
           })
         )
       )
@@ -277,8 +269,18 @@ export class Agent {
     return this.agentContext.wallet.publicDid
   }
 
+  /**
+   * Receive a message. This should mainly be used for receiving connection-less messages.
+   *
+   * If you want to receive messages that originated from e.g. a transport make sure to use the {@link MessageReceiver}
+   * for this. The `receiveMessage` method on the `Agent` class will associate the current context to the message, which
+   * may not be what should happen (e.g. in case of multi tenancy).
+   */
   public async receiveMessage(inboundMessage: unknown, session?: TransportSession) {
-    return await this.messageReceiver.receiveMessage(this.agentContext, inboundMessage, { session })
+    return await this.messageReceiver.receiveMessage(inboundMessage, {
+      session,
+      contextCorrelationId: this.agentContext.contextCorrelationId,
+    })
   }
 
   public get injectionContainer() {
@@ -336,7 +338,10 @@ export class Agent {
     dependencyManager.registerInstance(InjectionSymbols.FileSystem, new dependencies.FileSystem())
     dependencyManager.registerInstance(InjectionSymbols.Stop$, this.stop$)
 
-    // Register possibly already defined services
+    // Use default IndyWallet if no wallet has been registered yet.
+    if (!dependencyManager.isRegistered(InjectionSymbols.Wallet)) {
+      dependencyManager.registerContextScoped(InjectionSymbols.Wallet, IndyWallet)
+    }
     if (!dependencyManager.isRegistered(InjectionSymbols.Logger)) {
       dependencyManager.registerInstance(InjectionSymbols.Logger, this.logger)
     }
@@ -372,5 +377,17 @@ export class Agent {
       didCommMessagePlugin,
       storageUpdatePlugin,
     ])
+
+    const wallet = this.dependencyManager.resolve<Wallet>(InjectionSymbols.Wallet)
+
+    // Bind the default agent context to the container for use in modules etc.
+    this.agentContext = new DefaultAgentContext(wallet, this.agentConfig, 'default')
+    this.dependencyManager.registerInstance(InjectionSymbols.AgentContext, this.agentContext)
+
+    // If no agent context provider has been registered we use the default agent context.
+    if (!this.dependencyManager.isRegistered(InjectionSymbols.AgentContextProvider)) {
+      const agentContextProvider = new DefaultAgentContextProvider(this.agentContext)
+      this.dependencyManager.registerInstance(InjectionSymbols.AgentContextProvider, agentContextProvider)
+    }
   }
 }
