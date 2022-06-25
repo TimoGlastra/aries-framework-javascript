@@ -1,10 +1,9 @@
+import type { DependencyManager } from '../../plugins'
 import type { AutoAcceptProof } from './ProofAutoAcceptType'
 import type { PresentationPreview, RequestPresentationMessage } from './messages'
 import type { RequestedCredentials, RetrievedCredentials } from './models'
 import type { ProofRequestOptions } from './models/ProofRequest'
 import type { ProofRecord } from './repository/ProofRecord'
-
-import { Lifecycle, scoped } from 'tsyringe'
 
 import { AgentConfig } from '../../agent/AgentConfig'
 import { Dispatcher } from '../../agent/Dispatcher'
@@ -12,6 +11,7 @@ import { MessageSender } from '../../agent/MessageSender'
 import { createOutboundMessage } from '../../agent/helpers'
 import { ServiceDecorator } from '../../decorators/service/ServiceDecorator'
 import { AriesFrameworkError } from '../../error'
+import { modulePlugin } from '../../plugins'
 import { ConnectionService } from '../connections/services/ConnectionService'
 import { RoutingService } from '../routing/services/RoutingService'
 
@@ -26,9 +26,10 @@ import {
 } from './handlers'
 import { PresentationProblemReportMessage } from './messages/PresentationProblemReportMessage'
 import { ProofRequest } from './models/ProofRequest'
+import { ProofRepository } from './repository'
 import { ProofService } from './services'
 
-@scoped(Lifecycle.ContainerScoped)
+@modulePlugin()
 export class ProofsModule {
   private proofService: ProofService
   private connectionService: ConnectionService
@@ -460,6 +461,17 @@ export class ProofsModule {
     )
     dispatcher.registerHandler(new PresentationAckHandler(this.proofService))
     dispatcher.registerHandler(new PresentationProblemReportHandler(this.proofService))
+  }
+
+  /**
+   * Registers the dependencies of the proofs module on the dependency manager.
+   */
+  public static register(dependencyManager: DependencyManager) {
+    // Services
+    dependencyManager.registerSingleton(ProofService)
+
+    // Repositories
+    dependencyManager.registerSingleton(ProofRepository)
   }
 }
 

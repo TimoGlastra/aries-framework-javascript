@@ -24,7 +24,10 @@ import { DummyModule } from './dummy'
 
 const agent = new Agent(/** agent config... */)
 
-const dummyModule = agent.injectionContainer.resolve(DummyModule)
+// Register the module with it's dependencies
+agent.dependencyManager.registerModulePlugins(DummyModule)
+
+const dummyModule = agent.dependencyManager.resolve(DummyModule)
 
 await agent.initialize()
 ```

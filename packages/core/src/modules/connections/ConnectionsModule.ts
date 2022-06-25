@@ -1,15 +1,15 @@
+import type { DependencyManager } from '../../plugins'
 import type { Key } from '../dids'
 import type { OutOfBandRecord } from '../oob/repository'
 import type { ConnectionRecord } from './repository/ConnectionRecord'
 import type { Routing } from './services'
-
-import { Lifecycle, scoped } from 'tsyringe'
 
 import { AgentConfig } from '../../agent/AgentConfig'
 import { Dispatcher } from '../../agent/Dispatcher'
 import { MessageSender } from '../../agent/MessageSender'
 import { createOutboundMessage } from '../../agent/helpers'
 import { AriesFrameworkError } from '../../error'
+import { modulePlugin } from '../../plugins'
 import { DidResolverService } from '../dids'
 import { DidRepository } from '../dids/repository'
 import { OutOfBandService } from '../oob/OutOfBandService'
@@ -27,10 +27,11 @@ import {
   DidExchangeCompleteHandler,
 } from './handlers'
 import { HandshakeProtocol } from './models'
+import { ConnectionRepository } from './repository'
 import { ConnectionService } from './services/ConnectionService'
 import { TrustPingService } from './services/TrustPingService'
 
-@scoped(Lifecycle.ContainerScoped)
+@modulePlugin()
 export class ConnectionsModule {
   private agentConfig: AgentConfig
   private didExchangeProtocol: DidExchangeProtocol
@@ -305,5 +306,18 @@ export class ConnectionsModule {
       )
     )
     dispatcher.registerHandler(new DidExchangeCompleteHandler(this.didExchangeProtocol, this.outOfBandService))
+  }
+
+  /**
+   * Registers the dependencies of the connections module on the dependency manager.
+   */
+  public static register(dependencyManager: DependencyManager) {
+    // Services
+    dependencyManager.container.registerSingleton(ConnectionService)
+    dependencyManager.container.registerSingleton(DidExchangeProtocol)
+    dependencyManager.container.registerSingleton(TrustPingService)
+
+    // Repositories
+    dependencyManager.container.registerSingleton(ConnectionRepository)
   }
 }
