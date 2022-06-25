@@ -13,7 +13,7 @@ import { InjectionSymbols } from '../../constants'
 import { ServiceDecorator } from '../../decorators/service/ServiceDecorator'
 import { AriesFrameworkError } from '../../error'
 import { Logger } from '../../logger'
-import { modulePlugin, injectable, inject } from '../../plugins'
+import { modulePlugin, inject } from '../../plugins'
 import { ConnectionService } from '../connections/services/ConnectionService'
 import { RoutingService } from '../routing/services/RoutingService'
 
