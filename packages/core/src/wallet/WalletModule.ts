@@ -1,10 +1,9 @@
 import type { Logger } from '../logger'
 import type { WalletConfig, WalletConfigRekey, WalletExportImportConfig } from '../types'
 
-import { inject, Lifecycle, scoped } from 'tsyringe'
-
 import { AgentConfig } from '../agent/AgentConfig'
 import { InjectionSymbols } from '../constants'
+import { inject, injectable } from '../plugins'
 import { StorageUpdateService } from '../storage'
 import { CURRENT_FRAMEWORK_STORAGE_VERSION } from '../storage/migration/updates'
 
@@ -12,7 +11,7 @@ import { Wallet } from './Wallet'
 import { WalletError } from './error/WalletError'
 import { WalletNotFoundError } from './error/WalletNotFoundError'
 
-@scoped(Lifecycle.ContainerScoped)
+@injectable()
 export class WalletModule {
   private wallet: Wallet
   private storageUpdateService: StorageUpdateService
@@ -103,5 +102,12 @@ export class WalletModule {
 
   public async import(walletConfig: WalletConfig, importConfig: WalletExportImportConfig): Promise<void> {
     await this.wallet.import(walletConfig, importConfig)
+  }
+
+  /**
+   * Registers the dependencies of the wallet module on the injection dependencyManager.
+   */
+  public static register() {
+    // Nothing to register for wallet module (at the moment, we can move the wallet registration to here)
   }
 }

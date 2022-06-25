@@ -29,7 +29,7 @@ const run = async () => {
   agent.registerOutboundTransport(wsOutboundTransport)
 
   // Inject DummyModule
-  const dummyModule = agent.injectionContainer.resolve(DummyModule)
+  const dummyModule = agent.dependencyManager.resolve(DummyModule)
 
   // Now agent will handle messages and events from Dummy protocol
 

@@ -1,16 +1,17 @@
+import type { DependencyManager } from '../../plugins'
 import type { BasicMessageTags } from './repository/BasicMessageRecord'
-
-import { Lifecycle, scoped } from 'tsyringe'
 
 import { Dispatcher } from '../../agent/Dispatcher'
 import { MessageSender } from '../../agent/MessageSender'
 import { createOutboundMessage } from '../../agent/helpers'
+import { injectable } from '../../plugins'
 import { ConnectionService } from '../connections'
 
 import { BasicMessageHandler } from './handlers'
+import { BasicMessageRepository } from './repository'
 import { BasicMessageService } from './services'
 
-@scoped(Lifecycle.ContainerScoped)
+@injectable()
 export class BasicMessagesModule {
   private basicMessageService: BasicMessageService
   private messageSender: MessageSender
@@ -42,5 +43,16 @@ export class BasicMessagesModule {
 
   private registerHandlers(dispatcher: Dispatcher) {
     dispatcher.registerHandler(new BasicMessageHandler(this.basicMessageService))
+  }
+
+  /**
+   * Registers the dependencies of the basic message module on the dependency manager.
+   */
+  public static register(dependencyManager: DependencyManager) {
+    // Services
+    dependencyManager.registerSingleton(BasicMessageService)
+
+    // Repositories
+    dependencyManager.registerSingleton(BasicMessageRepository)
   }
 }

@@ -1,4 +1,5 @@
 import type { Logger } from '../../logger'
+import type { DependencyManager } from '../../plugins'
 import type { OutboundWebSocketClosedEvent } from '../../transport'
 import type { OutboundMessage } from '../../types'
 import type { ConnectionRecord } from '../connections'
@@ -8,7 +9,6 @@ import type { GetRoutingOptions } from './services/MediationRecipientService'
 
 import { firstValueFrom, interval, ReplaySubject, timer } from 'rxjs'
 import { filter, first, takeUntil, throttleTime, timeout, tap, delayWhen } from 'rxjs/operators'
-import { Lifecycle, scoped } from 'tsyringe'
 
 import { AgentConfig } from '../../agent/AgentConfig'
 import { Dispatcher } from '../../agent/Dispatcher'
@@ -17,6 +17,7 @@ import { MessageReceiver } from '../../agent/MessageReceiver'
 import { MessageSender } from '../../agent/MessageSender'
 import { createOutboundMessage } from '../../agent/helpers'
 import { AriesFrameworkError } from '../../error'
+import { injectable } from '../../plugins'
 import { TransportEventTypes } from '../../transport'
 import { ConnectionService } from '../connections/services'
 import { DidsModule } from '../dids'
@@ -31,10 +32,10 @@ import { MediationGrantHandler } from './handlers/MediationGrantHandler'
 import { StatusRequestMessage } from './messages'
 import { BatchPickupMessage } from './messages/BatchPickupMessage'
 import { MediationState } from './models/MediationState'
-import { MediationRepository } from './repository'
+import { MediationRepository, MediatorRoutingRepository } from './repository'
 import { MediationRecipientService } from './services/MediationRecipientService'
 
-@scoped(Lifecycle.ContainerScoped)
+@injectable()
 export class RecipientModule {
   private agentConfig: AgentConfig
   private mediationRecipientService: MediationRecipientService
@@ -377,5 +378,17 @@ export class RecipientModule {
     dispatcher.registerHandler(new StatusHandler(this.mediationRecipientService))
     dispatcher.registerHandler(new MessageDeliveryHandler(this.mediationRecipientService))
     //dispatcher.registerHandler(new KeylistListHandler(this.mediationRecipientService)) // TODO: write this
+  }
+
+  /**
+   * Registers the dependencies of the mediator recipient module on the dependency manager.
+   */
+  public static register(dependencyManager: DependencyManager) {
+    // Services
+    dependencyManager.registerSingleton(MediationRecipientService)
+
+    // Repositories
+    dependencyManager.registerSingleton(MediationRepository)
+    dependencyManager.registerSingleton(MediatorRoutingRepository)
   }
 }

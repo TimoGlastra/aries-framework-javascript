@@ -15,7 +15,6 @@ import type { StatusMessage } from '../messages/StatusMessage'
 
 import { firstValueFrom, ReplaySubject } from 'rxjs'
 import { filter, first, timeout } from 'rxjs/operators'
-import { inject, Lifecycle, scoped } from 'tsyringe'
 
 import { AgentConfig } from '../../../agent/AgentConfig'
 import { EventEmitter } from '../../../agent/EventEmitter'
@@ -25,6 +24,7 @@ import { createOutboundMessage } from '../../../agent/helpers'
 import { InjectionSymbols } from '../../../constants'
 import { KeyType } from '../../../crypto'
 import { AriesFrameworkError } from '../../../error'
+import { inject, injectable } from '../../../plugins'
 import { JsonTransformer } from '../../../utils'
 import { Wallet } from '../../../wallet/Wallet'
 import { ConnectionService } from '../../connections/services/ConnectionService'
@@ -44,7 +44,7 @@ import { MediationRole, MediationState } from '../models'
 import { MediationRecord } from '../repository/MediationRecord'
 import { MediationRepository } from '../repository/MediationRepository'
 
-@scoped(Lifecycle.ContainerScoped)
+@injectable()
 export class MediationRecipientService {
   private wallet: Wallet
   private mediationRepository: MediationRepository

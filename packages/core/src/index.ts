@@ -27,6 +27,7 @@ export { TransportService } from './agent/TransportService'
 import { parseInvitationUrl } from './utils/parseInvitation'
 import { uuid } from './utils/uuid'
 
+export * from './plugins'
 export * from './transport'
 export * from './modules/basic-messages'
 export * from './modules/credentials'

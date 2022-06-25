@@ -16,13 +16,12 @@ import type { GetFormatDataReturn } from '../../CredentialsModuleOptions'
 import type { CredentialFormat } from '../../formats'
 import type { IndyCredentialFormat } from '../../formats/indy/IndyCredentialFormat'
 
-import { Lifecycle, scoped } from 'tsyringe'
-
 import { AgentConfig } from '../../../../agent/AgentConfig'
 import { Dispatcher } from '../../../../agent/Dispatcher'
 import { EventEmitter } from '../../../../agent/EventEmitter'
 import { Attachment, AttachmentData } from '../../../../decorators/attachment/Attachment'
 import { AriesFrameworkError } from '../../../../error'
+import { injectable } from '../../../../plugins'
 import { DidCommMessageRepository, DidCommMessageRole } from '../../../../storage'
 import { JsonTransformer } from '../../../../utils'
 import { isLinkedAttachment } from '../../../../utils/attachment'
@@ -34,7 +33,7 @@ import { IndyCredentialFormatService } from '../../formats/indy/IndyCredentialFo
 import { IndyCredPropose } from '../../formats/indy/models'
 import { AutoAcceptCredential } from '../../models/CredentialAutoAcceptType'
 import { CredentialState } from '../../models/CredentialState'
-import { CredentialExchangeRecord, CredentialRepository } from '../../repository'
+import { CredentialRepository, CredentialExchangeRecord } from '../../repository'
 import { CredentialService } from '../../services'
 import { composeAutoAccept } from '../../util/composeAutoAccept'
 import { arePreviewAttributesEqual } from '../../util/previewAttributes'
@@ -59,7 +58,7 @@ import {
 } from './messages'
 import { V1CredentialPreview } from './messages/V1CredentialPreview'
 
-@scoped(Lifecycle.ContainerScoped)
+@injectable()
 export class V1CredentialService extends CredentialService<[IndyCredentialFormat]> {
   private connectionService: ConnectionService
   private formatService: IndyCredentialFormatService

@@ -1,13 +1,13 @@
 import type { DummyRecord } from './repository/DummyRecord'
+import type { DependencyManager } from '@aries-framework/core'
 
-import { ConnectionService, Dispatcher, MessageSender } from '@aries-framework/core'
-import { Lifecycle, scoped } from 'tsyringe'
+import { injectable, ConnectionService, Dispatcher, MessageSender } from '@aries-framework/core'
 
 import { DummyRequestHandler, DummyResponseHandler } from './handlers'
-import { DummyState } from './repository'
+import { DummyRepository, DummyState } from './repository'
 import { DummyService } from './services'
 
-@scoped(Lifecycle.ContainerScoped)
+@injectable()
 export class DummyModule {
   private messageSender: MessageSender
   private dummyService: DummyService
@@ -73,5 +73,10 @@ export class DummyModule {
   private registerHandlers(dispatcher: Dispatcher) {
     dispatcher.registerHandler(new DummyRequestHandler(this.dummyService))
     dispatcher.registerHandler(new DummyResponseHandler(this.dummyService))
+  }
+
+  public static register(dependencyManager: DependencyManager) {
+    dependencyManager.registerSingleton(DummyRepository)
+    dependencyManager.registerSingleton(DummyService)
   }
 }

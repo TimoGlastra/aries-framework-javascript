@@ -1,5 +1,6 @@
 import type { AgentMessage } from '../../agent/AgentMessage'
 import type { Logger } from '../../logger'
+import type { DependencyManager } from '../../plugins'
 import type { DeleteCredentialOptions } from './CredentialServiceOptions'
 import type {
   AcceptCredentialOptions,
@@ -23,18 +24,18 @@ import type { IndyCredentialFormat } from './formats/indy/IndyCredentialFormat'
 import type { CredentialExchangeRecord } from './repository/CredentialExchangeRecord'
 import type { CredentialService } from './services/CredentialService'
 
-import { Lifecycle, scoped } from 'tsyringe'
-
 import { AgentConfig } from '../../agent/AgentConfig'
 import { MessageSender } from '../../agent/MessageSender'
 import { createOutboundMessage } from '../../agent/helpers'
 import { ServiceDecorator } from '../../decorators/service/ServiceDecorator'
 import { AriesFrameworkError } from '../../error'
+import { injectable } from '../../plugins'
 import { DidCommMessageRole } from '../../storage'
 import { DidCommMessageRepository } from '../../storage/didcomm/DidCommMessageRepository'
 import { ConnectionService } from '../connections/services'
 import { MediationRecipientService } from '../routing'
 
+import { IndyCredentialFormatService } from './formats'
 import { CredentialState } from './models/CredentialState'
 import { V1CredentialService } from './protocol/v1/V1CredentialService'
 import { V2CredentialService } from './protocol/v2/V2CredentialService'
@@ -82,7 +83,7 @@ export interface CredentialsModule<CFs extends CredentialFormat[], CSs extends C
   findCredentialMessage(credentialExchangeId: string): Promise<FindCredentialMessageReturn<CSs>>
 }
 
-@scoped(Lifecycle.ContainerScoped)
+@injectable()
 export class CredentialsModule<
   CFs extends CredentialFormat[] = [IndyCredentialFormat],
   CSs extends CredentialService<CFs>[] = [V1CredentialService, V2CredentialService<CFs>]
@@ -595,5 +596,21 @@ export class CredentialsModule<
     const credentialExchangeRecord = await this.getById(credentialExchangeId)
 
     return this.getService(credentialExchangeRecord.protocolVersion)
+  }
+
+  /**
+   * Registers the dependencies of the credentials module on the dependency manager.
+   */
+  public static register(dependencyManager: DependencyManager) {
+    // Services
+    dependencyManager.registerSingleton(V1CredentialService)
+    dependencyManager.registerSingleton(RevocationNotificationService)
+    dependencyManager.registerSingleton(V2CredentialService)
+
+    // Repositories
+    dependencyManager.registerSingleton(CredentialRepository)
+
+    // Credential Formats
+    dependencyManager.registerSingleton(IndyCredentialFormatService)
   }
 }
