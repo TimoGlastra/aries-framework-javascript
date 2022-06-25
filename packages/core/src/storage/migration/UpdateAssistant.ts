@@ -1,5 +1,5 @@
 import type { AgentContext } from '../../agent'
-import type { Agent } from '../../agent/Agent'
+import type { BaseAgent } from '../../agent/BaseAgent'
 import type { FileSystem } from '../FileSystem'
 import type { UpdateConfig } from './updates'
 
@@ -12,7 +12,7 @@ import { StorageUpdateService } from './StorageUpdateService'
 import { StorageUpdateError } from './error/StorageUpdateError'
 import { CURRENT_FRAMEWORK_STORAGE_VERSION, supportedUpdates } from './updates'
 
-export class UpdateAssistant {
+export class UpdateAssistant<Agent extends BaseAgent = BaseAgent> {
   private agent: Agent
   private storageUpdateService: StorageUpdateService
   private updateConfig: UpdateConfig
