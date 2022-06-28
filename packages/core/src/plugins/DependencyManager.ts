@@ -2,14 +2,14 @@ import type { Constructor } from '../utils/mixins'
 import type { ModulePlugin, Plugin } from './Plugin'
 import type { DependencyContainer } from 'tsyringe'
 
-import { InjectionToken, Lifecycle } from 'tsyringe'
+import { container as rootContainer, InjectionToken, Lifecycle } from 'tsyringe'
 
 export { InjectionToken }
 
 export class DependencyManager {
-  public container: DependencyContainer
+  public readonly container: DependencyContainer
 
-  public constructor(container: DependencyContainer) {
+  public constructor(container: DependencyContainer = rootContainer.createChildContainer()) {
     this.container = container
   }
 
@@ -59,5 +59,9 @@ export class DependencyManager {
   public registerContextScoped(token: any, provider?: any) {
     if (provider) this.container.register(token, provider, { lifecycle: Lifecycle.ContainerScoped })
     else this.container.register(token, token, { lifecycle: Lifecycle.ContainerScoped })
+  }
+
+  public createChild() {
+    return new DependencyManager(this.container.createChildContainer())
   }
 }

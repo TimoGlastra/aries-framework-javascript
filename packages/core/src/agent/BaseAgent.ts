@@ -1,8 +1,8 @@
 import type { Logger } from '../logger'
+import type { DependencyManager } from '../plugins'
 import type { AgentConfig } from './AgentConfig'
 import type { TransportSession } from './TransportService'
 import type { AgentContext } from './context'
-import type { DependencyContainer } from 'tsyringe'
 
 import { InjectionSymbols } from '../constants'
 import { AriesFrameworkError } from '../error'
@@ -18,7 +18,6 @@ import { ProofsModule } from '../modules/proofs/ProofsModule'
 import { QuestionAnswerModule } from '../modules/question-answer/QuestionAnswerModule'
 import { MediatorModule } from '../modules/routing/MediatorModule'
 import { RecipientModule } from '../modules/routing/RecipientModule'
-import { DependencyManager } from '../plugins'
 import { StorageUpdateService } from '../storage'
 import { UpdateAssistant } from '../storage/migration/UpdateAssistant'
 import { DEFAULT_UPDATE_CONFIG } from '../storage/migration/updates'
@@ -55,17 +54,14 @@ export abstract class BaseAgent {
   public readonly wallet: WalletModule
   public readonly oob: OutOfBandModule
 
-  public constructor(agentConfig: AgentConfig, container: DependencyContainer) {
-    this.dependencyManager = new DependencyManager(container)
+  public constructor(agentConfig: AgentConfig, dependencyManager: DependencyManager) {
+    this.dependencyManager = dependencyManager
 
     this.agentConfig = agentConfig
     this.logger = this.agentConfig.logger
 
     this.logger.info('Creating agent with config', {
-      ...agentConfig,
-      // Prevent large object being logged.
-      // Will display true/false to indicate if value is present in config
-      logger: agentConfig.logger != undefined,
+      agentConfig: agentConfig.toString(),
     })
 
     if (!this.agentConfig.walletConfig) {

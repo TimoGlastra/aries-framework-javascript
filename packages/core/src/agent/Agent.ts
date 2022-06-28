@@ -1,4 +1,3 @@
-import type { DependencyManager } from '../plugins'
 import type { InboundTransport } from '../transport/InboundTransport'
 import type { OutboundTransport } from '../transport/OutboundTransport'
 import type { InitConfig } from '../types'
@@ -6,11 +5,9 @@ import type { Wallet } from '../wallet/Wallet'
 import type { AgentDependencies } from './AgentDependencies'
 import type { AgentMessageReceivedEvent } from './Events'
 import type { Subscription } from 'rxjs'
-import type { DependencyContainer } from 'tsyringe'
 
 import { Subject } from 'rxjs'
 import { concatMap, takeUntil } from 'rxjs/operators'
-import { container as baseContainer } from 'tsyringe'
 
 import { CachePlugin } from '../cache/plugin'
 import { InjectionSymbols } from '../constants'
@@ -29,6 +26,7 @@ import { ProofsModule } from '../modules/proofs/ProofsModule'
 import { QuestionAnswerModule } from '../modules/question-answer/QuestionAnswerModule'
 import { MediatorModule } from '../modules/routing/MediatorModule'
 import { RecipientModule } from '../modules/routing/RecipientModule'
+import { DependencyManager } from '../plugins'
 import { InMemoryMessageRepository } from '../storage/InMemoryMessageRepository'
 import { IndyStorageService } from '../storage/IndyStorageService'
 import { DidCommMessagePlugin, StorageUpdatePlugin } from '../storage/plugin'
@@ -52,11 +50,11 @@ export class Agent extends BaseAgent {
   public constructor(
     initialConfig: InitConfig,
     dependencies: AgentDependencies,
-    injectionContainer?: DependencyContainer
+    dependencyManager?: DependencyManager
   ) {
     // NOTE: we can't create variables before calling super as TS will complain that the super call must be the
     // the first statement in the constructor.
-    super(new AgentConfig(initialConfig, dependencies), injectionContainer ?? baseContainer.createChildContainer())
+    super(new AgentConfig(initialConfig, dependencies), dependencyManager ?? new DependencyManager())
 
     const stop$ = this.dependencyManager.resolve<Subject<boolean>>(InjectionSymbols.Stop$)
 
@@ -93,10 +91,6 @@ export class Agent extends BaseAgent {
 
   public get events() {
     return this.eventEmitter
-  }
-
-  public get isInitialized() {
-    return this._isInitialized && this.wallet.isInitialized
   }
 
   public async initialize() {
@@ -161,6 +155,7 @@ export class Agent extends BaseAgent {
     dependencyManager.registerSingleton(EnvelopeService)
     dependencyManager.registerInstance(InjectionSymbols.AgentDependencies, this.agentConfig.agentDependencies)
     dependencyManager.registerInstance(InjectionSymbols.Stop$, new Subject<boolean>())
+    dependencyManager.registerInstance(DependencyManager, dependencyManager)
 
     dependencyManager.registerInstance(InjectionSymbols.FileSystem, new dependencies.FileSystem())
 
@@ -204,17 +199,20 @@ export class Agent extends BaseAgent {
       StorageUpdatePlugin,
     ])
 
-    const wallet = dependencyManager.resolve<Wallet>(InjectionSymbols.Wallet)
-
-    // Bind the default agent context to the container for use in modules etc.
-    this.agentContext = new DefaultAgentContext(wallet, this.agentConfig, 'default')
-    this.dependencyManager.registerInstance(InjectionSymbols.AgentContext, this.agentContext)
-
     // If no agent context has been registered we use the default agent context.
     if (!this.dependencyManager.isRegistered(InjectionSymbols.AgentContextProvider)) {
-      const agentContextProvider = new DefaultAgentContextProvider(this.agentContext)
-      this.dependencyManager.registerInstance(InjectionSymbols.AgentContextProvider, agentContextProvider)
+      dependencyManager.registerSingleton(InjectionSymbols.AgentContextProvider, DefaultAgentContextProvider)
     }
+
+    // Bind the default agent context to the container for use in modules etc.
+    const wallet = dependencyManager.resolve<Wallet>(InjectionSymbols.Wallet)
+    this.agentContext = new DefaultAgentContext({
+      wallet,
+      config: this.agentConfig,
+      contextCorrelationId: 'default',
+      dependencyManager,
+    })
+    dependencyManager.registerInstance(InjectionSymbols.AgentContext, this.agentContext)
   }
 
   protected async getMediationConnection(mediatorInvitationUrl: string) {

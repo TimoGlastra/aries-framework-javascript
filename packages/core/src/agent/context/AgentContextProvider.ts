@@ -14,4 +14,6 @@ export interface AgentContextProvider {
     inboundMessage: unknown,
     options?: { contextCorrelationId?: string }
   ): Promise<AgentContext>
+
+  getAgentContextForContextCorrelationId(contextCorrelationId: string): Promise<AgentContext>
 }

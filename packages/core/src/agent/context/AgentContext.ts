@@ -1,9 +1,11 @@
+import type { DependencyManager } from '../../plugins'
 import type { Wallet } from '../../wallet'
 import type { AgentConfig } from '../AgentConfig'
 
 export interface AgentContext {
   readonly wallet: Wallet
   readonly config: AgentConfig
+  readonly dependencyManager: DependencyManager
 
   /**
    * An identifier that allows to correlate this context across usages. An example of the contextCorrelationId could be
