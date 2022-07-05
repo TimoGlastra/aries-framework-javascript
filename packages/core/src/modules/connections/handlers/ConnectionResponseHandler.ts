@@ -5,6 +5,7 @@ import type { OutOfBandService } from '../../oob/OutOfBandService'
 import type { ConnectionService } from '../services/ConnectionService'
 
 import { createOutboundMessage } from '../../../agent/helpers'
+import { ReturnRouteTypes } from '../../../decorators/transport/TransportDecorator'
 import { AriesFrameworkError } from '../../../error'
 import { ConnectionResponseMessage } from '../messages'
 
@@ -73,6 +74,7 @@ export class ConnectionResponseHandler implements Handler {
     // if auto accept is enable
     if (connection.autoAcceptConnection ?? this.agentConfig.autoAcceptConnections) {
       const { message } = await this.connectionService.createTrustPing(connection, { responseRequested: false })
+      message.setReturnRouting(ReturnRouteTypes.none)
       return createOutboundMessage(connection, message)
     }
   }
