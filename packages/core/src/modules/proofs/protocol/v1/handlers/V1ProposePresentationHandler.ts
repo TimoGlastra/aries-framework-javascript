@@ -3,7 +3,7 @@ import type { Handler, HandlerInboundMessage } from '../../../../../agent/Handle
 import type { DidCommMessageRepository } from '../../../../../storage/didcomm/DidCommMessageRepository'
 import type { ProofResponseCoordinator } from '../../../ProofResponseCoordinator'
 import type { IndyProofFormat } from '../../../formats/indy/IndyProofFormat'
-import type { IndyProofRequestFromProposalOptions } from '../../../formats/indy/IndyProofFormatsServiceOptions'
+import type { IndyProofRequestFromProposalOptions } from '../../../formats/indy/IndyProofFormatServiceOptions'
 import type { ProofRequestFromProposalOptions } from '../../../models/ProofServiceOptions'
 import type { ProofRecord } from '../../../repository/ProofRecord'
 import type { V1ProofService } from '../V1ProofService'

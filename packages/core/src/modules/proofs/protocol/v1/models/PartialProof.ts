@@ -1,5 +1,9 @@
+import type { IndyProof } from 'indy-sdk'
+
 import { Expose, Type } from 'class-transformer'
 import { IsInstance, ValidateNested } from 'class-validator'
+
+import { JsonTransformer } from '../../../../../utils'
 
 import { ProofIdentifier } from './ProofIdentifier'
 import { RequestedProof } from './RequestedProof'
@@ -21,4 +25,8 @@ export class PartialProof {
   @ValidateNested()
   @IsInstance(RequestedProof)
   public requestedProof!: RequestedProof
+
+  public toJSON(): IndyProof {
+    return JsonTransformer.toJSON(this) as IndyProof
+  }
 }

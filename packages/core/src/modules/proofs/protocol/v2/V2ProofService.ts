@@ -7,7 +7,7 @@ import type { RoutingService } from '../../../routing/services/RoutingService'
 import type { ProofResponseCoordinator } from '../../ProofResponseCoordinator'
 import type { ProofFormat } from '../../formats/ProofFormat'
 import type { ProofFormatService } from '../../formats/ProofFormatService'
-import type { CreateProblemReportOptions } from '../../formats/models/ProofFormatServiceOptions'
+import type { CreateProblemReportOptions } from '../../formats/ProofFormatServiceOptions'
 import type { ProofFormatSpec } from '../../models/ProofFormatSpec'
 import type {
   CreateAckOptions,

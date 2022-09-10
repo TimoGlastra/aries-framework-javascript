@@ -1,22 +1,49 @@
-import type { LinkedAttachment } from '../../../../utils/LinkedAttachment'
-import type { CredentialPreviewAttributeOptions } from '../../../credentials'
-import type {
-  PresentationPreviewAttribute,
-  PresentationPreviewPredicate,
-} from '../../protocol/v1/models/V1PresentationPreview'
+import type { Attachment } from '../../../../decorators/attachment/Attachment'
+import type { CredentialPreviewAttributeOptions, IndyRevocationInterval } from '../../../credentials'
+import type { GetRequestedCredentialsConfig } from '../../models'
+import type { PresentationPreview } from '../../protocol/v1/models/V1PresentationPreview'
 import type { ProofFormat } from '../ProofFormat'
-import type { IndyRequestProofFormat } from '../indy/IndyProofFormatsServiceOptions'
+import type { ProofAttributeInfo, ProofPredicateInfo } from './models'
 import type { RequestedAttribute } from './models/RequestedAttribute'
-import type { IndyRequestedCredentialsOptions } from './models/RequestedCredentials'
 import type { RequestedPredicate } from './models/RequestedPredicate'
 
-export interface IndyProposeProofFormat {
-  attributes?: PresentationPreviewAttribute[]
-  predicates?: PresentationPreviewPredicate[]
-  nonce: string
+export interface IndyProofFormatCreateRequestOptions {
   name: string
   version: string
+  nonce?: string
+  nonRevoked?: IndyRevocationInterval
+  requestedAttributes?: Record<string, ProofAttributeInfo> | Map<string, ProofAttributeInfo>
+  requestedPredicates?: Record<string, ProofPredicateInfo> | Map<string, ProofPredicateInfo>
 }
+
+export interface IndyProofFormatAcceptProposalOptions {
+  name: string
+  version: string
+  nonce?: string
+  nonRevoked?: IndyRevocationInterval
+  requestedAttributes?: Record<string, ProofAttributeInfo> | Map<string, ProofAttributeInfo>
+  requestedPredicates?: Record<string, ProofPredicateInfo> | Map<string, ProofPredicateInfo>
+}
+
+export interface IndyVerifyProofFormat {
+  proofJson: Attachment
+  proofRequest: Attachment
+}
+
+export interface IndyPresentationProofFormat {
+  requestedAttributes?: Record<string, RequestedAttribute>
+  requestedPredicates?: Record<string, RequestedPredicate>
+  selfAttestedAttributes?: Record<string, string>
+}
+
+export interface GetRequestedCredentialsFormat {
+  attachment: Attachment
+  presentationProposal?: PresentationPreview
+  config?: GetRequestedCredentialsConfig
+}
+
+// T-TODO: revise input data
+// T-TODO: make sure all input data can be interfaces (no classes required)
 
 /**
  * This defines the module payload for calling CredentialsApi.acceptProposal
@@ -24,14 +51,9 @@ export interface IndyProposeProofFormat {
 export interface IndyAcceptProposalFormat {
   credentialDefinitionId?: string
   attributes?: CredentialPreviewAttributeOptions[]
-  linkedAttachments?: LinkedAttachment[]
 }
 
-export interface IndyAcceptOfferFormat {
-  holderDid?: string
-}
-
-export interface IndyRequestedCredentialsFormat {
+export interface IndyProofFormatRequestedCredentials {
   requestedAttributes: Record<string, RequestedAttribute>
   requestedPredicates: Record<string, RequestedPredicate>
   selfAttestedAttributes: Record<string, string>
@@ -44,20 +66,14 @@ export interface IndyRetrievedCredentialsFormat {
 
 export interface IndyProofFormat extends ProofFormat {
   formatKey: 'indy'
-  proofRecordType: 'indy'
   proofFormats: {
-    createProposal: IndyProposeProofFormat
-    acceptProposal: unknown
-    createRequest: IndyRequestProofFormat
-    acceptRequest: unknown
-    createPresentation: IndyRequestedCredentialsOptions
-    acceptPresentation: unknown
-    createProposalAsResponse: IndyProposeProofFormat
-    createOutOfBandRequest: unknown
-    createRequestAsResponse: IndyRequestProofFormat
-    createProofRequestFromProposal: IndyRequestProofFormat
-    requestCredentials: IndyRequestedCredentialsFormat
-    retrieveCredentials: IndyRetrievedCredentialsFormat
+    createProposal: IndyProofFormatCreateRequestOptions
+    acceptProposal: IndyProofFormatAcceptProposalOptions
+    createRequest: IndyProofFormatCreateRequestOptions
+    acceptRequest: IndyProofFormatRequestedCredentials
+
+    getCredentialsForRequest: unknown
+    autoSelectCredentialsForRequest: unknown
   }
   // Format data is based on RFC 0592
   // https://github.com/hyperledger/aries-rfcs/tree/main/features/0592-indy-attachments

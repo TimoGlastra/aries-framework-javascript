@@ -1,4 +1,4 @@
-import type { ProofAttachmentFormat } from '../../../formats/models/ProofAttachmentFormat'
+import type { ProofAttachmentFormat } from '../../../models/ProofAttachmentFormat'
 
 import { Expose, Type } from 'class-transformer'
 import { IsArray, IsString, ValidateNested, IsOptional, IsInstance } from 'class-validator'

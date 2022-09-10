@@ -18,7 +18,7 @@ import type { CredentialFormatService } from './CredentialFormatService'
  * }
  * ```
  */
-export type FormatServiceMap<CFs extends CredentialFormat[]> = {
+export type CredentialFormatServiceMap<CFs extends CredentialFormat[]> = {
   [CF in CFs[number] as CF['formatKey']]: CredentialFormatService<CF>
 }
 
@@ -27,7 +27,7 @@ export type FormatServiceMap<CFs extends CredentialFormat[]> = {
  *
  * It requires an attachment and a format to be returned.
  */
-export interface FormatCreateReturn {
+export interface CredentialFormatCreateReturn {
   format: CredentialFormatSpec
   attachment: Attachment
 }
@@ -45,6 +45,9 @@ export interface FormatCreateProposalOptions<CF extends CredentialFormat> {
   credentialFormats: CredentialFormatPayload<[CF], 'createProposal'>
 }
 
+// T-TODO: attachId to attachmentId
+// T-TODO: prepend everything with Credential (Format) to avoid name clashes
+
 export interface FormatAcceptProposalOptions<CF extends CredentialFormat> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<[CF], 'acceptProposal'>
@@ -53,7 +56,7 @@ export interface FormatAcceptProposalOptions<CF extends CredentialFormat> {
   proposalAttachment: Attachment
 }
 
-export interface FormatCreateProposalReturn extends FormatCreateReturn {
+export interface FormatCreateProposalReturn extends CredentialFormatCreateReturn {
   previewAttributes?: CredentialPreviewAttribute[]
 }
 
@@ -71,7 +74,7 @@ export interface FormatAcceptOfferOptions<CF extends CredentialFormat> {
   offerAttachment: Attachment
 }
 
-export interface FormatCreateOfferReturn extends FormatCreateReturn {
+export interface FormatCreateOfferReturn extends CredentialFormatCreateReturn {
   previewAttributes?: CredentialPreviewAttribute[]
 }
 

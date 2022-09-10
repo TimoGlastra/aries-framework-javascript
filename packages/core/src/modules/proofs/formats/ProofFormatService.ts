@@ -1,79 +1,76 @@
 import type { AgentContext } from '../../../agent'
-import type { AgentConfig } from '../../../agent/AgentConfig'
-import type { DidCommMessageRepository } from '../../../storage'
-import type {
-  CreateRequestAsResponseOptions,
-  FormatRequestedCredentialReturn,
-  FormatRetrievedCredentialOptions,
-} from '../models/ProofServiceOptions'
-import type { ProofRequestFormats } from '../models/SharedOptions'
 import type { ProofFormat } from './ProofFormat'
-import type { IndyProofFormat } from './indy/IndyProofFormat'
-import type { GetRequestedCredentialsFormat } from './indy/IndyProofFormatsServiceOptions'
-import type { ProofAttachmentFormat } from './models/ProofAttachmentFormat'
 import type {
-  CreatePresentationFormatsOptions,
-  CreateProposalOptions,
-  CreateRequestOptions,
-  FormatCreatePresentationOptions,
-  ProcessPresentationOptions,
-  ProcessProposalOptions,
-  ProcessRequestOptions,
-} from './models/ProofFormatServiceOptions'
+  ProofFormatAcceptProposalOptions,
+  ProofFormatAcceptRequestOptions,
+  ProofFormatCreateProposalOptions,
+  ProofFormatCreateRequestOptions,
+  ProofFormatCreateReturn,
+  ProofFormatProcessOptions,
+} from './ProofFormatServiceOptions'
 
-/**
- * This abstract class is the base class for any proof format
- * specific service.
- *
- * @export
- * @abstract
- * @class ProofFormatService
- */
+import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
+import { JsonEncoder } from '../../../utils'
+
 export abstract class ProofFormatService<PF extends ProofFormat = ProofFormat> {
-  protected didCommMessageRepository: DidCommMessageRepository
-  protected agentConfig: AgentConfig
-
   abstract readonly formatKey: PF['formatKey']
 
-  public constructor(didCommMessageRepository: DidCommMessageRepository, agentConfig: AgentConfig) {
-    this.didCommMessageRepository = didCommMessageRepository
-    this.agentConfig = agentConfig
+  // proposal methods
+  abstract createProposal(
+    agentContext: AgentContext,
+    options: ProofFormatCreateProposalOptions<PF>
+  ): Promise<ProofFormatCreateReturn>
+  abstract processProposal(agentContext: AgentContext, options: ProofFormatProcessOptions): Promise<void>
+  abstract acceptProposal(
+    agentContext: AgentContext,
+    options: ProofFormatAcceptProposalOptions<PF>
+  ): Promise<ProofFormatCreateReturn>
+
+  // request methods
+  abstract createRequest(
+    agentContext: AgentContext,
+    options: ProofFormatCreateRequestOptions<PF>
+  ): Promise<ProofFormatCreateReturn>
+  abstract processRequest(agentContext: AgentContext, options: ProofFormatProcessOptions): Promise<void>
+  abstract acceptRequest(
+    agentContext: AgentContext,
+    options: ProofFormatAcceptRequestOptions<PF>
+  ): Promise<ProofFormatCreateReturn>
+
+  // presentation methods
+  abstract processPresentation(agentContext: AgentContext, options: ProofFormatProcessOptions): Promise<boolean>
+
+  // M-TODO: review
+  // public abstract getCredentialsForRequest(
+  //   agentContext: AgentContext,
+  //   options: GetRequestedCredentialsFormat
+  // ): Promise<FormatRetrievedCredentialOptions<[PF]>>
+  // public abstract autoSelectCredentialsForProofRequest(
+  //   options: FormatRetrievedCredentialOptions<[PF]>
+  // ): Promise<FormatRequestedCredentialReturn<[PF]>>
+  // abstract proposalAndRequestAreEqual(
+  //   proposalAttachments: ProofAttachmentFormat[],
+  //   requestAttachments: ProofAttachmentFormat[]
+  // ): boolean
+
+  abstract supportsFormat(format: string): boolean
+
+  /**
+   * Returns an object of type {@link Attachment} for use in presentation exchange messages.
+   * It looks up the correct format identifier and encodes the data as a base64 attachment.
+   *
+   * @param data The data to include in the attach object
+   * @param id the attach id from the formats component of the message
+   */
+  protected getFormatData(data: unknown, id: string): Attachment {
+    const attachment = new Attachment({
+      id,
+      mimeType: 'application/json',
+      data: new AttachmentData({
+        base64: JsonEncoder.toBase64(data),
+      }),
+    })
+
+    return attachment
   }
-
-  abstract createProposal(options: CreateProposalOptions): Promise<ProofAttachmentFormat>
-
-  abstract processProposal(options: ProcessProposalOptions): Promise<void>
-
-  abstract createRequest(options: CreateRequestOptions): Promise<ProofAttachmentFormat>
-
-  abstract processRequest(options: ProcessRequestOptions): Promise<void>
-
-  abstract createPresentation(
-    agentContext: AgentContext,
-    options: FormatCreatePresentationOptions<PF>
-  ): Promise<ProofAttachmentFormat>
-
-  abstract processPresentation(agentContext: AgentContext, options: ProcessPresentationOptions): Promise<boolean>
-
-  abstract createProofRequestFromProposal(options: CreatePresentationFormatsOptions): Promise<ProofRequestFormats>
-
-  public abstract getRequestedCredentialsForProofRequest(
-    agentContext: AgentContext,
-    options: GetRequestedCredentialsFormat
-  ): Promise<FormatRetrievedCredentialOptions<[PF]>>
-
-  public abstract autoSelectCredentialsForProofRequest(
-    options: FormatRetrievedCredentialOptions<[PF]>
-  ): Promise<FormatRequestedCredentialReturn<[PF]>>
-
-  abstract proposalAndRequestAreEqual(
-    proposalAttachments: ProofAttachmentFormat[],
-    requestAttachments: ProofAttachmentFormat[]
-  ): boolean
-
-  abstract supportsFormat(formatIdentifier: string): boolean
-
-  abstract createRequestAsResponse(
-    options: CreateRequestAsResponseOptions<[IndyProofFormat]>
-  ): Promise<ProofAttachmentFormat>
 }

@@ -117,7 +117,7 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
   public async createProposal(
     agentContext: AgentContext,
     { connection, credentialFormats, comment, autoAcceptCredential }: CreateProposalOptions<[IndyCredentialFormat]>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>> {
+  ): Promise<CredentialProtocolMsgReturnType> {
     this.assertOnlyIndyFormat(credentialFormats)
 
     if (!credentialFormats.indy) {
@@ -622,7 +622,7 @@ export class V1CredentialService extends CredentialService<[IndyCredentialFormat
       autoAcceptCredential,
       comment,
     }: NegotiateOfferOptions<[IndyCredentialFormat]>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>> {
+  ): Promise<CredentialProtocolMsgReturnType> {
     // Assert
     credentialRecord.assertProtocolVersion('v1')
     credentialRecord.assertState(CredentialState.OfferReceived)

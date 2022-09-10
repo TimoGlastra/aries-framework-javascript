@@ -3,29 +3,20 @@ import type { AgentMessage } from '../../../../agent/AgentMessage'
 import type { Dispatcher } from '../../../../agent/Dispatcher'
 import type { InboundMessageContext } from '../../../../agent/models/InboundMessageContext'
 import type { Attachment } from '../../../../decorators/attachment/Attachment'
+import type { CredentialProtocolMsgReturnType } from '../../../credentials/CredentialServiceOptions'
 import type { MediationRecipientService } from '../../../routing/services/MediationRecipientService'
 import type { RoutingService } from '../../../routing/services/RoutingService'
+import type { CreatePresentationOptions } from '../../../vc/models/W3cCredentialServiceOptions'
 import type { ProofResponseCoordinator } from '../../ProofResponseCoordinator'
 import type { ProofFormat } from '../../formats/ProofFormat'
 import type { ProofFormatService } from '../../formats/ProofFormatService'
-import type { IndyProofFormat, IndyProposeProofFormat } from '../../formats/indy/IndyProofFormat'
+import type { IndyProofFormat } from '../../formats/indy/IndyProofFormat'
 import type { ProofAttributeInfo } from '../../formats/indy/models'
 import type {
-  CreateProblemReportOptions,
-  FormatCreatePresentationOptions,
-} from '../../formats/models/ProofFormatServiceOptions'
-import type {
   CreateAckOptions,
-  CreatePresentationOptions,
-  CreateProofRequestFromProposalOptions,
-  CreateProposalAsResponseOptions,
+  CreateProblemReportOptions,
   CreateProposalOptions,
-  CreateRequestAsResponseOptions,
   CreateRequestOptions,
-  FormatRequestedCredentialReturn,
-  FormatRetrievedCredentialOptions,
-  GetRequestedCredentialsForProofRequestOptions,
-  ProofRequestFromProposalOptions,
 } from '../../models/ProofServiceOptions'
 
 import { validateOrReject } from 'class-validator'
@@ -40,6 +31,7 @@ import { DidCommMessageRepository } from '../../../../storage/didcomm/DidCommMes
 import { checkProofRequestForDuplicates } from '../../../../utils'
 import { JsonTransformer } from '../../../../utils/JsonTransformer'
 import { MessageValidator } from '../../../../utils/MessageValidator'
+import { uuid } from '../../../../utils/uuid'
 import { Wallet } from '../../../../wallet'
 import { AckStatus } from '../../../common/messages/AckMessage'
 import { ConnectionService } from '../../../connections'
@@ -85,31 +77,25 @@ import { PresentationPreview } from './models/V1PresentationPreview'
 @scoped(Lifecycle.ContainerScoped)
 export class V1ProofService extends ProofService<[IndyProofFormat]> {
   private credentialRepository: CredentialRepository
-  private ledgerService: IndyLedgerService
   private indyHolderService: IndyHolderService
-  private indyRevocationService: IndyRevocationService
   private indyProofFormatService: ProofFormatService
 
   public constructor(
     proofRepository: ProofRepository,
     didCommMessageRepository: DidCommMessageRepository,
-    ledgerService: IndyLedgerService,
     @inject(InjectionSymbols.Wallet) wallet: Wallet,
     agentConfig: AgentConfig,
     connectionService: ConnectionService,
     eventEmitter: EventEmitter,
     credentialRepository: CredentialRepository,
     formatService: IndyProofFormatService,
-    indyHolderService: IndyHolderService,
-    indyRevocationService: IndyRevocationService
+    indyHolderService: IndyHolderService
   ) {
     super(agentConfig, proofRepository, connectionService, didCommMessageRepository, wallet, eventEmitter)
     this.credentialRepository = credentialRepository
-    this.ledgerService = ledgerService
     this.wallet = wallet
     this.indyProofFormatService = formatService
     this.indyHolderService = indyHolderService
-    this.indyRevocationService = indyRevocationService
   }
 
   public readonly version = 'v1' as const
@@ -117,19 +103,35 @@ export class V1ProofService extends ProofService<[IndyProofFormat]> {
   public async createProposal(
     agentContext: AgentContext,
     options: CreateProposalOptions<[IndyProofFormat]>
-  ): Promise<{ proofRecord: ProofRecord; message: AgentMessage }> {
+  ): Promise<CredentialProtocolMsgReturnType> {
     const { connectionRecord, proofFormats } = options
 
-    // Assert
-    connectionRecord.assertReady()
-
-    if (!proofFormats.indy || Object.keys(proofFormats).length !== 1) {
-      throw new AriesFrameworkError('Only indy proof format is supported for present proof protocol v1')
+    this.assertOnlyIndyFormat(proofFormats)
+    if (!proofFormats.indy) {
+      throw new AriesFrameworkError('Missing indy proof format in v1 create proposal call.')
     }
 
+    // Create record
+    const proofRecord = new ProofRecord({
+      connectionId: connectionRecord.id,
+      threadId: uuid(),
+      parentThreadId: options.parentThreadId,
+      state: ProofState.ProposalSent,
+      autoAcceptProof: options?.autoAcceptProof,
+      protocolVersion: ProofProtocolVersion.V1,
+    })
+
+    // We're not actually using this proof request, but we need to validate the input
+    await this.indyProofFormatService.createProposal(agentContext, {
+      proofFormats: options.proofFormats,
+      proofRecord,
+    })
+
+    // TODO: request to v1 proposal
+
     const presentationProposal = new PresentationPreview({
-      attributes: proofFormats.indy?.attributes,
-      predicates: proofFormats.indy?.predicates,
+      attributes: proofFormats.indy.attributes,
+      predicates: proofFormats.indy.predicates,
     })
 
     // Create message
@@ -137,16 +139,6 @@ export class V1ProofService extends ProofService<[IndyProofFormat]> {
       comment: options?.comment,
       presentationProposal,
       parentThreadId: options.parentThreadId,
-    })
-
-    // Create record
-    const proofRecord = new ProofRecord({
-      connectionId: connectionRecord.id,
-      threadId: proposalMessage.threadId,
-      parentThreadId: proposalMessage.thread?.parentThreadId,
-      state: ProofState.ProposalSent,
-      autoAcceptProof: options?.autoAcceptProof,
-      protocolVersion: ProofProtocolVersion.V1,
     })
 
     await this.didCommMessageRepository.saveOrUpdateAgentMessage(agentContext, {
@@ -1042,5 +1034,16 @@ export class V1ProofService extends ProofService<[IndyProofFormat]> {
     await this.updateState(gentContext, proofRecord, ProofState.Done)
 
     return { message: ackMessage, proofRecord }
+  }
+
+  private assertOnlyIndyFormat(proofFormats: Record<string, unknown>) {
+    const formatKeys = Object.keys(proofFormats)
+
+    // It's fine to not have any formats in some cases, if indy is required the method that calls this should check for this
+    if (formatKeys.length === 0) return
+
+    if (formatKeys.length !== 1 || !formatKeys.includes('indy')) {
+      throw new AriesFrameworkError('Only indy credential format is supported for present proof v1 protocol')
+    }
   }
 }

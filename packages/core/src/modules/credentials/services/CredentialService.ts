@@ -61,53 +61,54 @@ export abstract class CredentialService<CFs extends CredentialFormat[] = Credent
   abstract createProposal(
     agentContext: AgentContext,
     options: CreateProposalOptions<CFs>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  ): Promise<CredentialProtocolMsgReturnType>
   abstract processProposal(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
   abstract acceptProposal(
     agentContext: AgentContext,
     options: AcceptProposalOptions<CFs>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  ): Promise<CredentialProtocolMsgReturnType>
   abstract negotiateProposal(
     agentContext: AgentContext,
     options: NegotiateProposalOptions<CFs>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  ): Promise<CredentialProtocolMsgReturnType>
 
   // methods for offer
   abstract createOffer(
     agentContext: AgentContext,
     options: CreateOfferOptions<CFs>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  ): Promise<CredentialProtocolMsgReturnType>
   abstract processOffer(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
   abstract acceptOffer(
     agentContext: AgentContext,
     options: AcceptOfferOptions<CFs>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  ): Promise<CredentialProtocolMsgReturnType>
   abstract negotiateOffer(
     agentContext: AgentContext,
     options: NegotiateOfferOptions<CFs>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  ): Promise<CredentialProtocolMsgReturnType>
 
   // methods for request
   abstract createRequest(
     agentContext: AgentContext,
     options: CreateRequestOptions<CFs>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  ): Promise<CredentialProtocolMsgReturnType>
   abstract processRequest(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
   abstract acceptRequest(
     agentContext: AgentContext,
     options: AcceptRequestOptions<CFs>
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  ): Promise<CredentialProtocolMsgReturnType>
 
   // methods for issue
   abstract processCredential(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
   abstract acceptCredential(
     agentContext: AgentContext,
     options: AcceptCredentialOptions
-  ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
+  ): Promise<CredentialProtocolMsgReturnType>
 
   // methods for ack
   abstract processAck(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
 
+  // T-TODO: consistent return type and async
   // methods for problem-report
   abstract createProblemReport(agentContext: AgentContext, options: CreateProblemReportOptions): ProblemReportMessage
 

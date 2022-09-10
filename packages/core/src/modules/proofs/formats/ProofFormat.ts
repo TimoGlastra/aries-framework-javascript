@@ -22,20 +22,15 @@ export type ProofFormatPayload<PFs extends ProofFormat[], M extends keyof ProofF
 }
 
 export interface ProofFormat {
-  formatKey: string // e.g. 'ProofManifest', cannot be shared between different formats
+  formatKey: string // e.g. 'presentationExchange', cannot be shared between different formats
   proofFormats: {
     createProposal: unknown
     acceptProposal: unknown
     createRequest: unknown
     acceptRequest: unknown
-    createPresentation: unknown
-    acceptPresentation: unknown
-    createProposalAsResponse: unknown
-    createOutOfBandRequest: unknown
-    createRequestAsResponse: unknown
-    createProofRequestFromProposal: unknown
-    requestCredentials: unknown
-    retrieveCredentials: unknown
+
+    getCredentialsForRequest: unknown
+    autoSelectCredentialsForRequest: unknown
   }
   formatData: {
     proposal: unknown

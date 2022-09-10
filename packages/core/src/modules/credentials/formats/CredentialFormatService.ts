@@ -7,7 +7,7 @@ import type {
   FormatCreateOfferOptions,
   FormatCreateOfferReturn,
   FormatCreateRequestOptions,
-  FormatCreateReturn,
+  CredentialFormatCreateReturn,
   FormatAcceptRequestOptions,
   FormatAcceptOfferOptions,
   FormatAcceptProposalOptions,
@@ -18,7 +18,7 @@ import type {
 } from './CredentialFormatServiceOptions'
 
 import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
-import { JsonEncoder } from '../../../utils/JsonEncoder'
+import { JsonEncoder } from '../../../utils'
 
 export abstract class CredentialFormatService<CF extends CredentialFormat = CredentialFormat> {
   abstract readonly formatKey: CF['formatKey']
@@ -41,18 +41,21 @@ export abstract class CredentialFormatService<CF extends CredentialFormat = Cred
     options: FormatCreateOfferOptions<CF>
   ): Promise<FormatCreateOfferReturn>
   abstract processOffer(agentContext: AgentContext, options: FormatProcessOptions): Promise<void>
-  abstract acceptOffer(agentContext: AgentContext, options: FormatAcceptOfferOptions<CF>): Promise<FormatCreateReturn>
+  abstract acceptOffer(
+    agentContext: AgentContext,
+    options: FormatAcceptOfferOptions<CF>
+  ): Promise<CredentialFormatCreateReturn>
 
   // request methods
   abstract createRequest(
     agentContext: AgentContext,
     options: FormatCreateRequestOptions<CF>
-  ): Promise<FormatCreateReturn>
+  ): Promise<CredentialFormatCreateReturn>
   abstract processRequest(agentContext: AgentContext, options: FormatProcessOptions): Promise<void>
   abstract acceptRequest(
     agentContext: AgentContext,
     options: FormatAcceptRequestOptions<CF>
-  ): Promise<FormatCreateReturn>
+  ): Promise<CredentialFormatCreateReturn>
 
   // credential methods
   abstract processCredential(agentContext: AgentContext, options: FormatProcessOptions): Promise<void>

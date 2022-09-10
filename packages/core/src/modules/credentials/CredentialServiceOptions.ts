@@ -122,7 +122,7 @@ export interface CreateProblemReportOptions {
   message: string
 }
 
-export interface CredentialProtocolMsgReturnType<MessageType extends AgentMessage> {
+export interface CredentialProtocolMsgReturnType<MessageType extends AgentMessage = AgentMessage> {
   message: MessageType
   credentialRecord: CredentialExchangeRecord
 }

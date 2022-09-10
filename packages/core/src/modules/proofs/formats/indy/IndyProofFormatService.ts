@@ -1,62 +1,48 @@
 import type { AgentContext } from '../../../../agent'
-import type { Logger } from '../../../../logger'
+import type { ProofAttachmentFormat } from '../../models/ProofAttachmentFormat'
 import type {
-  CreateRequestAsResponseOptions,
   FormatRequestedCredentialReturn,
   FormatRetrievedCredentialOptions,
 } from '../../models/ProofServiceOptions'
-import type { ProofRequestFormats } from '../../models/SharedOptions'
-import type { ProofAttachmentFormat } from '../models/ProofAttachmentFormat'
 import type {
-  CreatePresentationFormatsOptions,
-  CreateProofAttachmentOptions,
-  CreateProposalOptions,
-  CreateRequestAttachmentOptions,
-  CreateRequestOptions,
-  FormatCreatePresentationOptions,
-  ProcessPresentationOptions,
-  ProcessProposalOptions,
-  ProcessRequestOptions,
-  VerifyProofOptions,
-} from '../models/ProofFormatServiceOptions'
-import type { IndyProofFormat } from './IndyProofFormat'
-import type { GetRequestedCredentialsFormat } from './IndyProofFormatsServiceOptions'
+  ProofFormatAcceptProposalOptions,
+  ProofFormatAcceptRequestOptions,
+  ProofFormatCreateProposalOptions,
+  ProofFormatCreateRequestOptions,
+  ProofFormatCreateReturn,
+  ProofFormatProcessOptions,
+  ProofFormatProcessPresentationOptions,
+} from '../ProofFormatServiceOptions'
+import type { GetRequestedCredentialsFormat, IndyProofFormat } from './IndyProofFormat'
 import type { ProofAttributeInfo, ProofPredicateInfo } from './models'
 import type { CredDef, IndyProof, Schema } from 'indy-sdk'
 
-import { Lifecycle, scoped } from 'tsyringe'
+import { inject, Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../../../../agent/AgentConfig'
-import { Attachment, AttachmentData } from '../../../../decorators/attachment/Attachment'
+import { InjectionSymbols } from '../../../../constants'
 import { AriesFrameworkError } from '../../../../error/AriesFrameworkError'
-import { ConsoleLogger, LogLevel } from '../../../../logger'
-import { DidCommMessageRepository } from '../../../../storage/didcomm/DidCommMessageRepository'
+import { Logger } from '../../../../logger'
+import { DidCommMessageRepository } from '../../../../storage'
 import { checkProofRequestForDuplicates } from '../../../../utils'
-import { JsonEncoder } from '../../../../utils/JsonEncoder'
 import { JsonTransformer } from '../../../../utils/JsonTransformer'
 import { MessageValidator } from '../../../../utils/MessageValidator'
 import { objectEquals } from '../../../../utils/objectCheck'
-import { uuid } from '../../../../utils/uuid'
-import { IndyWallet } from '../../../../wallet/IndyWallet'
 import { IndyCredential, IndyCredentialInfo } from '../../../credentials'
 import { IndyCredentialUtils } from '../../../credentials/formats/indy/IndyCredentialUtils'
 import { IndyHolderService, IndyVerifierService, IndyRevocationService } from '../../../indy'
 import { IndyLedgerService } from '../../../ledger'
 import { ProofFormatSpec } from '../../models/ProofFormatSpec'
 import { PartialProof } from '../../protocol/v1/models'
-import {
-  V2_INDY_PRESENTATION_REQUEST,
-  V2_INDY_PRESENTATION_PROPOSAL,
-  V2_INDY_PRESENTATION,
-} from '../ProofFormatConstants'
 import { ProofFormatService } from '../ProofFormatService'
 
 import { InvalidEncodedValueError } from './errors/InvalidEncodedValueError'
-import { MissingIndyProofMessageError } from './errors/MissingIndyProofMessageError'
 import { RequestedAttribute, RequestedPredicate } from './models'
 import { ProofRequest } from './models/ProofRequest'
 import { RequestedCredentials } from './models/RequestedCredentials'
 import { RetrievedCredentials } from './models/RetrievedCredentials'
+
+export const INDY_PROOF_REQ = 'hlindy/proof-req@v2.0'
+export const INDY_PROOF = 'hlindy/proof@v2.0'
 
 @scoped(Lifecycle.ContainerScoped)
 export class IndyProofFormatService extends ProofFormatService {
@@ -65,249 +51,188 @@ export class IndyProofFormatService extends ProofFormatService {
   private indyRevocationService: IndyRevocationService
   private ledgerService: IndyLedgerService
   private logger: Logger
-  private wallet: IndyWallet
+  private didCommMessageRepository: DidCommMessageRepository
 
   public constructor(
-    agentConfig: AgentConfig,
     indyHolderService: IndyHolderService,
     indyVerifierService: IndyVerifierService,
     indyRevocationService: IndyRevocationService,
     ledgerService: IndyLedgerService,
-    didCommMessageRepository: DidCommMessageRepository,
-    wallet: IndyWallet
+    @inject(InjectionSymbols.Logger) logger: Logger,
+    didCommMessageRepository: DidCommMessageRepository
   ) {
-    super(didCommMessageRepository, agentConfig)
+    super()
+
     this.indyHolderService = indyHolderService
     this.indyVerifierService = indyVerifierService
     this.indyRevocationService = indyRevocationService
     this.ledgerService = ledgerService
-    this.wallet = wallet
-    this.logger = new ConsoleLogger(LogLevel.off)
+    this.logger = logger
+    this.didCommMessageRepository = didCommMessageRepository
   }
-  public readonly formatKey = 'indy' as const
-  public readonly proofRecordType = 'indy' as const
 
-  private createRequestAttachment(options: CreateRequestAttachmentOptions): ProofAttachmentFormat {
+  public readonly formatKey = 'indy' as const
+
+  public async createProposal(
+    agentContext: AgentContext,
+    { attachmentId, proofFormats }: ProofFormatCreateProposalOptions<IndyProofFormat>
+  ): Promise<ProofFormatCreateReturn> {
     const format = new ProofFormatSpec({
-      attachmentId: options.id,
-      format: V2_INDY_PRESENTATION_REQUEST,
+      format: INDY_PROOF_REQ,
+      attachmentId,
     })
 
-    const request = new ProofRequest(options.proofRequestOptions)
+    const indyFormat = proofFormats.indy
+
+    if (!indyFormat) {
+      throw Error('Missing indy format to create proposal attachment format')
+    }
+
+    const request = new ProofRequest({
+      ...indyFormat,
+      nonce: indyFormat.nonce ?? (await agentContext.wallet.generateNonce()),
+    })
+
+    // Validation and assert attribute and predicate (group) names do not match
+    MessageValidator.validateSync(request)
+    checkProofRequestForDuplicates(request)
+
+    const attachment = this.getFormatData(JsonTransformer.toJSON(request), format.attachmentId)
+
+    return {
+      format,
+      attachment,
+    }
+  }
+
+  public async processProposal(agentContext: AgentContext, { attachment }: ProofFormatProcessOptions): Promise<void> {
+    const proposalJson = attachment.getDataAsJson()
+
+    // fromJson also validates
+    const request = JsonTransformer.fromJSON(proposalJson, ProofRequest)
 
     // Assert attribute and predicate (group) names do not match
     checkProofRequestForDuplicates(request)
-
-    const attachment = new Attachment({
-      id: options.id,
-      mimeType: 'application/json',
-      data: new AttachmentData({
-        base64: JsonEncoder.toBase64(request),
-      }),
-    })
-    return { format, attachment }
   }
 
-  private async createProofAttachment(options: CreateProofAttachmentOptions): Promise<ProofAttachmentFormat> {
+  public async acceptProposal(
+    agentContext: AgentContext,
+    { proofFormats, attachmentId, proposalAttachment }: ProofFormatAcceptProposalOptions<IndyProofFormat>
+  ): Promise<ProofFormatCreateReturn> {
     const format = new ProofFormatSpec({
-      attachmentId: options.id,
-      format: V2_INDY_PRESENTATION_PROPOSAL,
+      format: INDY_PROOF_REQ,
+      attachmentId,
     })
 
-    const request = new ProofRequest(options.proofProposalOptions)
-    await MessageValidator.validateSync(request)
+    const proposal = JsonTransformer.fromJSON(proposalAttachment.getDataAsJson(), ProofRequest)
 
-    const attachment = new Attachment({
-      id: options.id,
-      mimeType: 'application/json',
-      data: new AttachmentData({
-        base64: JsonEncoder.toBase64(JsonTransformer.toJSON(request)),
-      }),
-    })
+    let request: ProofRequest
+
+    // If input is provided, we use that
+    if (proofFormats?.indy) {
+      request = new ProofRequest({
+        ...proofFormats.indy,
+        nonce: proofFormats.indy.nonce ?? (await agentContext.wallet.generateNonce()),
+      })
+    }
+    // Otherwise we use the proposal as base
+    else {
+      // We don't want to reuse the nonce from the proposal, as that would possibly allow replay attacks
+      request = proposal
+      request.nonce = await agentContext.wallet.generateNonce()
+    }
+
+    // Validation and assert attribute and predicate (group) names do not match
+    MessageValidator.validateSync(request)
+    checkProofRequestForDuplicates(request)
+
+    const attachment = this.getFormatData(JsonTransformer.toJSON(request), format.attachmentId)
     return { format, attachment }
   }
 
-  public async createProposal(options: CreateProposalOptions): Promise<ProofAttachmentFormat> {
-    if (!options.formats.indy) {
-      throw Error('Missing indy format to create proposal attachment format')
-    }
-    const indyFormat = options.formats.indy
-
-    return await this.createProofAttachment({
-      id: options.id ?? uuid(),
-      proofProposalOptions: indyFormat,
-    })
-  }
-
-  public async processProposal(options: ProcessProposalOptions): Promise<void> {
-    const proofProposalJson = options.proposal.attachment.getDataAsJson<ProofRequest>()
-
-    // Assert attachment
-    if (!proofProposalJson) {
-      throw new AriesFrameworkError(
-        `Missing required base64 or json encoded attachment data for presentation proposal with thread id ${options.record?.threadId}`
-      )
-    }
-
-    const proposalMessage = JsonTransformer.fromJSON(proofProposalJson, ProofRequest)
-
-    await MessageValidator.validateSync(proposalMessage)
-  }
-
-  public async createRequestAsResponse(
-    options: CreateRequestAsResponseOptions<[IndyProofFormat]>
-  ): Promise<ProofAttachmentFormat> {
-    if (!options.proofFormats.indy) {
-      throw Error('Missing indy format to create proposal attachment format')
-    }
-
-    const id = options.id ?? uuid()
-
+  public async createRequest(
+    agentContext: AgentContext,
+    { attachmentId, proofFormats }: ProofFormatCreateRequestOptions<IndyProofFormat>
+  ): Promise<ProofFormatCreateReturn> {
     const format = new ProofFormatSpec({
-      attachmentId: id,
-      format: V2_INDY_PRESENTATION_REQUEST,
+      format: INDY_PROOF_REQ,
+      attachmentId,
     })
 
-    const attachment = new Attachment({
-      id: id,
-      mimeType: 'application/json',
-      data: new AttachmentData({
-        base64: JsonEncoder.toBase64(options.proofFormats.indy),
-      }),
-    })
-    return { format, attachment }
-  }
+    const indyFormat = proofFormats.indy
 
-  public async createRequest(options: CreateRequestOptions): Promise<ProofAttachmentFormat> {
-    if (!options.formats.indy) {
-      throw new AriesFrameworkError('Missing indy format to create proof request attachment format.')
+    if (!indyFormat) {
+      throw Error('Missing indy format to create request attachment format')
     }
 
-    return this.createRequestAttachment({
-      id: options.id ?? uuid(),
-      proofRequestOptions: options.formats.indy,
+    const request = new ProofRequest({
+      ...indyFormat,
+      nonce: indyFormat.nonce ?? (await agentContext.wallet.generateNonce()),
     })
+
+    // Validation and assert attribute and predicate (group) names do not match
+    MessageValidator.validateSync(request)
+    checkProofRequestForDuplicates(request)
+
+    const attachment = this.getFormatData(JsonTransformer.toJSON(request), format.attachmentId)
+
+    return {
+      format,
+      attachment,
+    }
   }
 
-  public async processRequest(options: ProcessRequestOptions): Promise<void> {
-    const proofRequestJson = options.requestAttachment.attachment.getDataAsJson<ProofRequest>()
+  public async processRequest(agentContext: AgentContext, { attachment }: ProofFormatProcessOptions): Promise<void> {
+    const proposalJson = attachment.getDataAsJson()
 
-    const proofRequest = JsonTransformer.fromJSON(proofRequestJson, ProofRequest)
-
-    // Assert attachment
-    if (!proofRequest) {
-      throw new AriesFrameworkError(
-        `Missing required base64 or json encoded attachment data for presentation request with thread id ${options.record?.threadId}`
-      )
-    }
-    await MessageValidator.validateSync(proofRequest)
+    // fromJson also validates
+    const request = JsonTransformer.fromJSON(proposalJson, ProofRequest)
 
     // Assert attribute and predicate (group) names do not match
-    checkProofRequestForDuplicates(proofRequest)
+    checkProofRequestForDuplicates(request)
   }
 
-  public async createPresentation(
+  public async acceptRequest(
     agentContext: AgentContext,
-    options: FormatCreatePresentationOptions<IndyProofFormat>
+    { requestAttachment, proofFormats, attachmentId }: ProofFormatAcceptRequestOptions<IndyProofFormat>
   ): Promise<ProofAttachmentFormat> {
-    // Extract proof request from attachment
-    const proofRequestJson = options.attachment.getDataAsJson<ProofRequest>() ?? null
-    const proofRequest = JsonTransformer.fromJSON(proofRequestJson, ProofRequest)
+    const indyFormat = proofFormats?.indy
+    const format = new ProofFormatSpec({
+      format: INDY_PROOF,
+      attachmentId,
+    })
 
-    // verify everything is there
-    if (!options.proofFormats.indy) {
-      throw new AriesFrameworkError('Missing indy format to create proof presentation attachment format.')
+    const request = JsonTransformer.fromJSON(requestAttachment.getDataAsJson(), ProofRequest)
+
+    let requestedCredentials: RequestedCredentials
+
+    if (indyFormat) {
+      requestedCredentials = new RequestedCredentials({
+        requestedAttributes: indyFormat.requestedAttributes,
+        requestedPredicates: indyFormat.requestedPredicates,
+        selfAttestedAttributes: indyFormat.selfAttestedAttributes,
+      })
+    } else {
+      // T-TODO: auto select credentials for proof request
+      throw new Error('Auto selecting credentials for proof request is not yet implemented')
     }
 
-    const requestedCredentials = new RequestedCredentials({
-      requestedAttributes: options.proofFormats.indy.requestedAttributes,
-      requestedPredicates: options.proofFormats.indy.requestedPredicates,
-      selfAttestedAttributes: options.proofFormats.indy.selfAttestedAttributes,
-    })
+    MessageValidator.validateSync(requestedCredentials)
 
-    const proof = await this.createProof(agentContext, proofRequest, requestedCredentials)
+    const proof = await this.createProof(agentContext, request, requestedCredentials)
+    const attachment = this.getFormatData(proof, format.attachmentId)
 
-    const attachmentId = options.id ?? uuid()
-
-    const format = new ProofFormatSpec({
-      attachmentId,
-      format: V2_INDY_PRESENTATION,
-    })
-
-    const attachment = new Attachment({
-      id: attachmentId,
-      mimeType: 'application/json',
-      data: new AttachmentData({
-        base64: JsonEncoder.toBase64(proof),
-      }),
-    })
     return { format, attachment }
   }
 
-  public async processPresentation(agentContext: AgentContext, options: ProcessPresentationOptions): Promise<boolean> {
-    const requestFormat = options.formatAttachments.request.find(
-      (x) => x.format.format === V2_INDY_PRESENTATION_REQUEST
-    )
+  public async processPresentation(
+    agentContext: AgentContext,
+    { attachment, requestAttachment }: ProofFormatProcessPresentationOptions
+  ): Promise<boolean> {
+    const request = JsonTransformer.fromJSON(requestAttachment.getDataAsJson(), ProofRequest)
+    const proof = JsonTransformer.fromJSON(attachment.getDataAsJson(), PartialProof)
 
-    if (!requestFormat) {
-      throw new MissingIndyProofMessageError(
-        'Missing Indy Proof Request format while trying to process an Indy proof presentation.'
-      )
-    }
-
-    const proofFormat = options.formatAttachments.presentation.find((x) => x.format.format === V2_INDY_PRESENTATION)
-
-    if (!proofFormat) {
-      throw new MissingIndyProofMessageError(
-        'Missing Indy Proof Presentation format while trying to process an Indy proof presentation.'
-      )
-    }
-
-    return await this.verifyProof(agentContext, { request: requestFormat.attachment, proof: proofFormat.attachment })
-  }
-
-  public async verifyProof(agentContext: AgentContext, options: VerifyProofOptions): Promise<boolean> {
-    if (!options) {
-      throw new AriesFrameworkError('No Indy proof was provided.')
-    }
-    const proofRequestJson = options.request.getDataAsJson<ProofRequest>() ?? null
-    const proofRequest = JsonTransformer.fromJSON(proofRequestJson, ProofRequest)
-
-    const proofJson = options.proof.getDataAsJson<IndyProof>() ?? null
-
-    const proof = JsonTransformer.fromJSON(proofJson, PartialProof)
-
-    for (const [referent, attribute] of proof.requestedProof.revealedAttributes.entries()) {
-      if (!IndyCredentialUtils.checkValidEncoding(attribute.raw, attribute.encoded)) {
-        throw new InvalidEncodedValueError(
-          `The encoded value for '${referent}' is invalid. ` +
-            `Expected '${IndyCredentialUtils.encode(attribute.raw)}'. ` +
-            `Actual '${attribute.encoded}'`
-        )
-      }
-    }
-
-    // TODO: pre verify proof json
-    // I'm not 100% sure how much indy does. Also if it checks whether the proof requests matches the proof
-    // @see https://github.com/hyperledger/aries-cloudagent-python/blob/master/aries_cloudagent/indy/sdk/verifier.py#L79-L164
-
-    const schemas = await this.getSchemas(agentContext, new Set(proof.identifiers.map((i) => i.schemaId)))
-    const credentialDefinitions = await this.getCredentialDefinitions(
-      agentContext,
-      new Set(proof.identifiers.map((i) => i.credentialDefinitionId))
-    )
-
-    return await this.indyVerifierService.verifyProof(agentContext, {
-      proofRequest: proofRequest.toJSON(),
-      proof: proofJson,
-      schemas,
-      credentialDefinitions,
-    })
-  }
-
-  public supportsFormat(formatIdentifier: string): boolean {
-    const supportedFormats = [V2_INDY_PRESENTATION_PROPOSAL, V2_INDY_PRESENTATION_REQUEST, V2_INDY_PRESENTATION]
-    return supportedFormats.includes(formatIdentifier)
+    return await this.verifyProof(agentContext, { request, proof })
   }
 
   /**
@@ -350,26 +275,6 @@ export class IndyProofFormatService extends ProofFormatService {
     }
 
     return false
-  }
-
-  /**
-   * Build credential definitions object needed to create and verify proof objects.
-   *
-   * Creates object with `{ credentialDefinitionId: CredentialDefinition }` mapping
-   *
-   * @param credentialDefinitionIds List of credential definition ids
-   * @returns Object containing credential definitions for specified credential definition ids
-   *
-   */
-  private async getCredentialDefinitions(agentContext: AgentContext, credentialDefinitionIds: Set<string>) {
-    const credentialDefinitions: { [key: string]: CredDef } = {}
-
-    for (const credDefId of credentialDefinitionIds) {
-      const credDef = await this.ledgerService.getCredentialDefinition(agentContext, credDefId)
-      credentialDefinitions[credDefId] = credDef
-    }
-
-    return credentialDefinitions
   }
 
   public async getRequestedCredentialsForProofRequest(
@@ -475,19 +380,6 @@ export class IndyProofFormatService extends ProofFormatService {
     }
   }
 
-  private async getCredentialsForProofRequest(
-    agentContext: AgentContext,
-    proofRequest: ProofRequest,
-    attributeReferent: string
-  ): Promise<IndyCredential[]> {
-    const credentialsJson = await this.indyHolderService.getCredentialsForProofRequest(agentContext, {
-      proofRequest: proofRequest.toJSON(),
-      attributeReferent,
-    })
-
-    return JsonTransformer.fromJSON(credentialsJson, IndyCredential) as unknown as IndyCredential[]
-  }
-
   public async autoSelectCredentialsForProofRequest(
     options: FormatRetrievedCredentialOptions<[IndyProofFormat]>
   ): Promise<FormatRequestedCredentialReturn<[IndyProofFormat]>> {
@@ -525,6 +417,44 @@ export class IndyProofFormatService extends ProofFormatService {
     }
   }
 
+  public supportsFormat(formatIdentifier: string): boolean {
+    const supportedFormats = [INDY_PROOF_REQ, INDY_PROOF]
+    return supportedFormats.includes(formatIdentifier)
+  }
+
+  private async getCredentialsForProofRequest(
+    agentContext: AgentContext,
+    proofRequest: ProofRequest,
+    attributeReferent: string
+  ): Promise<IndyCredential[]> {
+    const credentialsJson = await this.indyHolderService.getCredentialsForProofRequest(agentContext, {
+      proofRequest: proofRequest.toJSON(),
+      attributeReferent,
+    })
+
+    return JsonTransformer.fromJSON(credentialsJson, IndyCredential) as unknown as IndyCredential[]
+  }
+
+  /**
+   * Build credential definitions object needed to create and verify proof objects.
+   *
+   * Creates object with `{ credentialDefinitionId: CredentialDefinition }` mapping
+   *
+   * @param credentialDefinitionIds List of credential definition ids
+   * @returns Object containing credential definitions for specified credential definition ids
+   *
+   */
+  private async getCredentialDefinitions(agentContext: AgentContext, credentialDefinitionIds: Set<string>) {
+    const credentialDefinitions: { [key: string]: CredDef } = {}
+
+    for (const credDefId of credentialDefinitionIds) {
+      const credDef = await this.ledgerService.getCredentialDefinition(agentContext, credDefId)
+      credentialDefinitions[credDefId] = credDef
+    }
+
+    return credentialDefinitions
+  }
+
   /**
    * Build schemas object needed to create and verify proof objects.
    *
@@ -557,14 +487,14 @@ export class IndyProofFormatService extends ProofFormatService {
     proofRequest: ProofRequest,
     requestedCredentials: RequestedCredentials
   ): Promise<IndyProof> {
+    const requestedItems = [
+      ...Object.values(requestedCredentials.requestedAttributes),
+      ...Object.values(requestedCredentials.requestedPredicates),
+    ]
+
     const credentialObjects = await Promise.all(
-      [
-        ...Object.values(requestedCredentials.requestedAttributes),
-        ...Object.values(requestedCredentials.requestedPredicates),
-      ].map(async (c) => {
-        if (c.credentialInfo) {
-          return c.credentialInfo
-        }
+      requestedItems.map(async (c) => {
+        if (c.credentialInfo) return c.credentialInfo
         const credentialInfo = await this.indyHolderService.getCredential(agentContext, c.credentialId)
         return JsonTransformer.fromJSON(credentialInfo, IndyCredentialInfo)
       })
@@ -584,23 +514,42 @@ export class IndyProofFormatService extends ProofFormatService {
     })
   }
 
-  public async createProofRequestFromProposal(options: CreatePresentationFormatsOptions): Promise<ProofRequestFormats> {
-    const proofRequestJson = options.presentationAttachment.getDataAsJson<ProofRequest>()
-
-    const proofRequest = JsonTransformer.fromJSON(proofRequestJson, ProofRequest)
-
-    // Assert attachment
-    if (!proofRequest) {
-      throw new AriesFrameworkError(`Missing required base64 or json encoded attachment data for presentation request.`)
+  private async verifyProof(
+    agentContext: AgentContext,
+    {
+      request,
+      proof,
+    }: {
+      request: ProofRequest
+      proof: PartialProof
     }
-    await MessageValidator.validateSync(proofRequest)
-
-    // Assert attribute and predicate (group) names do not match
-    checkProofRequestForDuplicates(proofRequest)
-
-    return {
-      indy: proofRequest,
+  ): Promise<boolean> {
+    for (const [referent, attribute] of proof.requestedProof.revealedAttributes.entries()) {
+      if (!IndyCredentialUtils.checkValidEncoding(attribute.raw, attribute.encoded)) {
+        throw new InvalidEncodedValueError(
+          `The encoded value for '${referent}' is invalid. ` +
+            `Expected '${IndyCredentialUtils.encode(attribute.raw)}'. ` +
+            `Actual '${attribute.encoded}'`
+        )
+      }
     }
+
+    // TODO: pre verify proof json
+    // I'm not 100% sure how much indy does. Also if it checks whether the proof requests matches the proof
+    // @see https://github.com/hyperledger/aries-cloudagent-python/blob/master/aries_cloudagent/indy/sdk/verifier.py#L79-L164
+
+    const schemas = await this.getSchemas(agentContext, new Set(proof.identifiers.map((i) => i.schemaId)))
+    const credentialDefinitions = await this.getCredentialDefinitions(
+      agentContext,
+      new Set(proof.identifiers.map((i) => i.credentialDefinitionId))
+    )
+
+    return await this.indyVerifierService.verifyProof(agentContext, {
+      proofRequest: request.toJSON(),
+      proof: proof.toJSON(),
+      schemas,
+      credentialDefinitions,
+    })
   }
 
   private async getRevocationStatusForRequestedItem(
