@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { ILogObject } from 'tslog'
+import type { ILogObject, ISettingsParam } from 'tslog'
 
 import { appendFileSync } from 'fs'
 import { Logger } from 'tslog'
@@ -27,10 +27,10 @@ export class TestLogger extends BaseLogger {
     [LogLevel.fatal]: 'fatal',
   } as const
 
-  public constructor(logLevel: LogLevel, name?: string) {
+  public constructor(logLevel: LogLevel, name?: string, parentLogger?: Logger) {
     super(logLevel)
 
-    this.logger = new Logger({
+    const loggerSettings: ISettingsParam = {
       name,
       minLevel: this.logLevel == LogLevel.off ? undefined : this.tsLogLevelMap[this.logLevel],
       ignoreStackLevels: 5,
@@ -49,7 +49,9 @@ export class TestLogger extends BaseLogger {
           minLevel: 'silly',
         },
       ],
-    })
+    }
+
+    this.logger = parentLogger?.getChildLogger(loggerSettings) ?? new Logger(loggerSettings)
   }
 
   private log(level: Exclude<LogLevel, LogLevel.off>, message: string, data?: Record<string, any>): void {
@@ -91,8 +93,12 @@ export class TestLogger extends BaseLogger {
   public fatal(message: string, data?: Record<string, any>): void {
     this.log(LogLevel.fatal, message, data)
   }
+
+  public getChildLogger(name: string): TestLogger {
+    return new TestLogger(this.logLevel, name, this.logger)
+  }
 }
 
-const testLogger = new TestLogger(LogLevel.error)
+const testLogger = new TestLogger(LogLevel.off)
 
 export default testLogger

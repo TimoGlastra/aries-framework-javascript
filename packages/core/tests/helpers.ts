@@ -102,7 +102,7 @@ export function getAgentOptions<AgentModules extends AgentModulesInput>(
     ],
     // TODO: determine the log level based on an environment variable. This will make it
     // possible to run e.g. failed github actions in debug mode for extra logs
-    logger: new TestLogger(LogLevel.off, name),
+    logger: testLogger.getChildLogger(name),
     ...extraConfig,
   }
   return { config, modules, dependencies: agentDependencies } as const
@@ -139,7 +139,7 @@ export function getPostgresAgentOptions(name: string, extraConfig: Partial<InitC
         genesisPath,
       },
     ],
-    logger: new TestLogger(LogLevel.off, name),
+    logger: testLogger.getChildLogger(name),
     ...extraConfig,
   }
 
