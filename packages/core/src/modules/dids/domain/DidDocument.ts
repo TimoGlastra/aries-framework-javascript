@@ -1,3 +1,4 @@
+import type { DidPurpose } from './didDocumentUtil'
 import type { DidDocumentService } from './service'
 
 import { Expose, Type } from 'class-transformer'
@@ -6,19 +7,11 @@ import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { KeyType, Key } from '../../../crypto'
 import { JsonTransformer } from '../../../utils/JsonTransformer'
 import { IsStringOrStringArray } from '../../../utils/transformers'
+import { findMatchingEd25519Key } from '../../didcomm/util/matchingEd25519Key'
 
-import { getKeyDidMappingByVerificationMethod } from './key-type'
+import { keyReferenceToKey } from './didDocumentUtil'
 import { IndyAgentService, ServiceTransformer, DidCommV1Service } from './service'
 import { VerificationMethodTransformer, VerificationMethod, IsStringOrVerificationMethod } from './verificationMethod'
-
-export type DidPurpose =
-  | 'authentication'
-  | 'keyAgreement'
-  | 'assertionMethod'
-  | 'capabilityInvocation'
-  | 'capabilityDelegation'
-
-type DidVerificationMethods = DidPurpose | 'verificationMethod'
 
 interface DidDocumentOptions {
   context?: string | string[]
@@ -179,7 +172,6 @@ export class DidDocument {
     return services.sort((a, b) => b.priority - a.priority)
   }
 
-  // TODO: it would probably be easier if we add a utility to each service so we don't have to handle logic for all service types here
   public get recipientKeys(): Key[] {
     let recipientKeys: Key[] = []
 
@@ -190,10 +182,18 @@ export class DidDocument {
           ...service.recipientKeys.map((publicKeyBase58) => Key.fromPublicKeyBase58(publicKeyBase58, KeyType.Ed25519)),
         ]
       } else if (service instanceof DidCommV1Service) {
-        recipientKeys = [
-          ...recipientKeys,
-          ...service.recipientKeys.map((recipientKey) => keyReferenceToKey(this, recipientKey)),
-        ]
+        for (const recipientKey of service.recipientKeys) {
+          const key = keyReferenceToKey(this, recipientKey)
+
+          // NOTE: In DIDComm v1 ed25519 have been used in services, while encryption is done using x25519 keys.
+          // If we find an x25519 key, we also include the matching ed25519 key.
+          if (key.keyType === KeyType.X25519) {
+            const ed25519Key = findMatchingEd25519Key(key, this)
+            if (ed25519Key) recipientKeys.push(ed25519Key)
+          }
+
+          recipientKeys.push(key)
+        }
       }
     }
 
@@ -203,49 +203,4 @@ export class DidDocument {
   public toJSON() {
     return JsonTransformer.toJSON(this)
   }
-}
-
-export function keyReferenceToKey(didDocument: DidDocument, keyId: string) {
-  // FIXME: we allow authentication keys as historically ed25519 keys have been used in did documents
-  // for didcomm. In the future we should update this to only be allowed for IndyAgent and DidCommV1 services
-  // as didcomm v2 doesn't have this issue anymore
-  const verificationMethod = didDocument.dereferenceKey(keyId, ['authentication', 'keyAgreement'])
-  const { getKeyFromVerificationMethod } = getKeyDidMappingByVerificationMethod(verificationMethod)
-  const key = getKeyFromVerificationMethod(verificationMethod)
-
-  return key
-}
-
-/**
- * Extracting the verification method for signature type
- * @param type Signature type
- * @param didDocument DidDocument
- * @returns verification method
- */
-export async function findVerificationMethodByKeyType(
-  keyType: string,
-  didDocument: DidDocument
-): Promise<VerificationMethod | null> {
-  const didVerificationMethods: DidVerificationMethods[] = [
-    'verificationMethod',
-    'authentication',
-    'keyAgreement',
-    'assertionMethod',
-    'capabilityInvocation',
-    'capabilityDelegation',
-  ]
-  for await (const purpose of didVerificationMethods) {
-    const key: VerificationMethod[] | (string | VerificationMethod)[] | undefined = didDocument[purpose]
-    if (key instanceof Array) {
-      for await (const method of key) {
-        if (typeof method !== 'string') {
-          if (method.type === keyType) {
-            return method
-          }
-        }
-      }
-    }
-  }
-
-  return null
 }
