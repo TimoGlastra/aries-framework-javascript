@@ -16,7 +16,7 @@ import { OutOfBandRole } from './domain/OutOfBandRole'
 import { OutOfBandState } from './domain/OutOfBandState'
 import { HandshakeReuseMessage } from './messages'
 import { HandshakeReuseAcceptedMessage } from './messages/HandshakeReuseAcceptedMessage'
-import { OutOfBandRepository } from './repository'
+import { OutOfBandMetadataKeys, OutOfBandRepository } from './repository'
 
 @injectable()
 export class OutOfBandService {
@@ -81,13 +81,37 @@ export class OutOfBandService {
       throw new AriesFrameworkError('handshake-reuse-accepted message must have a parent thread id')
     }
 
-    const outOfBandRecord = await this.findByInvitationId(messageContext.agentContext, parentThreadId)
+    // We want to find the out of band record for this specific connection reuse interaction. The most important
+    // field to find this record is the reuseThreadId.
+    const outOfBandRecord = await this.outOfBandRepository.findSingleByQuery(messageContext.agentContext, {
+      invitationId: parentThreadId,
+      state: OutOfBandState.PrepareResponse,
+      role: OutOfBandRole.Receiver,
+      reuseThreadId: reuseAcceptedMessage.threadId,
+    })
+
+    if (!outOfBandRecord) {
+      // FIXME: legacy flow is that the reuseThreadId is not set on the out of band record. We can either say: all interactions need to
+      // be finished when upgrading, or we can support the legacy flow using this. This can return multiple records, but not for the legacy flow
+      // So we also need to do a check if the metadata is undefined
+      const outOfBandRecord = await this.outOfBandRepository.findSingleByQuery(messageContext.agentContext, {
+        invitationId: parentThreadId,
+        state: OutOfBandState.PrepareResponse,
+        role: OutOfBandRole.Receiver,
+      })
+
+      if (outOfBandRecord?.metadata.get(OutOfBandMetadataKeys.ConnectionReuse)) {
+        throw new AriesFrameworkError(
+          "Out of band record queried without reuseThreadId not allowed to have 'connectionReuse' metadata."
+        )
+      }
+    }
+
     if (!outOfBandRecord) {
       throw new AriesFrameworkError('No out of band record found for handshake-reuse-accepted message')
     }
 
     // Assert
-    outOfBandRecord.assertRole(OutOfBandRole.Receiver)
     outOfBandRecord.assertState(OutOfBandState.PrepareResponse)
 
     const reusedConnection = messageContext.assertReadyConnection()
@@ -124,6 +148,13 @@ export class OutOfBandService {
 
     // Store the reuse connection id
     outOfBandRecord.reuseConnectionId = connectionRecord.id
+
+    // Store the reuse threadId in the out of band record, this will allow us to find the
+    // out of band record when we receive the handshake reuse accepted message
+    outOfBandRecord.metadata.set(OutOfBandMetadataKeys.ConnectionReuse, {
+      reuseThreadId: reuseMessage.threadId,
+    })
+
     await this.outOfBandRepository.update(agentContext, outOfBandRecord)
 
     return reuseMessage

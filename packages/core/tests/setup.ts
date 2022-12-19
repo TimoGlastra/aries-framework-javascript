@@ -10,7 +10,7 @@ function toBeConnectedWith(actual: ConnectionRecord, expected: ConnectionRecord)
   actual.assertReady()
   expected.assertReady()
 
-  const pass = actual.theirDid === expected.did
+  const pass = actual.theirDid === expected.did && actual.did === expected.theirDid
   if (pass) {
     return {
       message: () => `expected connection ${actual.theirDid} not to be connected to with ${expected.did}`,

@@ -1,19 +1,25 @@
 import type { AgentContext } from '../../../agent'
+import type { DidDocument } from '../../dids/domain'
 import type { ResolvedDidCommService } from '../types'
 
+import { InjectionSymbols } from '../../../constants'
 import { KeyType } from '../../../crypto'
-import { injectable } from '../../../plugins'
-import { DidResolverService } from '../../dids'
-import { DidCommV1Service, IndyAgentService, keyReferenceToKey } from '../../dids/domain'
+import { AriesFrameworkError } from '../../../error'
+import { Logger } from '../../../logger'
+import { inject, injectable } from '../../../plugins'
+import { DidRecord, DidRepository, DidResolverService } from '../../dids'
+import { DidDocumentRole, DidCommV1Service, IndyAgentService, keyReferenceToKey } from '../../dids/domain'
 import { verkeyToInstanceOfKey } from '../../dids/helpers'
 import { findMatchingEd25519Key } from '../util/matchingEd25519Key'
 
 @injectable()
 export class DidCommDocumentService {
   private didResolverService: DidResolverService
+  private didRepository: DidRepository
 
-  public constructor(didResolverService: DidResolverService) {
+  public constructor(didResolverService: DidResolverService, didRepository: DidRepository) {
     this.didResolverService = didResolverService
+    this.didRepository = didRepository
   }
 
   public async resolveServicesFromDid(agentContext: AgentContext, did: string): Promise<ResolvedDidCommService[]> {
@@ -64,5 +70,45 @@ export class DidCommDocumentService {
     }
 
     return didCommServices
+  }
+
+  public async storeReceivedDidDocument(agentContext: AgentContext, didDocument: DidDocument) {
+    let didRecord = await this.didRepository.findById(agentContext, didDocument.id)
+    if (didRecord) {
+      agentContext.config.logger.debug(
+        `Not creating did record for did ${didDocument.id}, because record already exists`
+      )
+      return
+    }
+
+    // Verify the did document contains didcomm services
+    if (didDocument.didCommServices.length === 0) {
+      throw new AriesFrameworkError(`Did document for did ${didDocument.id} does not contain any didcomm services`)
+    }
+
+    didRecord = new DidRecord({
+      id: didDocument.id,
+      role: DidDocumentRole.Received,
+      // We only need to store the did document if it's a did:peer:1 did
+      didDocument: didDocument.id.startsWith('did:peer:1') ? didDocument : undefined,
+      tags: {
+        // We need to save the recipientKeys, so we can find the associated did
+        // of a key when we receive a message from another connection.
+        recipientKeyFingerprints: didDocument.recipientKeys.map((key) => key.fingerprint),
+      },
+    })
+
+    await this.didRepository.save(agentContext, didRecord)
+
+    agentContext.config.logger.debug('Saving did record', {
+      did: didRecord.id,
+      role: didRecord.role,
+      tags: didRecord.getTags(),
+      didDocument: 'omitted...',
+    })
+  }
+
+  public containsDidCommService(didDocument: DidDocument): boolean {
+    return didDocument.didCommServices.length > 0
   }
 }

@@ -1,34 +1,27 @@
 import type { MessageHandler, MessageHandlerInboundMessage } from '../../../agent/MessageHandler'
-import type { DidRepository } from '../../dids/repository'
 import type { OutOfBandService } from '../../oob/OutOfBandService'
-import type { RoutingService } from '../../routing/services/RoutingService'
 import type { ConnectionsModuleConfig } from '../ConnectionsModuleConfig'
 import type { DidExchangeProtocol } from '../DidExchangeProtocol'
 
 import { OutboundMessageContext } from '../../../agent/models'
 import { AriesFrameworkError } from '../../../error/AriesFrameworkError'
 import { OutOfBandState } from '../../oob/domain/OutOfBandState'
+import { DidExchangeProblemReportError, DidExchangeProblemReportReason } from '../errors'
 import { DidExchangeRequestMessage } from '../messages'
 
 export class DidExchangeRequestHandler implements MessageHandler {
   private didExchangeProtocol: DidExchangeProtocol
   private outOfBandService: OutOfBandService
-  private routingService: RoutingService
-  private didRepository: DidRepository
   private connectionsModuleConfig: ConnectionsModuleConfig
   public supportedMessages = [DidExchangeRequestMessage]
 
   public constructor(
     didExchangeProtocol: DidExchangeProtocol,
     outOfBandService: OutOfBandService,
-    routingService: RoutingService,
-    didRepository: DidRepository,
     connectionsModuleConfig: ConnectionsModuleConfig
   ) {
     this.didExchangeProtocol = didExchangeProtocol
     this.outOfBandService = outOfBandService
-    this.routingService = routingService
-    this.didRepository = didRepository
     this.connectionsModuleConfig = connectionsModuleConfig
   }
 
@@ -51,19 +44,16 @@ export class DidExchangeRequestHandler implements MessageHandler {
       throw new AriesFrameworkError(`OutOfBand record for message ID ${message.thread?.parentThreadId} not found!`)
     }
 
-    if (connection && !outOfBandRecord.reusable) {
-      throw new AriesFrameworkError(
-        `Connection record for non-reusable out-of-band ${outOfBandRecord.id} already exists.`
+    if (connection) {
+      throw new DidExchangeProblemReportError(
+        `Connection for senderKey ${senderKey.fingerprint} and recipientKey ${recipientKey.fingerprint} already exists.`,
+        {
+          problemCode: DidExchangeProblemReportReason.RequestNotAccepted,
+        }
       )
     }
 
-    const didRecord = await this.didRepository.findByRecipientKey(messageContext.agentContext, senderKey)
-    if (didRecord) {
-      throw new AriesFrameworkError(`Did record for sender key ${senderKey.fingerprint} already exists.`)
-    }
-
     // TODO Shouldn't we check also if the keys match the keys from oob invitation services?
-
     if (outOfBandRecord.state === OutOfBandState.Done) {
       throw new AriesFrameworkError(
         'Out-of-band record has been already processed and it does not accept any new requests'
@@ -73,17 +63,10 @@ export class DidExchangeRequestHandler implements MessageHandler {
     const connectionRecord = await this.didExchangeProtocol.processRequest(messageContext, outOfBandRecord)
 
     if (connectionRecord.autoAcceptConnection ?? this.connectionsModuleConfig.autoAcceptConnections) {
-      // TODO We should add an option to not pass routing and therefore do not rotate keys and use the keys from the invitation
-      // TODO: Allow rotation of keys used in the invitation for new ones not only when out-of-band is reusable
-      const routing = outOfBandRecord.reusable
-        ? await this.routingService.getRouting(messageContext.agentContext)
-        : undefined
-
       const message = await this.didExchangeProtocol.createResponse(
         messageContext.agentContext,
         connectionRecord,
-        outOfBandRecord,
-        routing
+        outOfBandRecord
       )
       return new OutboundMessageContext(message, {
         agentContext: messageContext.agentContext,

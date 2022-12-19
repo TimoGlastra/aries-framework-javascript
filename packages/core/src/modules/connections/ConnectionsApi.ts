@@ -84,21 +84,23 @@ export class ConnectionsApi {
       alias?: string
       imageUrl?: string
       protocol: HandshakeProtocol
-      routing?: Routing
+      routing?: {
+        did?: string
+      }
     }
   ) {
     const { protocol, label, alias, imageUrl, autoAcceptConnection } = config
 
-    const routing =
-      config.routing ||
-      (await this.routingService.getRouting(this.agentContext, { mediatorId: outOfBandRecord.mediatorId }))
+    // const routing =
+    //   config.routing ||
+    //   (await this.routingService.getRouting(this.agentContext, { mediatorId: outOfBandRecord.mediatorId }))
 
     let result
     if (protocol === HandshakeProtocol.DidExchange) {
       result = await this.didExchangeProtocol.createRequest(this.agentContext, outOfBandRecord, {
         label,
         alias,
-        routing,
+        did: config.routing?.did,
         autoAcceptConnection,
       })
     } else if (protocol === HandshakeProtocol.Connections) {
@@ -106,7 +108,7 @@ export class ConnectionsApi {
         label,
         alias,
         imageUrl,
-        routing,
+        routing: {} as Routing,
         autoAcceptConnection,
       })
     } else {

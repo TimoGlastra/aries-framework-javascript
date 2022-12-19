@@ -54,7 +54,11 @@ export interface CreateOutOfBandInvitationConfig {
   messages?: AgentMessage[]
   multiUseInvitation?: boolean
   autoAcceptConnection?: boolean
-  routing?: Routing
+  routing?: {
+    did?: string
+    // FIXME: use mediator id, even with public did if configured (register key at mediator)
+    mediatorId?: string
+  }
   appendedAttachments?: Attachment[]
 }
 
@@ -74,7 +78,12 @@ export interface ReceiveOutOfBandInvitationConfig {
   autoAcceptInvitation?: boolean
   autoAcceptConnection?: boolean
   reuseConnection?: boolean
-  routing?: Routing
+  // routing?: Routing
+  routing?: {
+    did?: string
+    // FIXME: use mediator id, even with public did if configured (register key at mediator)
+    mediatorId?: string
+  }
   acceptInvitationTimeoutMs?: number
 }
 
@@ -171,16 +180,31 @@ export class OutOfBandApi {
       }
     }
 
-    const routing = config.routing ?? (await this.routingService.getRouting(this.agentContext, {}))
+    let mediatorId = config.routing?.mediatorId
+    let services: Array<OutOfBandDidCommService | string> = []
 
-    const services = routing.endpoints.map((endpoint, index) => {
-      return new OutOfBandDidCommService({
-        id: `#inline-${index}`,
-        serviceEndpoint: endpoint,
-        recipientKeys: [routing.recipientKey].map((key) => new DidKey(key).did),
-        routingKeys: routing.routingKeys.map((key) => new DidKey(key).did),
+    // If no did is provided we will create new routing keys for this invitation
+    if (!config.routing?.did) {
+      const routing = await this.routingService.getRouting(this.agentContext, {
+        mediatorId: config.routing?.mediatorId,
       })
-    })
+
+      // mediatorId may be assigned to default mediator id
+      mediatorId = routing.mediatorId
+      services = routing.endpoints.map(
+        (endpoint, index) =>
+          new OutOfBandDidCommService({
+            id: `#inline-${index}`,
+            serviceEndpoint: endpoint,
+            recipientKeys: [routing.recipientKey].map((key) => new DidKey(key).did),
+            routingKeys: routing.routingKeys.map((key) => new DidKey(key).did),
+          })
+      )
+    }
+    // If a did is provided, we will use it for the invitation
+    else {
+      services.push(config.routing.did)
+    }
 
     const options = {
       label,
@@ -204,8 +228,9 @@ export class OutOfBandApi {
       })
     }
 
+    const recipientKeyFingerprints = await this.getRecipientKeyFingerprintsFromServices(services)
     const outOfBandRecord = new OutOfBandRecord({
-      mediatorId: routing.mediatorId,
+      mediatorId,
       role: OutOfBandRole.Sender,
       state: OutOfBandState.AwaitResponse,
       alias: config.alias,
@@ -213,9 +238,7 @@ export class OutOfBandApi {
       reusable: multiUseInvitation,
       autoAcceptConnection,
       tags: {
-        recipientKeyFingerprints: services
-          .reduce<string[]>((aggr, { recipientKeys }) => [...aggr, ...recipientKeys], [])
-          .map((didKey) => DidKey.fromDid(didKey).key.fingerprint),
+        recipientKeyFingerprints,
       },
     })
 
@@ -343,39 +366,35 @@ export class OutOfBandApi {
       )
     }
 
+    // FIXME: it should be fine to reuse an invitation we've already connected to. We just need to make sure
+    // we don't create a connection based on the same dids. (i can connect to the same invitation, using 10 different dids and that should be fine)
     // Make sure we haven't processed this invitation before.
-    let outOfBandRecord = await this.findByInvitationId(outOfBandInvitation.id)
-    if (outOfBandRecord) {
-      throw new AriesFrameworkError(
-        `An out of band record with invitation ${outOfBandInvitation.id} already exists. Invitations should have a unique id.`
-      )
+    // let outOfBandRecord = await this.findByInvitationId(outOfBandInvitation.id)
+    // if (outOfBandRecord) {
+    //   throw new AriesFrameworkError(
+    //     `An out of band record with invitation ${outOfBandInvitation.id} already exists. Invitations should have a unique id.`
+    //   )
+    // }
+
+    // If we use a custom did we need to verify we don't already have a connection with the same did
+    if (routing?.did) {
+      // Make sure we don't have a connection where:
+      //  - ourDid = routing.did
+      //  - theirDid = outOfBandInvitation.invitationDid (first for now)
+      // this.connectionsApi.findByInvitationDid()
     }
 
-    const recipientKeyFingerprints: string[] = []
-    for (const service of outOfBandInvitation.getServices()) {
-      // Resolve dids to DIDDocs to retrieve services
-      if (typeof service === 'string') {
-        this.logger.debug(`Resolving services for did ${service}.`)
-        const resolvedDidCommServices = await this.didCommDocumentService.resolveServicesFromDid(
-          this.agentContext,
-          service
-        )
-        recipientKeyFingerprints.push(
-          ...resolvedDidCommServices
-            .reduce<Key[]>((aggr, { recipientKeys }) => [...aggr, ...recipientKeys], [])
-            .map((key) => key.fingerprint)
-        )
-      } else {
-        recipientKeyFingerprints.push(...service.recipientKeys.map((didKey) => DidKey.fromDid(didKey).key.fingerprint))
-      }
-    }
+    const recipientKeyFingerprints = await this.getRecipientKeyFingerprintsFromServices(
+      outOfBandInvitation.getServices()
+    )
 
-    outOfBandRecord = new OutOfBandRecord({
+    const outOfBandRecord = new OutOfBandRecord({
       role: OutOfBandRole.Receiver,
       state: OutOfBandState.Initial,
       outOfBandInvitation: outOfBandInvitation,
       autoAcceptConnection,
       tags: { recipientKeyFingerprints },
+      mediatorId: routing?.mediatorId,
     })
 
     await this.outOfBandService.save(this.agentContext, outOfBandRecord)
@@ -418,7 +437,9 @@ export class OutOfBandApi {
       label?: string
       alias?: string
       imageUrl?: string
-      routing?: Routing
+      routing?: {
+        did?: string
+      }
       timeoutMs?: number
     }
   ) {
@@ -764,6 +785,32 @@ export class OutOfBandApi {
     await this.messageSender.sendMessage(outboundMessageContext)
 
     return reuseAcceptedEventPromise
+  }
+
+  /**
+   * Get the recipient key fingerprints based on an array of out of band invitation services.
+   */
+  private async getRecipientKeyFingerprintsFromServices(services: Array<OutOfBandDidCommService | string>) {
+    const recipientKeyFingerprints: string[] = []
+    for (const service of services) {
+      // Resolve dids to DIDDocs to retrieve services
+      if (typeof service === 'string') {
+        this.logger.debug(`Resolving services for did ${service}.`)
+        const resolvedDidCommServices = await this.didCommDocumentService.resolveServicesFromDid(
+          this.agentContext,
+          service
+        )
+        recipientKeyFingerprints.push(
+          ...resolvedDidCommServices
+            .reduce<Key[]>((aggr, { recipientKeys }) => [...aggr, ...recipientKeys], [])
+            .map((key) => key.fingerprint)
+        )
+      } else {
+        recipientKeyFingerprints.push(...service.recipientKeys.map((didKey) => DidKey.fromDid(didKey).key.fingerprint))
+      }
+    }
+
+    return recipientKeyFingerprints
   }
 
   private registerMessageHandlers(dispatcher: Dispatcher) {

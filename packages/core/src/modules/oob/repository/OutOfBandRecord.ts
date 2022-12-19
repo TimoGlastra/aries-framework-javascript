@@ -1,6 +1,7 @@
 import type { TagsBase } from '../../../storage/BaseRecord'
 import type { OutOfBandRole } from '../domain/OutOfBandRole'
 import type { OutOfBandState } from '../domain/OutOfBandState'
+import type { OutOfBandMetadata } from './OutOfBandMetadataTypes'
 
 import { Type } from 'class-transformer'
 
@@ -9,10 +10,15 @@ import { BaseRecord } from '../../../storage/BaseRecord'
 import { uuid } from '../../../utils/uuid'
 import { OutOfBandInvitation } from '../messages'
 
+import { OutOfBandMetadataKeys } from './OutOfBandMetadataTypes'
+
 type DefaultOutOfBandRecordTags = {
   role: OutOfBandRole
   state: OutOfBandState
   invitationId: string
+  reuseConnectionId?: string
+  reusable: boolean
+  reuseThreadId?: string
 }
 
 interface CustomOutOfBandRecordTags extends TagsBase {
@@ -34,7 +40,11 @@ export interface OutOfBandRecordProps {
   reuseConnectionId?: string
 }
 
-export class OutOfBandRecord extends BaseRecord<DefaultOutOfBandRecordTags, CustomOutOfBandRecordTags> {
+export class OutOfBandRecord extends BaseRecord<
+  DefaultOutOfBandRecordTags,
+  CustomOutOfBandRecordTags,
+  OutOfBandMetadata
+> {
   @Type(() => OutOfBandInvitation)
   public outOfBandInvitation!: OutOfBandInvitation
   public role!: OutOfBandRole
@@ -72,6 +82,9 @@ export class OutOfBandRecord extends BaseRecord<DefaultOutOfBandRecordTags, Cust
       role: this.role,
       state: this.state,
       invitationId: this.outOfBandInvitation.id,
+      reuseConnectionId: this.reuseConnectionId,
+      reusable: this.reusable,
+      reuseThreadId: this.metadata.get(OutOfBandMetadataKeys.ConnectionReuse)?.reuseThreadId,
     }
   }
 

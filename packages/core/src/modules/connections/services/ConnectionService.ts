@@ -609,7 +609,7 @@ export class ConnectionService {
     return this.connectionRepository.findByQuery(agentContext, { invitationDid })
   }
 
-  public async findByKeys(
+  public async findReadyConnectionByKeys(
     agentContext: AgentContext,
     { senderKey, recipientKey }: { senderKey: Key; recipientKey: Key }
   ) {

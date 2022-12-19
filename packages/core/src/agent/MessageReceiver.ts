@@ -114,15 +114,13 @@ export class MessageReceiver {
       plaintextMessage
     )
 
-    const connection = await this.findConnectionByMessageKeys(agentContext, decryptedMessage)
+    // We only look for ready connections
+    const connection = await this.findReadyConnectionByMessageKeys(agentContext, decryptedMessage)
 
     const message = await this.transformAndValidate(agentContext, plaintextMessage, connection)
 
     const messageContext = new InboundMessageContext(message, {
-      // Only make the connection available in message context if the connection is ready
-      // To prevent unwanted usage of unready connections. Connections can still be retrieved from
-      // Storage if the specific protocol allows an unready connection to be used.
-      connection: connection?.isReady ? connection : undefined,
+      connection: connection ?? undefined,
       senderKey,
       recipientKey,
       agentContext,
@@ -140,9 +138,6 @@ export class MessageReceiver {
       }
       session.keys = keys
       session.inboundMessage = message
-      // We allow unready connections to be attached to the session as we want to be able to
-      // use return routing to make connections. This is especially useful for creating connections
-      // with mediators when you don't have a public endpoint yet.
       session.connection = connection ?? undefined
       messageContext.sessionId = session.id
       this.transportService.saveSession(session)
@@ -203,7 +198,7 @@ export class MessageReceiver {
     return message
   }
 
-  private async findConnectionByMessageKeys(
+  private async findReadyConnectionByMessageKeys(
     agentContext: AgentContext,
     { recipientKey, senderKey }: DecryptedMessageContext
   ): Promise<ConnectionRecord | null> {
@@ -211,7 +206,7 @@ export class MessageReceiver {
     if (!recipientKey || !senderKey) return null
 
     // Try to find the did records that holds the sender and recipient keys
-    return this.connectionService.findByKeys(agentContext, {
+    return this.connectionService.findReadyConnectionByKeys(agentContext, {
       senderKey,
       recipientKey,
     })
