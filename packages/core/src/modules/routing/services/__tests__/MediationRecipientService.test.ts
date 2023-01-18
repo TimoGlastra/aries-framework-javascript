@@ -80,8 +80,7 @@ describe('MediationRecipientService', () => {
     agentContext = getAgentContext({
       agentConfig: config,
     })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await wallet.createAndOpen(config.walletConfig!)
+    await wallet.createAndOpen(config.walletConfig)
   })
 
   afterAll(async () => {

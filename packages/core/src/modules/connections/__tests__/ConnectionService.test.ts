@@ -83,8 +83,7 @@ describe('ConnectionService', () => {
   beforeAll(async () => {
     wallet = new IndyWallet(agentConfig.agentDependencies, agentConfig.logger, new SigningProviderRegistry([]))
     agentContext = getAgentContext({ wallet, agentConfig })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await wallet.createAndOpen(agentConfig.walletConfig!)
+    await wallet.createAndOpen(agentConfig.walletConfig)
   })
 
   afterAll(async () => {

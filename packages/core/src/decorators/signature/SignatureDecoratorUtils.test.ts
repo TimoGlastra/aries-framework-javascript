@@ -44,8 +44,7 @@ describe('Decorators | Signature | SignatureDecoratorUtils', () => {
   beforeAll(async () => {
     const config = getAgentConfig('SignatureDecoratorUtilsTest')
     wallet = new IndyWallet(config.agentDependencies, config.logger, new SigningProviderRegistry([]))
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await wallet.createAndOpen(config.walletConfig!)
+    await wallet.createAndOpen(config.walletConfig)
   })
 
   afterAll(async () => {
