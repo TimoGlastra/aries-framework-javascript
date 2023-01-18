@@ -71,8 +71,7 @@ describe('IndyPoolService', () => {
   beforeAll(async () => {
     wallet = new IndyWallet(config.agentDependencies, config.logger, new SigningProviderRegistry([]))
     agentContext = getAgentContext()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await wallet.createAndOpen(config.walletConfig!)
+    await wallet.createAndOpen(config.walletConfig)
   })
 
   afterAll(async () => {

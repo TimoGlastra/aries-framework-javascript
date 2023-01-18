@@ -22,8 +22,7 @@ describe('IndySdkStorageService', () => {
       wallet,
       agentConfig,
     })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await wallet.createAndOpen(agentConfig.walletConfig!)
+    await wallet.createAndOpen(agentConfig.walletConfig)
     storageService = new IndySdkStorageService<TestRecord>(indy)
   })
 

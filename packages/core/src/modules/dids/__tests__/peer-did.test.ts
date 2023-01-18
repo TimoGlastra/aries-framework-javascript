@@ -46,8 +46,7 @@ describe('peer dids', () => {
         [InjectionSymbols.StorageService, storageService],
       ],
     })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await wallet.createAndOpen(config.walletConfig!)
+    await wallet.createAndOpen(config.walletConfig)
 
     didResolverService = new DidResolverService(
       config.logger,

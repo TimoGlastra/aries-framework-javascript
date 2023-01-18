@@ -42,8 +42,7 @@ describe('OutOfBandService', () => {
   beforeAll(async () => {
     wallet = new IndyWallet(agentConfig.agentDependencies, agentConfig.logger, new SigningProviderRegistry([]))
     agentContext = getAgentContext()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await wallet.createAndOpen(agentConfig.walletConfig!)
+    await wallet.createAndOpen(agentConfig.walletConfig)
   })
 
   afterAll(async () => {
