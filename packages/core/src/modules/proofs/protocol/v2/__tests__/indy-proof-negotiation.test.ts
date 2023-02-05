@@ -1,8 +1,8 @@
 import type { Agent } from '../../../../../agent/Agent'
 import type { ConnectionRecord } from '../../../../connections/repository/ConnectionRecord'
-import type { AcceptProofProposalOptions, NegotiateProposalOptions } from '../../../ProofsApiOptions'
+import type { AcceptProofProposalOptions, NegotiateProofProposalOptions } from '../../../ProofsApiOptions'
 import type { ProofExchangeRecord } from '../../../repository/ProofExchangeRecord'
-import type { PresentationPreview } from '../../v1/models/V1PresentationPreview'
+import type { V1PresentationPreview } from '../../v1/models/V1PresentationPreview'
 import type { CredDefId } from 'indy-sdk'
 
 import { setupProofsTest, waitForProofExchangeRecord } from '../../../../../../tests/helpers'
@@ -23,7 +23,7 @@ describe('Present Proof', () => {
   let aliceAgent: Agent
   let credDefId: CredDefId
   let aliceConnection: ConnectionRecord
-  let presentationPreview: PresentationPreview
+  let presentationPreview: V1PresentationPreview
   let faberProofExchangeRecord: ProofExchangeRecord
   let aliceProofExchangeRecord: ProofExchangeRecord
   let didCommMessageRepository: DidCommMessageRepository
@@ -164,7 +164,7 @@ describe('Present Proof', () => {
       }),
     }
 
-    const requestProofAsResponseOptions: NegotiateProposalOptions = {
+    const requestProofAsResponseOptions: NegotiateProofProposalOptions = {
       proofRecordId: faberProofExchangeRecord.id,
       proofFormats: {
         indy: {

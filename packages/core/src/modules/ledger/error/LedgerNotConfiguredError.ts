@@ -1,4 +1,4 @@
-import { LedgerError } from './LedgerError'
+import { LedgerError, LedgerError } from './LedgerError'
 
 export class LedgerNotConfiguredError extends LedgerError {
   public constructor(message: string, { cause }: { cause?: Error } = {}) {

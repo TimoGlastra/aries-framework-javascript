@@ -1,8 +1,11 @@
+import type { ProofProtocol } from '../protocol/ProofProtocol'
+
 import { FeatureRegistry } from '../../../agent/FeatureRegistry'
 import { DependencyManager } from '../../../plugins/DependencyManager'
 import { ProofsApi } from '../ProofsApi'
 import { ProofsModule } from '../ProofsModule'
-import { V1ProofService } from '../protocol/v1/V1ProofService'
+import { ProofsModuleConfig } from '../ProofsModuleConfig'
+import { V1ProofProtocol } from '../protocol/v1/V1ProofProtocol'
 import { V2ProofService } from '../protocol/v2/V2ProofService'
 import { ProofRepository } from '../repository'
 
@@ -16,16 +19,42 @@ const featureRegistry = new FeatureRegistryMock()
 
 describe('ProofsModule', () => {
   test('registers dependencies on the dependency manager', () => {
-    new ProofsModule().register(dependencyManager, featureRegistry)
+    const proofsModule = new ProofsModule({
+      proofProtocols: [],
+    })
+    proofsModule.register(dependencyManager, featureRegistry)
 
     expect(dependencyManager.registerContextScoped).toHaveBeenCalledTimes(1)
     expect(dependencyManager.registerContextScoped).toHaveBeenCalledWith(ProofsApi)
 
-    expect(dependencyManager.registerSingleton).toHaveBeenCalledTimes(5)
-    expect(dependencyManager.registerSingleton).toHaveBeenCalledWith(V1ProofService)
-    expect(dependencyManager.registerSingleton).toHaveBeenCalledWith(V2ProofService)
-    expect(dependencyManager.registerSingleton).toHaveBeenCalledWith(ProofRepository)
+    expect(dependencyManager.registerInstance).toHaveBeenCalledTimes(1)
+    expect(dependencyManager.registerInstance).toHaveBeenCalledWith(ProofsModuleConfig, proofsModule.config)
 
-    expect(featureRegistry.register).toHaveBeenCalledTimes(2)
+    expect(dependencyManager.registerSingleton).toHaveBeenCalledTimes(1)
+    expect(dependencyManager.registerSingleton).toHaveBeenCalledWith(ProofRepository)
+  })
+
+  test('registers V1ProofProtocol and V2ProofProtocol if no proofProtocols are configured', () => {
+    const proofsModule = new ProofsModule()
+
+    expect(proofsModule.config.proofProtocols).toEqual([expect.any(V1ProofProtocol), expect.any(V2ProofService)])
+  })
+
+  test('calls register on the provided ProofProtocols', () => {
+    const registerMock = jest.fn()
+    const proofProtocol = {
+      register: registerMock,
+    } as unknown as ProofProtocol
+
+    const proofsModule = new ProofsModule({
+      proofProtocols: [proofProtocol],
+    })
+
+    expect(proofsModule.config.proofProtocols).toEqual([proofProtocol])
+
+    proofsModule.register(dependencyManager, featureRegistry)
+
+    expect(registerMock).toHaveBeenCalledTimes(1)
+    expect(registerMock).toHaveBeenCalledWith(dependencyManager, featureRegistry)
   })
 })

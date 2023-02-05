@@ -1,31 +1,31 @@
-import type { CustomProofTags } from './../repository/ProofExchangeRecord'
-import type { AgentContext } from '../../../agent'
-import type { Wallet } from '../../../wallet/Wallet'
-import type { CredentialRepository } from '../../credentials/repository'
-import type { ProofStateChangedEvent } from '../ProofEvents'
+import type { CustomProofTags } from '../../../repository/ProofExchangeRecord'
+import type { AgentContext } from '../../../../../agent'
+import type { Wallet } from '../../../../../wallet/Wallet'
+import type { CredentialRepository } from '../../../../credentials/repository'
+import type { ProofStateChangedEvent } from '../../../ProofEvents'
 
 import { Subject } from 'rxjs'
 
-import { getAgentConfig, getAgentContext, getMockConnection, mockFunction } from '../../../../tests/helpers'
-import { EventEmitter } from '../../../agent/EventEmitter'
-import { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
-import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
-import { DidCommMessageRepository } from '../../../storage'
-import { ConnectionService, DidExchangeState } from '../../connections'
-import { IndyHolderService } from '../../indy/services/IndyHolderService'
-import { IndyRevocationService } from '../../indy/services/IndyRevocationService'
-import { IndyLedgerService } from '../../ledger/services'
-import { ProofEventTypes } from '../ProofEvents'
-import { PresentationProblemReportReason } from '../errors/PresentationProblemReportReason'
-import { IndyProofFormatService } from '../formats/indy/IndyProofFormatService'
-import { ProofState } from '../models/ProofState'
-import { V1ProofService } from '../protocol/v1'
-import { INDY_PROOF_REQUEST_ATTACHMENT_ID, V1RequestPresentationMessage } from '../protocol/v1/messages'
-import { V1PresentationProblemReportMessage } from '../protocol/v1/messages/V1PresentationProblemReportMessage'
-import { ProofExchangeRecord } from '../repository/ProofExchangeRecord'
-import { ProofRepository } from '../repository/ProofRepository'
+import { getAgentConfig, getAgentContext, getMockConnection, mockFunction } from '../../../../../../tests/helpers'
+import { EventEmitter } from '../../../../../agent/EventEmitter'
+import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
+import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
+import { DidCommMessageRepository } from '../../../../../storage'
+import { ConnectionService, DidExchangeState } from '../../../../connections'
+import { IndyHolderService } from '../../../../indy/services/IndyHolderService'
+import { IndyRevocationService } from '../../../../indy/services/IndyRevocationService'
+import { IndyLedgerService } from '../../../../ledger/services'
+import { ProofEventTypes } from '../../../ProofEvents'
+import { PresentationProblemReportReason } from '../../../errors/PresentationProblemReportReason'
+import { IndyProofFormatService } from '../../../formats/indy/IndyProofFormatService'
+import { ProofState } from '../../../models/ProofState'
+import { V1ProofProtocol } from '..'
+import { INDY_PROOF_REQUEST_ATTACHMENT_ID, V1RequestPresentationMessage } from '../messages'
+import { V1PresentationProblemReportMessage } from '../messages/V1PresentationProblemReportMessage'
+import { ProofExchangeRecord } from '../../../repository/ProofExchangeRecord'
+import { ProofRepository } from '../../../repository/ProofRepository'
 
-import { credDef } from './fixtures'
+import { credDef } from '../../../__tests__/fixtures'
 
 // Mock classes
 jest.mock('../repository/ProofRepository')
@@ -95,7 +95,7 @@ const mockProofExchangeRecord = ({
 
 describe('V1ProofService', () => {
   let proofRepository: ProofRepository
-  let proofService: V1ProofService
+  let proofService: V1ProofProtocol
   let ledgerService: IndyLedgerService
   let wallet: Wallet
   let indyHolderService: IndyHolderService
@@ -120,7 +120,7 @@ describe('V1ProofService', () => {
     indyProofFormatService = new indyProofFormatServiceMock()
     agentContext = getAgentContext()
 
-    proofService = new V1ProofService(
+    proofService = new V1ProofProtocol(
       proofRepository,
       didCommMessageRepository,
       ledgerService,

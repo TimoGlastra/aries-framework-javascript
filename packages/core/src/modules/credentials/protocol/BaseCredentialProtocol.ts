@@ -1,12 +1,4 @@
 import type { CredentialProtocol } from './CredentialProtocol'
-import type { AgentContext } from '../../../agent'
-import type { AgentMessage } from '../../../agent/AgentMessage'
-import type { FeatureRegistry } from '../../../agent/FeatureRegistry'
-import type { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
-import type { DependencyManager } from '../../../plugins'
-import type { Query } from '../../../storage/StorageService'
-import type { ProblemReportMessage } from '../../problem-reports'
-import type { CredentialStateChangedEvent } from '../CredentialEvents'
 import type {
   CreateProposalOptions,
   CredentialProtocolMsgReturnType,
@@ -21,15 +13,23 @@ import type {
   AcceptCredentialOptions,
   GetFormatDataReturn,
   CreateProblemReportOptions,
-} from '../CredentialProtocolOptions'
+} from './CredentialProtocolOptions'
+import type { AgentContext } from '../../../agent'
+import type { AgentMessage } from '../../../agent/AgentMessage'
+import type { FeatureRegistry } from '../../../agent/FeatureRegistry'
+import type { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
+import type { DependencyManager } from '../../../plugins'
+import type { Query } from '../../../storage/StorageService'
+import type { ProblemReportMessage } from '../../problem-reports'
+import type { CredentialStateChangedEvent } from '../CredentialEvents'
 import type { CredentialFormatService, ExtractCredentialFormats } from '../formats'
+import type { CredentialState } from '../models/CredentialState'
 import type { CredentialExchangeRecord } from '../repository'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { DidCommMessageRepository } from '../../../storage'
 import { JsonTransformer } from '../../../utils'
 import { CredentialEventTypes } from '../CredentialEvents'
-import { CredentialState } from '../models/CredentialState'
 import { CredentialRepository } from '../repository'
 
 /**
@@ -102,7 +102,7 @@ export abstract class BaseCredentialProtocol<CFs extends CredentialFormatService
   public abstract createProblemReport(
     agentContext: AgentContext,
     options: CreateProblemReportOptions
-  ): ProblemReportMessage
+  ): Promise<CredentialProtocolMsgReturnType<ProblemReportMessage>>
 
   public abstract findProposalMessage(
     agentContext: AgentContext,
@@ -128,21 +128,6 @@ export abstract class BaseCredentialProtocol<CFs extends CredentialFormatService
   public abstract register(dependencyManager: DependencyManager, featureRegistry: FeatureRegistry): void
 
   /**
-   * Decline a credential offer
-   * @param credentialRecord The credential to be declined
-   */
-  public async declineOffer(
-    agentContext: AgentContext,
-    credentialRecord: CredentialExchangeRecord
-  ): Promise<CredentialExchangeRecord> {
-    credentialRecord.assertState(CredentialState.OfferReceived)
-
-    await this.updateState(agentContext, credentialRecord, CredentialState.Declined)
-
-    return credentialRecord
-  }
-
-  /**
    * Process a received credential {@link ProblemReportMessage}.
    *
    * @param messageContext The message context containing a credential problem report message
@@ -155,17 +140,17 @@ export abstract class BaseCredentialProtocol<CFs extends CredentialFormatService
 
     const connection = messageContext.assertReadyConnection()
 
-    agentContext.config.logger.debug(`Processing problem report with id ${credentialProblemReportMessage.id}`)
+    agentContext.config.logger.debug(`Processing problem report with message id ${credentialProblemReportMessage.id}`)
 
     const credentialRecord = await this.getByThreadAndConnectionId(
-      messageContext.agentContext,
+      agentContext,
       credentialProblemReportMessage.threadId,
       connection.id
     )
 
     // Update record
     credentialRecord.errorMessage = `${credentialProblemReportMessage.description.code}: ${credentialProblemReportMessage.description.en}`
-    await this.update(messageContext.agentContext, credentialRecord)
+    await this.update(agentContext, credentialRecord)
     return credentialRecord
   }
 
@@ -253,10 +238,10 @@ export abstract class BaseCredentialProtocol<CFs extends CredentialFormatService
    * @param credentialRecordId the credential record id
    * @returns The credential record or null if not found
    */
-  public findById(agentContext: AgentContext, connectionId: string): Promise<CredentialExchangeRecord | null> {
+  public findById(agentContext: AgentContext, proofRecordId: string): Promise<CredentialExchangeRecord | null> {
     const credentialRepository = agentContext.dependencyManager.resolve(CredentialRepository)
 
-    return credentialRepository.findById(agentContext, connectionId)
+    return credentialRepository.findById(agentContext, proofRecordId)
   }
 
   public async delete(

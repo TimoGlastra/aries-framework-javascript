@@ -11,7 +11,7 @@ export class ProofAttributeInfo {
       this.name = options.name
       this.names = options.names
       this.nonRevoked = options.nonRevoked
-      this.restrictions = options.restrictions
+      this.restrictions = options.restrictions?.map((r) => new AttributeFilter(r))
     }
   }
 

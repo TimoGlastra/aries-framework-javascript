@@ -26,7 +26,7 @@ import type { ProofFormat } from '../../formats/ProofFormat'
 import type { ProofFormatService } from '../../formats/ProofFormatService'
 import type { ProofFormatSpec } from '../../models/ProofFormatSpec'
 
-import { inject, Lifecycle, scoped } from 'tsyringe'
+import { inject, injectable, Lifecycle, scoped } from 'tsyringe'
 
 import { AgentConfig } from '../../../../agent/AgentConfig'
 import { EventEmitter } from '../../../../agent/EventEmitter'
@@ -37,12 +37,12 @@ import { MessageValidator } from '../../../../utils/MessageValidator'
 import { Wallet } from '../../../../wallet/Wallet'
 import { AckStatus } from '../../../common'
 import { ConnectionService } from '../../../connections'
-import { ProofService } from '../../ProofService'
 import { PresentationProblemReportReason } from '../../errors/PresentationProblemReportReason'
 import { IndyProofFormatService } from '../../formats/indy/IndyProofFormatService'
 import { PresentationExchangeProofFormatService } from '../../formats/presentation-exchange/PresentationExchangeProofFormatService'
 import { ProofState } from '../../models/ProofState'
 import { ProofExchangeRecord, ProofRepository } from '../../repository'
+import { ProofProtocol } from '../ProofProtocol'
 
 import { V2PresentationProblemReportError } from './errors'
 import { V2PresentationAckHandler } from './handlers/V2PresentationAckHandler'
@@ -56,8 +56,8 @@ import { V2PresentationProblemReportMessage } from './messages/V2PresentationPro
 import { V2ProposalPresentationMessage } from './messages/V2ProposalPresentationMessage'
 import { V2RequestPresentationMessage } from './messages/V2RequestPresentationMessage'
 
-@scoped(Lifecycle.ContainerScoped)
-export class V2ProofService<PFs extends ProofFormat[] = ProofFormat[]> extends ProofService<PFs> {
+@injectable()
+export class V2ProofService<PFs extends ProofFormat[] = ProofFormat[]> extends ProofProtocol<PFs> {
   private formatServiceMap: { [key: string]: ProofFormatService }
 
   public constructor(

@@ -1,7 +1,7 @@
-import { ClassValidationError } from '../../../error/ClassValidationError'
-import { JsonTransformer } from '../../../utils/JsonTransformer'
-import { MessageValidator } from '../../../utils/MessageValidator'
-import { ProofRequest } from '../formats/indy/models/ProofRequest'
+import { ClassValidationError } from '../../../../../../error/ClassValidationError'
+import { JsonTransformer } from '../../../../../../utils/JsonTransformer'
+import { MessageValidator } from '../../../../../../utils/MessageValidator'
+import { ProofRequest } from '../ProofRequest'
 
 describe('ProofRequest', () => {
   it('should successfully validate if the proof request JSON contains a valid structure', async () => {

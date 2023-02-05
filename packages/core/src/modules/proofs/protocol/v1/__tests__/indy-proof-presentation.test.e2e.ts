@@ -1,6 +1,6 @@
 import type { Agent } from '../../../../../agent/Agent'
 import type { ConnectionRecord } from '../../../../connections/repository/ConnectionRecord'
-import type { PresentationPreview } from '../models/V1PresentationPreview'
+import type { V1PresentationPreview } from '../models/V1PresentationPreview'
 
 import { setupProofsTest, waitForProofExchangeRecord } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
@@ -13,7 +13,7 @@ describe('Present Proof', () => {
   let faberAgent: Agent
   let aliceAgent: Agent
   let aliceConnection: ConnectionRecord
-  let presentationPreview: PresentationPreview
+  let presentationPreview: V1PresentationPreview
   let faberProofExchangeRecord: ProofExchangeRecord
   let aliceProofExchangeRecord: ProofExchangeRecord
   let didCommMessageRepository: DidCommMessageRepository

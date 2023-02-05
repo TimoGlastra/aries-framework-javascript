@@ -1,10 +1,10 @@
 import type { Agent, ConnectionRecord } from '../src'
 import type { AcceptProofProposalOptions } from '../src/modules/proofs/ProofsApiOptions'
-import type { PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
+import type { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
 import type { CredDefId } from 'indy-sdk'
 
 import { ProofExchangeRecord } from '../src'
-import { getGroupKeysFromIndyProofFormatData } from '../src/modules/proofs/__tests__/groupKeys'
+import { getGroupKeysFromIndyProofFormatData } from '../src/modules/proofs/formats/indy/__tests__/groupKeys'
 import {
   ProofAttributeInfo,
   AttributeFilter,
@@ -30,7 +30,7 @@ describe('Present Proof', () => {
   let aliceConnection: ConnectionRecord
   let faberProofExchangeRecord: ProofExchangeRecord
   let aliceProofExchangeRecord: ProofExchangeRecord
-  let presentationPreview: PresentationPreview
+  let presentationPreview: V1PresentationPreview
   let didCommMessageRepository: DidCommMessageRepository
 
   beforeAll(async () => {

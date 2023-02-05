@@ -46,26 +46,27 @@ export interface CredentialFormatCreateReturn {
 }
 
 /**
- * Base return type for all process methods.
+ * Base return type for all credential process methods.
  */
-export interface FormatProcessOptions {
+export interface CredentialFormatProcessOptions {
   attachment: Attachment
   credentialRecord: CredentialExchangeRecord
 }
 
-export interface FormatProcessCredentialOptions extends FormatProcessOptions {
+export interface FormatProcessCredentialOptions extends CredentialFormatProcessOptions {
   requestAttachment: Attachment
 }
 
 export interface FormatCreateProposalOptions<CF extends CredentialFormat> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats: CredentialFormatPayload<[CF], 'createProposal'>
+  attachmentId?: string
 }
 
 export interface FormatAcceptProposalOptions<CF extends CredentialFormat> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<[CF], 'acceptProposal'>
-  attachId?: string
+  attachmentId?: string
 
   proposalAttachment: Attachment
 }
@@ -77,13 +78,13 @@ export interface FormatCreateProposalReturn extends CredentialFormatCreateReturn
 export interface FormatCreateOfferOptions<CF extends CredentialFormat> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats: CredentialFormatPayload<[CF], 'createOffer'>
-  attachId?: string
+  attachmentId?: string
 }
 
 export interface FormatAcceptOfferOptions<CF extends CredentialFormat> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<[CF], 'acceptOffer'>
-  attachId?: string
+  attachmentId?: string
 
   offerAttachment: Attachment
 }
@@ -100,18 +101,12 @@ export interface FormatCreateRequestOptions<CF extends CredentialFormat> {
 export interface FormatAcceptRequestOptions<CF extends CredentialFormat> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<[CF], 'acceptRequest'>
-  attachId?: string
+  attachmentId?: string
 
   requestAttachment: Attachment
   offerAttachment?: Attachment
 }
 
-export interface FormatAcceptCredentialOptions {
-  credentialRecord: CredentialExchangeRecord
-  attachId?: string
-  requestAttachment: Attachment
-  offerAttachment?: Attachment
-}
 // Auto accept method interfaces
 export interface FormatAutoRespondProposalOptions {
   credentialRecord: CredentialExchangeRecord

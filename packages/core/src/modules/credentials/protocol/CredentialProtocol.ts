@@ -1,10 +1,3 @@
-import type { AgentContext } from '../../../agent'
-import type { AgentMessage } from '../../../agent/AgentMessage'
-import type { FeatureRegistry } from '../../../agent/FeatureRegistry'
-import type { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
-import type { DependencyManager } from '../../../plugins'
-import type { Query } from '../../../storage/StorageService'
-import type { ProblemReportMessage } from '../../problem-reports'
 import type {
   CreateProposalOptions,
   CredentialProtocolMsgReturnType,
@@ -19,7 +12,14 @@ import type {
   AcceptCredentialOptions,
   GetFormatDataReturn,
   CreateProblemReportOptions,
-} from '../CredentialProtocolOptions'
+} from './CredentialProtocolOptions'
+import type { AgentContext } from '../../../agent'
+import type { AgentMessage } from '../../../agent/AgentMessage'
+import type { FeatureRegistry } from '../../../agent/FeatureRegistry'
+import type { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
+import type { DependencyManager } from '../../../plugins'
+import type { Query } from '../../../storage/StorageService'
+import type { ProblemReportMessage } from '../../problem-reports'
 import type { CredentialFormatService, ExtractCredentialFormats } from '../formats'
 import type { CredentialState } from '../models/CredentialState'
 import type { CredentialExchangeRecord } from '../repository'
@@ -79,7 +79,11 @@ export interface CredentialProtocol<CFs extends CredentialFormatService[] = Cred
   processAck(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
 
   // methods for problem-report
-  createProblemReport(agentContext: AgentContext, options: CreateProblemReportOptions): ProblemReportMessage
+  createProblemReport(
+    agentContext: AgentContext,
+    options: CreateProblemReportOptions
+  ): Promise<CredentialProtocolMsgReturnType<ProblemReportMessage>>
+  processProblemReport(messageContext: InboundMessageContext<ProblemReportMessage>): Promise<CredentialExchangeRecord>
 
   findProposalMessage(agentContext: AgentContext, credentialExchangeId: string): Promise<AgentMessage | null>
   findOfferMessage(agentContext: AgentContext, credentialExchangeId: string): Promise<AgentMessage | null>
@@ -90,25 +94,19 @@ export interface CredentialProtocol<CFs extends CredentialFormatService[] = Cred
     credentialExchangeId: string
   ): Promise<GetFormatDataReturn<ExtractCredentialFormats<CFs>>>
 
-  declineOffer(
-    agentContext: AgentContext,
-    credentialRecord: CredentialExchangeRecord
-  ): Promise<CredentialExchangeRecord>
-  processProblemReport(messageContext: InboundMessageContext<ProblemReportMessage>): Promise<CredentialExchangeRecord>
-
   // Repository methods
   updateState(
     agentContext: AgentContext,
     credentialRecord: CredentialExchangeRecord,
     newState: CredentialState
   ): Promise<void>
-  getById(agentContext: AgentContext, credentialRecordId: string): Promise<CredentialExchangeRecord>
+  getById(agentContext: AgentContext, credentialExchangeId: string): Promise<CredentialExchangeRecord>
   getAll(agentContext: AgentContext): Promise<CredentialExchangeRecord[]>
   findAllByQuery(
     agentContext: AgentContext,
     query: Query<CredentialExchangeRecord>
   ): Promise<CredentialExchangeRecord[]>
-  findById(agentContext: AgentContext, connectionId: string): Promise<CredentialExchangeRecord | null>
+  findById(agentContext: AgentContext, credentialExchangeId: string): Promise<CredentialExchangeRecord | null>
   delete(
     agentContext: AgentContext,
     credentialRecord: CredentialExchangeRecord,

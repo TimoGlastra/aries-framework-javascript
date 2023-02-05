@@ -2,7 +2,7 @@ import type { CredentialFormat } from './CredentialFormat'
 import type {
   FormatCreateProposalOptions,
   FormatCreateProposalReturn,
-  FormatProcessOptions,
+  CredentialFormatProcessOptions,
   FormatCreateOfferOptions,
   FormatCreateOfferReturn,
   FormatCreateRequestOptions,
@@ -17,7 +17,6 @@ import type {
   FormatProcessCredentialOptions,
 } from './CredentialFormatServiceOptions'
 import type { AgentContext } from '../../../agent'
-import type { Attachment } from '../../../decorators/attachment/Attachment'
 
 export interface CredentialFormatService<CF extends CredentialFormat = CredentialFormat> {
   formatKey: CF['formatKey']
@@ -28,12 +27,12 @@ export interface CredentialFormatService<CF extends CredentialFormat = Credentia
     agentContext: AgentContext,
     options: FormatCreateProposalOptions<CF>
   ): Promise<FormatCreateProposalReturn>
-  processProposal(agentContext: AgentContext, options: FormatProcessOptions): Promise<void>
+  processProposal(agentContext: AgentContext, options: CredentialFormatProcessOptions): Promise<void>
   acceptProposal(agentContext: AgentContext, options: FormatAcceptProposalOptions<CF>): Promise<FormatCreateOfferReturn>
 
   // offer methods
   createOffer(agentContext: AgentContext, options: FormatCreateOfferOptions<CF>): Promise<FormatCreateOfferReturn>
-  processOffer(agentContext: AgentContext, options: FormatProcessOptions): Promise<void>
+  processOffer(agentContext: AgentContext, options: CredentialFormatProcessOptions): Promise<void>
   acceptOffer(agentContext: AgentContext, options: FormatAcceptOfferOptions<CF>): Promise<CredentialFormatCreateReturn>
 
   // request methods
@@ -41,7 +40,7 @@ export interface CredentialFormatService<CF extends CredentialFormat = Credentia
     agentContext: AgentContext,
     options: FormatCreateRequestOptions<CF>
   ): Promise<CredentialFormatCreateReturn>
-  processRequest(agentContext: AgentContext, options: FormatProcessOptions): Promise<void>
+  processRequest(agentContext: AgentContext, options: CredentialFormatProcessOptions): Promise<void>
   acceptRequest(
     agentContext: AgentContext,
     options: FormatAcceptRequestOptions<CF>
@@ -51,14 +50,15 @@ export interface CredentialFormatService<CF extends CredentialFormat = Credentia
   processCredential(agentContext: AgentContext, options: FormatProcessCredentialOptions): Promise<void>
 
   // auto accept methods
-  shouldAutoRespondToProposal(agentContext: AgentContext, options: FormatAutoRespondProposalOptions): boolean
-  shouldAutoRespondToOffer(agentContext: AgentContext, options: FormatAutoRespondOfferOptions): boolean
-  shouldAutoRespondToRequest(agentContext: AgentContext, options: FormatAutoRespondRequestOptions): boolean
-  shouldAutoRespondToCredential(agentContext: AgentContext, options: FormatAutoRespondCredentialOptions): boolean
+  shouldAutoRespondToProposal(agentContext: AgentContext, options: FormatAutoRespondProposalOptions): Promise<boolean>
+  shouldAutoRespondToOffer(agentContext: AgentContext, options: FormatAutoRespondOfferOptions): Promise<boolean>
+  shouldAutoRespondToRequest(agentContext: AgentContext, options: FormatAutoRespondRequestOptions): Promise<boolean>
+  shouldAutoRespondToCredential(
+    agentContext: AgentContext,
+    options: FormatAutoRespondCredentialOptions
+  ): Promise<boolean>
 
   deleteCredentialById(agentContext: AgentContext, credentialId: string): Promise<void>
 
-  supportsFormat(format: string): boolean
-
-  getFormatData(data: unknown, id: string): Attachment
+  supportsFormat(formatIdentifier: string): boolean
 }

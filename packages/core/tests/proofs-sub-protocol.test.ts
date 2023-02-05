@@ -1,5 +1,5 @@
 import type { Agent, ConnectionRecord, ProofExchangeRecord } from '../src'
-import type { PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
+import type { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
 import type { CredDefId } from 'indy-sdk'
 
 import {
@@ -21,7 +21,7 @@ describe('Present Proof Subprotocol', () => {
   let faberConnection: ConnectionRecord
   let aliceConnection: ConnectionRecord
   let aliceProofExchangeRecord: ProofExchangeRecord
-  let presentationPreview: PresentationPreview
+  let presentationPreview: V1PresentationPreview
 
   beforeAll(async () => {
     testLogger.test('Initializing the agents')

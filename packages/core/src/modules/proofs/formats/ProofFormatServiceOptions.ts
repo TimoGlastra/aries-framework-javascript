@@ -1,136 +1,126 @@
-import type { ProofAttachmentFormat } from './ProofAttachmentFormat'
-import type { ProofFormat, ProofFormatPayload } from './ProofFormat'
+import type { ProofFormat, ProofFormatCredentialForRequestPayload, ProofFormatPayload } from './ProofFormat'
 import type { ProofFormatService } from './ProofFormatService'
-import type { IndyProposeProofFormat, IndyRequestProofFormat, ProofRequest, ProofRequestOptions } from './indy'
 import type { Attachment } from '../../../decorators/attachment/Attachment'
-import type { BaseOptions } from '../ProofServiceOptions'
-import type { GetRequestedCredentialsConfig } from '../models/GetRequestedCredentialsConfig'
-import type { RequestPresentationOptions } from '../protocol'
-import type { PresentationPreview } from '../protocol/v1/models/V1PresentationPreview'
+import type { ProofFormatSpec } from '../models/ProofFormatSpec'
 import type { ProofExchangeRecord } from '../repository/ProofExchangeRecord'
-import type { PresentationDefinitionV1 } from '@sphereon/pex-models'
 
 /**
- * Get the service map for usage in the proofs module. Will return a type mapping of protocol version to service.
+ * Infer the {@link ProofFormat} based on a {@link ProofFormatService}.
+ *
+ * It does this by extracting the `ProofFormat` generic from the `ProofFormatService`.
  *
  * @example
  * ```
- * type FormatServiceMap = ProofFormatServiceMap<[IndyProofFormat]>
+ * // TheProofFormat is now equal to IndyProofFormat
+ * type TheProofFormat = ExtractProofFormat<IndyProofFormatService>
+ * ```
  *
- * // equal to
- * type FormatServiceMap = {
- *   indy: ProofFormatServiceMap<IndyCredentialFormat>
+ * Because the `IndyProofFormatService` is defined as follows:
+ * ```
+ * class IndyProofFormatService implements ProofFormatService<IndyProofFormat> {
  * }
  * ```
  */
-export type ProofFormatServiceMap<PFs extends ProofFormat[]> = {
-  [PF in PFs[number] as PF['formatKey']]: ProofFormatService<PF>
+export type ExtractProofFormat<Type> = Type extends ProofFormatService<infer ProofFormat> ? ProofFormat : never
+
+/**
+ * Infer an array of {@link ProofFormat} types based on an array of {@link ProofFormatService} types.
+ *
+ * This is based on {@link ExtractProofFormat}, but allows to handle arrays.
+ */
+export type ExtractProofFormats<PFs extends ProofFormatService[]> = {
+  [PF in keyof PFs]: ExtractProofFormat<PFs[PF]>
 }
 
-export interface FormatGetRequestedCredentials {
+/**
+ * Base return type for all methods that create an attachment format.
+ *
+ * It requires an attachment and a format to be returned.
+ */
+export interface ProofFormatCreateReturn {
+  format: ProofFormatSpec
   attachment: Attachment
-  presentationProposal?: PresentationPreview
-  config?: GetRequestedCredentialsConfig
 }
 
-export interface CreateRequestAttachmentOptions {
-  id?: string
-  proofRequestOptions: ProofRequestOptions
-}
-
-export interface CreateProofAttachmentOptions {
-  id?: string
-  proofProposalOptions: ProofRequestOptions
-}
-
-export interface FormatCreateProofProposalOptions {
-  id?: string
-  formats: ProposeProofFormats
-}
-
-export interface FormatProcessProposalOptions {
-  proposal: ProofAttachmentFormat
-  record?: ProofExchangeRecord
-}
-
-export interface FormatCreateProofRequestOptions {
-  id?: string
-  formats: ProposeProofFormats
-}
-
-export interface FormatProcessRequestOptions {
-  requestAttachment: ProofAttachmentFormat
-  record?: ProofExchangeRecord
-}
-
-export interface FormatProcessPresentationOptions {
-  record: ProofExchangeRecord
-  formatAttachments: {
-    request: ProofAttachmentFormat[]
-    presentation: ProofAttachmentFormat[]
-  }
-}
-
-export interface VerifyProofOptions {
-  request: Attachment
-  proof: Attachment
-}
-
-export interface CreateProblemReportOptions {
+/**
+ * Base type for all proof process methods.
+ */
+export interface ProofFormatProcessOptions {
+  attachment: Attachment
   proofRecord: ProofExchangeRecord
-  description: string
 }
 
-export interface FormatCreatePresentationOptions<PF extends ProofFormat> {
-  id?: string
-  attachment: Attachment
-  proofFormats: ProofFormatPayload<[PF], 'createPresentation'>
+export interface FormatProcessPresentationOptions extends ProofFormatProcessOptions {
+  requestAttachment: Attachment
 }
 
-export interface FormatPresentationAttachment {
+// TODO: proof specific interface naming?
+export interface FormatCreateProposalOptions<PF extends ProofFormat> {
+  proofRecord: ProofExchangeRecord
+  proofFormats: ProofFormatPayload<[PF], 'createProposal'>
+  attachmentId?: string
+}
+
+export interface FormatAcceptProposalOptions<PF extends ProofFormat> {
+  proofRecord: ProofExchangeRecord
+  proofFormats?: ProofFormatPayload<[PF], 'acceptProposal'>
+  attachmentId?: string
+
+  proposalAttachment: Attachment
+}
+
+export interface FormatCreateRequestOptions<PF extends ProofFormat> {
+  proofRecord: ProofExchangeRecord
+  proofFormats: ProofFormatPayload<[PF], 'createRequest'>
+  attachmentId?: string
+}
+
+export interface FormatAcceptRequestOptions<PF extends ProofFormat> {
+  proofRecord: ProofExchangeRecord
+  proofFormats?: ProofFormatPayload<[PF], 'acceptRequest'>
+  attachmentId?: string
+
+  requestAttachment: Attachment
+  proposalAttachment?: Attachment
+}
+
+export interface FormatGetCredentialsForRequestOptions<PF extends ProofFormat> {
+  proofRecord: ProofExchangeRecord
+  proofFormats: ProofFormatCredentialForRequestPayload<[PF], 'getCredentialsForRequest', 'input'>
+
+  requestAttachment: Attachment
+  proposalAttachment?: Attachment
+}
+
+export type FormatGetCredentialsForRequestReturn<PF extends ProofFormat> =
+  PF['proofFormats']['getCredentialsForRequest']['output']
+
+export interface FormatSelectCredentialsForRequestOptions<PF extends ProofFormat> {
+  proofRecord: ProofExchangeRecord
+  proofFormats: ProofFormatCredentialForRequestPayload<[PF], 'selectCredentialsForRequest', 'input'>
+
+  requestAttachment: Attachment
+  proposalAttachment?: Attachment
+}
+
+export type FormatSelectCredentialsForRequestReturn<PF extends ProofFormat> =
+  PF['proofFormats']['selectCredentialsForRequest']['output']
+
+export interface FormatAutoRespondProposalOptions {
+  proofRecord: ProofExchangeRecord
+  proposalAttachment: Attachment
+  requestAttachment: Attachment
+}
+
+export interface FormatAutoRespondRequestOptions {
+  proofRecord: ProofExchangeRecord
+  requestAttachment: Attachment
+  proposalAttachment: Attachment
+}
+
+export interface FormatAutoRespondPresentationOptions {
+  proofRecord: ProofExchangeRecord
+  proposalAttachment?: Attachment
+  requestAttachment: Attachment
   presentationAttachment: Attachment
-  presentationOptions?: PresentationOptions
-}
-
-export interface ProposeProofFormats {
-  indy?: IndyProposeProofFormat
-  presentationExchange?: ProposePresentationExchangeOptions
-}
-
-export interface RequestProofFormats {
-  indy?: IndyRequestProofFormat
-  presentationExchange?: RequestPresentationOptions
-}
-
-export interface FormatProofRequestOptions {
-  indy?: ProofRequest
-  presentationExchange?: FormatRequestPresentationExchangeOptions
-}
-
-interface PresentationOptions {
-  challenge?: string
-  domain?: string
-}
-
-export interface FormatRequestPresentationExchangeOptions {
-  options?: PresentationOptions
-  presentationDefinition: PresentationDefinitionV1
-}
-
-export interface ProposePresentationExchangeOptions {
-  presentationDefinition: PresentationDefinitionV1
-}
-
-export interface FormatCreateRequestAsResponseOptions<PFs extends ProofFormat[]> extends BaseOptions {
-  id?: string
-  proofRecord: ProofExchangeRecord
-  proofFormats: ProofFormatPayload<PFs, 'createRequestAsResponse'>
-}
-
-export interface FormatRequestedCredentialReturn<PFs extends ProofFormat[]> {
-  proofFormats: ProofFormatPayload<PFs, 'requestCredentials'>
-}
-
-export interface FormatRetrievedCredentialOptions<PFs extends ProofFormat[]> {
-  proofFormats: ProofFormatPayload<PFs, 'retrieveCredentials'>
 }

@@ -72,9 +72,9 @@ import { OutOfBandRecord } from '../src/modules/oob/repository'
 import { PredicateType } from '../src/modules/proofs/formats/indy/models'
 import { ProofState } from '../src/modules/proofs/models/ProofState'
 import {
-  PresentationPreview,
-  PresentationPreviewAttribute,
-  PresentationPreviewPredicate,
+  V1PresentationPreview,
+  V1PresentationPreviewAttribute,
+  V1PresentationPreviewPredicate,
 } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
 import { customDocumentLoader } from '../src/modules/vc/__tests__/documentLoader'
 import { KeyDerivationMethod } from '../src/types'
@@ -891,26 +891,26 @@ export async function setupProofsTest(faberName: string, aliceName: string, auto
   const faberConnection = agentAConnection
   const aliceConnection = agentBConnection
 
-  const presentationPreview = new PresentationPreview({
+  const presentationPreview = new V1PresentationPreview({
     attributes: [
-      new PresentationPreviewAttribute({
+      {
         name: 'name',
         credentialDefinitionId: definition.id,
         referent: '0',
         value: 'John',
-      }),
-      new PresentationPreviewAttribute({
+      },
+      {
         name: 'image_0',
         credentialDefinitionId: definition.id,
-      }),
+      },
     ],
     predicates: [
-      new PresentationPreviewPredicate({
+      {
         name: 'age',
         credentialDefinitionId: definition.id,
         predicate: PredicateType.GreaterThanOrEqualTo,
         threshold: 50,
-      }),
+      },
     ],
   })
 
@@ -1026,26 +1026,26 @@ export async function setupJsonLdProofsTestMultipleCredentials(
   const faberConnection = agentAConnection
   const aliceConnection = agentBConnection
 
-  const presentationPreview = new PresentationPreview({
+  const presentationPreview = new V1PresentationPreview({
     attributes: [
-      new PresentationPreviewAttribute({
+      {
         name: 'name',
         credentialDefinitionId: definition.id,
         referent: '0',
         value: 'John',
-      }),
-      new PresentationPreviewAttribute({
+      },
+      {
         name: 'image_0',
         credentialDefinitionId: definition.id,
-      }),
+      },
     ],
     predicates: [
-      new PresentationPreviewPredicate({
+      {
         name: 'age',
         credentialDefinitionId: definition.id,
         predicate: PredicateType.GreaterThanOrEqualTo,
         threshold: 50,
-      }),
+      },
     ],
   })
 
@@ -1372,26 +1372,26 @@ export async function setupJsonLdProofsTest(faberName: string, aliceName: string
   const faberConnection = agentAConnection
   const aliceConnection = agentBConnection
 
-  const presentationPreview = new PresentationPreview({
+  const presentationPreview = new V1PresentationPreview({
     attributes: [
-      new PresentationPreviewAttribute({
+      {
         name: 'name',
         credentialDefinitionId: definition.id,
         referent: '0',
         value: 'John',
-      }),
-      new PresentationPreviewAttribute({
+      },
+      {
         name: 'image_0',
         credentialDefinitionId: definition.id,
-      }),
+      },
     ],
     predicates: [
-      new PresentationPreviewPredicate({
+      {
         name: 'age',
         credentialDefinitionId: definition.id,
         predicate: PredicateType.GreaterThanOrEqualTo,
         threshold: 50,
-      }),
+      },
     ],
   })
 

@@ -1,10 +1,12 @@
-import type { PresentationAckMessageOptions } from '../../../messages/PresentationAckMessage'
+import type { AckMessageOptions } from '../../../../common/messages/AckMessage'
 
 import { IsValidMessageType, parseMessageType } from '../../../../../utils/messageType'
 import { AckMessage } from '../../../../common/messages/AckMessage'
 
+export type V2PresentationAckMessageOptions = AckMessageOptions
+
 export class V2PresentationAckMessage extends AckMessage {
-  public constructor(options: PresentationAckMessageOptions) {
+  public constructor(options: V2PresentationAckMessageOptions) {
     super(options)
   }
 

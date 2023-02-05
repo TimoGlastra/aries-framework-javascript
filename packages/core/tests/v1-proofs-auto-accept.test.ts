@@ -1,5 +1,5 @@
 import type { Agent, ConnectionRecord } from '../src'
-import type { PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
+import type { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
 
 import {
   AutoAcceptProof,
@@ -19,7 +19,7 @@ describe('Auto accept present proof', () => {
   let credDefId: string
   let faberConnection: ConnectionRecord
   let aliceConnection: ConnectionRecord
-  let presentationPreview: PresentationPreview
+  let presentationPreview: V1PresentationPreview
 
   describe('Auto accept on `always`', () => {
     beforeAll(async () => {

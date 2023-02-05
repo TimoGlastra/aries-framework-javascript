@@ -1,258 +1,221 @@
-import type { PresentationExchangeProofFormat } from './PresentationExchangeProofFormat'
-import type { InputDescriptorsSchema } from './models'
+import type {
+  PresentationExchangeProofFormat,
+  PresentationExchangeProposalData,
+  PresentationExchangeRequestData,
+} from './PresentationExchangeProofFormat'
 import type { AgentContext } from '../../../../agent'
-import type { Key } from '../../../../crypto/Key'
 import type { Query } from '../../../../storage/StorageService'
 import type { W3cCredentialRecord } from '../../../vc'
-import type { SignPresentationOptions, VerifyPresentationOptions } from '../../../vc/models/W3cCredentialServiceOptions'
-import type { ProofAttachmentFormat } from '../ProofAttachmentFormat'
+import type { ProofFormatService } from '../ProofFormatService'
 import type {
-  FormatGetRequestedCredentials,
-  FormatPresentationAttachment,
-  FormatCreatePresentationOptions,
-  FormatCreateProofRequestOptions,
-  FormatCreateProofProposalOptions,
+  FormatAcceptProposalOptions,
+  FormatAcceptRequestOptions,
+  FormatAutoRespondProposalOptions,
+  FormatAutoRespondRequestOptions,
+  FormatCreateProposalOptions,
+  FormatCreateRequestOptions,
+  FormatGetCredentialsForRequestOptions,
+  FormatGetCredentialsForRequestReturn,
   FormatProcessPresentationOptions,
-  FormatProcessProposalOptions,
-  FormatProcessRequestOptions,
-  FormatProofRequestOptions,
-  FormatRequestPresentationExchangeOptions,
-  FormatCreateRequestAsResponseOptions,
-  FormatRequestedCredentialReturn,
-  FormatRetrievedCredentialOptions,
+  FormatSelectCredentialsForRequestOptions,
+  FormatSelectCredentialsForRequestReturn,
+  ProofFormatCreateReturn,
+  ProofFormatProcessOptions,
 } from '../ProofFormatServiceOptions'
-import type {
-  PresentationSignCallBackParams,
-  PresentationSignOptions,
-  SelectResults,
-  SubmissionRequirementMatch,
-  Validated,
-} from '@sphereon/pex'
-import type { PresentationDefinitionV1 } from '@sphereon/pex-models'
-import type { ICredentialSubject, IVerifiablePresentation, IVerifiableCredential } from '@sphereon/ssi-types'
+import type { PresentationSignCallBackParams, PresentationSignOptions, SubmissionRequirementMatch } from '@sphereon/pex'
+import type { IVerifiableCredential, IVerifiablePresentation } from '@sphereon/ssi-types'
 
-import { Status, PEXv1 } from '@sphereon/pex'
+import { PEXv1, Status } from '@sphereon/pex'
 import { Rules } from '@sphereon/pex-models'
 import { IProofPurpose } from '@sphereon/ssi-types'
 import { query } from 'jsonpath'
-import { Lifecycle, scoped } from 'tsyringe'
 
-import { AgentConfig } from '../../../../agent/AgentConfig'
+import { Attachment, AttachmentData } from '../../../../decorators/attachment/Attachment'
 import { AriesFrameworkError } from '../../../../error'
-import { DidCommMessageRepository } from '../../../../storage/didcomm/DidCommMessageRepository'
-import { deepEquality, JsonTransformer } from '../../../../utils'
+import { JsonEncoder, JsonTransformer } from '../../../../utils'
 import { uuid } from '../../../../utils/uuid'
-import { DidResolverService, keyReferenceToKey } from '../../../dids'
-import { W3cPresentation, W3cCredentialService } from '../../../vc'
-import { W3cVerifiablePresentation } from '../../../vc/models/presentation/W3cVerifiablePresentation'
+import { DidResolverService } from '../../../dids'
+import { W3cCredentialService, W3cPresentation, W3cVerifiablePresentation } from '../../../vc'
 import { ProofFormatSpec } from '../../models/ProofFormatSpec'
-import { ProofFormatService } from '../ProofFormatService'
 
-import {
-  V2_PRESENTATION_EXCHANGE_PRESENTATION,
-  V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL,
-  V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
-} from './PresentationExchangeProofFormat'
+export const V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL = 'dif/presentation-exchange/definitions@v1.0'
+export const V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST = 'dif/presentation-exchange/definitions@v1.0'
+export const V2_PRESENTATION_EXCHANGE_PRESENTATION = 'dif/presentation-exchange/submission@v1.0'
 
-@scoped(Lifecycle.ContainerScoped)
-export class PresentationExchangeProofFormatService extends ProofFormatService {
-  private w3cCredentialService: W3cCredentialService
-  private didResolver: DidResolverService
-  private agentContext!: AgentContext
-
-  public constructor(
-    agentConfig: AgentConfig,
-    didCommMessageRepository: DidCommMessageRepository,
-    w3cCredentialService: W3cCredentialService,
-    didResolver: DidResolverService
-  ) {
-    super(didCommMessageRepository, agentConfig)
-    this.w3cCredentialService = w3cCredentialService
-    this.didResolver = didResolver
-  }
+export class PresentationExchangeProofFormatService implements ProofFormatService<PresentationExchangeProofFormat> {
   public readonly formatKey = 'presentationExchange' as const
 
-  public async createProposal(options: FormatCreateProofProposalOptions): Promise<ProofAttachmentFormat> {
-    if (!options) {
-      throw new AriesFrameworkError('Presentation Exchange format missing while creating proof proposal.')
-    }
-
-    const presentationExchangeFormat = options.formats.presentationExchange
-
-    if (!presentationExchangeFormat?.presentationDefinition) {
-      throw Error('Presentation definition with Input Descriptor is missing while creating proof proposal.')
-    }
-
-    const presentationDefinition = presentationExchangeFormat.presentationDefinition
-
-    const pex: PEXv1 = new PEXv1()
-    const result: Validated = pex.validateDefinition(presentationDefinition)
-
-    if (Array.isArray(result) && result[0].status !== Status.INFO) {
-      throw new AriesFrameworkError(`Error in creating presentation definition: ${result[0].message} `)
-    }
-
-    const attachId = options.id ?? uuid()
-
-    const format = new ProofFormatSpec({
-      attachmentId: attachId,
-      format: V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL,
-    })
-    const attachment = this.getFormatData(presentationDefinition, format.attachmentId)
-
-    return { format, attachment }
-  }
-
-  public async processProposal(options: FormatProcessProposalOptions): Promise<void> {
-    if (!options.proposal) {
-      throw Error('Proposal message is missing while processing proof proposal.')
-    }
-
-    const proposalMessage = options.proposal
-
-    const presentationDefinition = proposalMessage.attachment.getDataAsJson<PresentationDefinitionV1>()
-
-    const pex: PEXv1 = new PEXv1()
-    const result: Validated = pex.validateDefinition(presentationDefinition)
-
-    if (Array.isArray(result) && result[0].status !== Status.INFO) {
-      throw new AriesFrameworkError(
-        `Error in presentation definition while processing presentation exchange proposal: ${result[0].message} `
-      )
-    }
-  }
-
-  public async createProofRequestFromProposal(
-    options: FormatPresentationAttachment
-  ): Promise<FormatProofRequestOptions> {
-    const presentationDefinitionJson = options.presentationAttachment.getDataAsJson<PresentationDefinitionV1>()
-
-    const pex: PEXv1 = new PEXv1()
-    const result: Validated = pex.validateDefinition(presentationDefinitionJson)
-
-    if (Array.isArray(result) && result[0].status !== Status.INFO) {
-      throw new AriesFrameworkError(`Error in creating presentation definition: ${result[0].message} `)
-    }
-
-    const presentationExchangeRequestMessage: FormatRequestPresentationExchangeOptions = {
-      options: {
-        challenge: options.presentationOptions?.challenge ?? uuid(),
-        domain: options.presentationOptions?.domain,
-      },
-      presentationDefinition: presentationDefinitionJson,
-    }
-
-    return {
-      presentationExchange: presentationExchangeRequestMessage,
-    }
-  }
-
-  public async createRequestAsResponse(
-    options: FormatCreateRequestAsResponseOptions<[PresentationExchangeProofFormat]>
-  ): Promise<ProofAttachmentFormat> {
-    if (!options.proofFormats.presentationExchange) {
-      throw Error('Presentation Exchange format missing while creating proof request as response.')
-    }
-
-    if (!options.proofFormats.presentationExchange) {
-      throw Error('Input Descriptor missing while creating proof request as response.')
-    }
-
-    const presentationExchangeRequestMessage = options.proofFormats.presentationExchange
-
-    const attachId = options.id ?? uuid()
-
-    const format = new ProofFormatSpec({
-      attachmentId: attachId,
-      format: V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
-    })
-
-    const attachment = this.getFormatData(presentationExchangeRequestMessage, format.attachmentId)
-
-    return { format, attachment }
-  }
-
-  public async createRequest(options: FormatCreateProofRequestOptions): Promise<ProofAttachmentFormat> {
-    if (!options.formats.presentationExchange) {
-      throw Error('Presentation Exchange format missing')
-    }
-
-    const requestPresentation = options.formats.presentationExchange as FormatRequestPresentationExchangeOptions
-
-    if (!requestPresentation.presentationDefinition.input_descriptors) {
-      throw Error('Input Descriptor missing while creating the request in presentation exchange service.')
-    }
-    const presentationDefinitionJson = requestPresentation.presentationDefinition as PresentationDefinitionV1
-
-    const pex: PEXv1 = new PEXv1()
-    const result: Validated = pex.validateDefinition(presentationDefinitionJson)
-
-    if (Array.isArray(result) && result[0].status !== Status.INFO) {
-      throw new AriesFrameworkError(
-        `Error in presentation definition while creating presentation request: ${result[0].message} `
-      )
-    }
-
-    const presentationExchangeRequestMessage: FormatRequestPresentationExchangeOptions = {
-      options: {
-        challenge: uuid(),
-        domain: '',
-      },
-      presentationDefinition: presentationDefinitionJson,
-    }
-
-    const attachId = options.id ?? uuid()
-
-    const format = new ProofFormatSpec({
-      attachmentId: attachId,
-      format: V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
-    })
-
-    const attachment = this.getFormatData(presentationExchangeRequestMessage, format.attachmentId)
-
-    return { format, attachment }
-  }
-  public async processRequest(options: FormatProcessRequestOptions): Promise<void> {
-    if (!options.requestAttachment) {
-      throw Error('Request message is missing while processing proof request in presentation exchange.')
-    }
-
-    const requestMessage = options.requestAttachment
-
-    const requestPresentation = requestMessage.attachment.getDataAsJson<FormatRequestPresentationExchangeOptions>()
-
-    const pex: PEXv1 = new PEXv1()
-    const result: Validated = pex.validateDefinition(requestPresentation.presentationDefinition)
-
-    if (Array.isArray(result) && result[0].status !== Status.INFO) {
-      throw new AriesFrameworkError(
-        `Error in presentation definition while processing presentation exchange request: ${result[0].message} `
-      )
-    }
-  }
-
-  public async createPresentation(
+  public async createProposal(
     agentContext: AgentContext,
-    options: FormatCreatePresentationOptions<PresentationExchangeProofFormat>
-  ): Promise<ProofAttachmentFormat> {
-    if (!options.proofFormats.presentationExchange) {
-      throw Error('Presentation Exchange format missing while creating presentation in presentation exchange service.')
+    { attachmentId, proofFormats }: FormatCreateProposalOptions<PresentationExchangeProofFormat>
+  ): Promise<ProofFormatCreateReturn> {
+    const format = new ProofFormatSpec({
+      format: V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL,
+      attachmentId,
+    })
+
+    const presentationExchangeFormat = proofFormats.presentationExchange
+    if (!presentationExchangeFormat) {
+      throw Error('Missing presentationExchange format to create proposal attachment format')
     }
 
-    const requestPresentation = options.attachment.getDataAsJson<FormatRequestPresentationExchangeOptions>()
+    const inputDescriptors = presentationExchangeFormat.inputDescriptors
 
-    // we may have multiple credentials for the given presentation
-    const credentials: IVerifiableCredential[] = options.proofFormats.presentationExchange.formats
+    const pex = new PEXv1()
+    // RFC 0510 only requires input_descriptors, but we can only validate a full definition
+    // So we hardcode a random `id` to make it a valid definition
+    const result = pex.validateDefinition({
+      id: 'presentation-definition-id',
+      input_descriptors: inputDescriptors,
+    })
 
-    const pex: PEXv1 = new PEXv1()
+    // check if error
+    const firstResult = Array.isArray(result) ? result[0] : result
+    if (firstResult.status !== Status.INFO) {
+      throw new AriesFrameworkError(`Error in presentation exchange inputDescriptors: ${firstResult.message} `)
+    }
+
+    const proposalData = {
+      input_descriptors: inputDescriptors,
+    } satisfies PresentationExchangeProposalData
+
+    const attachment = this.getFormatData(proposalData, format.attachmentId)
+    return { format, attachment }
+  }
+
+  public async processProposal(agentContext: AgentContext, { attachment }: ProofFormatProcessOptions): Promise<void> {
+    const proposalJson = attachment.getDataAsJson<PresentationExchangeProposalData>()
+
+    const pex = new PEXv1()
+    // RFC 0510 only requires input_descriptors, but we can only validate a full definition
+    // So we hardcode a random `id` to make it a valid definition
+    const result = pex.validateDefinition({
+      id: 'presentation-definition-id',
+      input_descriptors: proposalJson.input_descriptors,
+    })
+
+    // check if error
+    const firstResult = Array.isArray(result) ? result[0] : result
+    if (firstResult.status !== Status.INFO) {
+      throw new AriesFrameworkError(`Error in presentation exchange inputDescriptors: ${firstResult.message} `)
+    }
+  }
+
+  public async acceptProposal(
+    agentContext: AgentContext,
+    { proposalAttachment, attachmentId, proofFormats }: FormatAcceptProposalOptions<PresentationExchangeProofFormat>
+  ): Promise<ProofFormatCreateReturn> {
+    const format = new ProofFormatSpec({
+      format: V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
+      attachmentId,
+    })
+
+    const proposalJson = proposalAttachment.getDataAsJson<PresentationExchangeProposalData>()
+
+    const presentationExchangeFormat = proofFormats?.presentationExchange
+
+    // Challenge and domain are both optional, however, we always create a challenge to avoid replay attacks
+    const challenge = presentationExchangeFormat?.options?.challenge ?? uuid()
+    const domain = presentationExchangeFormat?.options?.domain
+
+    const requestData = {
+      options: {
+        challenge,
+        domain,
+      },
+      presentationDefinition: {
+        id: uuid(),
+        input_descriptors: proposalJson.input_descriptors,
+      },
+    } satisfies PresentationExchangeRequestData
+
+    const attachment = this.getFormatData(requestData, format.attachmentId)
+
+    return { attachment, format }
+  }
+
+  public async createRequest(
+    agentContext: AgentContext,
+    { attachmentId, proofFormats }: FormatCreateRequestOptions<PresentationExchangeProofFormat>
+  ): Promise<ProofFormatCreateReturn> {
+    const format = new ProofFormatSpec({
+      format: V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
+      attachmentId,
+    })
+
+    const presentationExchangeFormat = proofFormats.presentationExchange
+    if (!presentationExchangeFormat) {
+      throw Error('Missing presentationExchange format to create request attachment format')
+    }
+
+    const pex = new PEXv1()
+    const result = pex.validateDefinition(presentationExchangeFormat.presentationDefinition)
+
+    // check if error
+    const firstResult = Array.isArray(result) ? result[0] : result
+    if (firstResult.status !== Status.INFO) {
+      throw new AriesFrameworkError(`Error in presentation exchange presentationDefinition: ${firstResult.message} `)
+    }
+
+    const requestData = {
+      options: {
+        challenge: presentationExchangeFormat.options?.challenge ?? uuid(),
+        domain: presentationExchangeFormat.options?.domain,
+      },
+      presentationDefinition: presentationExchangeFormat.presentationDefinition,
+    } satisfies PresentationExchangeRequestData
+
+    const attachment = this.getFormatData(requestData, format.attachmentId)
+
+    return { attachment, format }
+  }
+
+  public async processRequest(agentContext: AgentContext, { attachment }: ProofFormatProcessOptions): Promise<void> {
+    const requestJson = attachment.getDataAsJson<PresentationExchangeRequestData>()
+
+    const pex = new PEXv1()
+    const result = pex.validateDefinition(requestJson.presentationDefinition)
+
+    // check if error
+    const firstResult = Array.isArray(result) ? result[0] : result
+    if (firstResult.status !== Status.INFO) {
+      throw new AriesFrameworkError(`Error in presentation exchange presentationDefinition: ${firstResult.message} `)
+    }
+  }
+
+  public async acceptRequest(
+    agentContext: AgentContext,
+    { proofFormats, requestAttachment, attachmentId }: FormatAcceptRequestOptions<PresentationExchangeProofFormat>
+  ): Promise<ProofFormatCreateReturn> {
+    const didResolverService = agentContext.dependencyManager.resolve(DidResolverService)
+    const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
+
+    const format = new ProofFormatSpec({
+      format: V2_PRESENTATION_EXCHANGE_PRESENTATION,
+      attachmentId,
+    })
+
+    const pex = new PEXv1()
+
+    const presentationExchangeFormat = proofFormats?.presentationExchange
+    const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
+
+    let credentials = presentationExchangeFormat?.credentials
+
+    // User did not provide credentials, we need to select them ourselves
+    if (!credentials) {
+      // TODO
+      credentials = []
+    }
 
     // We use the subject id to resolve the DID document.
     // I am assuming the subject is the same for all credentials (for now)
     // The presentation contains multiple credentials and these are being added
     // TODO how do we derive the verification method if there are multiple subject Ids
-    const subject: ICredentialSubject = credentials[0].credentialSubject as ICredentialSubject
+    // FIXME: clash between W3cVerifiableCredential and IVerifiableCredential
+    const subject = credentials[0].credentialSubject
 
-    // Credential is allowed to be presented without a subject id. In that case we can't prove ownerhsip of credential
+    // Credential is allowed to be presented without a subject id. In that case we can't prove ownership of credential
     // And it is more like a bearer token.
     // In the future we can first check the holder key and if it exists we can use that as the one that should authenticate
     // https://www.w3.org/TR/vc-data-model/#example-a-credential-issued-to-a-holder-who-is-not-the-only-subject-of-the-credential-who-has-no-relationship-with-the-subject-of-the-credential-but-who-has-a-relationship-with-the-issuer
@@ -262,46 +225,23 @@ export class PresentationExchangeProofFormatService extends ProofFormatService {
       )
     }
 
-    const didResolutionResult = await this.didResolver.resolve(agentContext, subject.id)
-
-    if (!didResolutionResult.didDocument) {
-      throw new AriesFrameworkError(`No did document found for did ${subject.id}`)
+    if (!subject.id.startsWith('did:')) {
+      throw new AriesFrameworkError(`Only dids are supported as credentialSubject id. ${subject.id} is not a valid did`)
     }
 
-    if (
-      !didResolutionResult.didDocument.authentication ||
-      didResolutionResult.didDocument.authentication.length === 0
-    ) {
-      throw new AriesFrameworkError(`No did authentication found for did ${subject.id} in did document`)
+    const didDocument = await didResolverService.resolveDidDocument(agentContext, subject.id)
+    if (!didDocument.authentication || didDocument.authentication.length === 0) {
+      throw new AriesFrameworkError(`No authentication verificationMethods found for did ${subject.id} in did document`)
     }
-
-    if (!didResolutionResult.didDocument?.verificationMethod) {
-      throw new AriesFrameworkError(`No did verification method found for did ${subject.id} in did document`)
-    }
-
-    const proofPurpose = IProofPurpose.authentication
 
     // the signature suite to use for the presentation is dependant on the credentials we share.
-
     // 1. Get the verification method for this given proof purpose in this DID document
-    let [verificationMethod] = didResolutionResult.didDocument.authentication
+    let [verificationMethod] = didDocument.authentication
     if (typeof verificationMethod === 'string') {
-      verificationMethod = didResolutionResult.didDocument.dereferenceKey(verificationMethod, ['authentication'])
+      verificationMethod = didDocument.dereferenceKey(verificationMethod, ['authentication'])
     }
 
-    const proofType = this.w3cCredentialService.getProofTypeByVerificationMethodType(verificationMethod.type)
-
-    // 2. Get the key for this given proof purpose in this DID document
-    const keyId = didResolutionResult.didDocument[proofPurpose] as string[]
-
-    // get keys from the did document section containing the proof purpose
-
-    // 3. Map the Key Id to a key. Key contains publicKey and keyType attributes
-    const privateKey: Key = keyReferenceToKey(didResolutionResult.didDocument, keyId[0])
-
-    if (!proofType) {
-      throw new AriesFrameworkError(`Unsupported key type: ${privateKey.keyType}`)
-    }
+    const proofType = w3cCredentialService.getProofTypeByVerificationMethodType(verificationMethod.type)
 
     // Q1: is holder always subject id, what if there are multiple subjects???
     // Q2: What about proofType, proofPurpose verification method for multiple subjects?
@@ -309,272 +249,117 @@ export class PresentationExchangeProofFormatService extends ProofFormatService {
       holder: subject.id,
       proofOptions: {
         type: proofType,
-        proofPurpose: IProofPurpose.assertionMethod,
-        challenge: requestPresentation.options?.challenge,
+        proofPurpose: IProofPurpose.authentication,
+        challenge: requestJson.options.challenge,
+        domain: requestJson.options.domain,
       },
       signatureOptions: {
         verificationMethod: verificationMethod.id,
       },
     }
 
-    this.agentContext = agentContext
-
     const verifiablePresentation = await pex.verifiablePresentationFromAsync(
-      requestPresentation.presentationDefinition,
-      options.proofFormats.presentationExchange.formats, // TBD required an IVerifiableCredential[] but AutoSelectCredential returns single credential
-      this.signedProofCallBack.bind(this),
+      requestJson.presentationDefinition,
+      credentials,
+      // FIXME: pex library has incorrect return type for the PEXv1 class
+      // remove ts-ignore when https://github.com/Sphereon-Opensource/PEX/pull/108 is released
+      // @ts-ignore
+      this.signPresentationCallbackWithAgentContext(agentContext),
       params
     )
 
-    const attachId = options.id ?? uuid()
-
-    const format = new ProofFormatSpec({
-      attachmentId: attachId,
-      format: V2_PRESENTATION_EXCHANGE_PRESENTATION,
-    })
-
     const attachment = this.getFormatData(verifiablePresentation, format.attachmentId)
 
-    return { format, attachment }
+    return {
+      attachment,
+      format,
+    }
   }
+
   public async processPresentation(
     agentContext: AgentContext,
-    options: FormatProcessPresentationOptions
+    { requestAttachment, attachment }: FormatProcessPresentationOptions
   ): Promise<boolean> {
-    if (!options.formatAttachments) {
-      throw Error('Presentation missing while processing presentation in presentation exchange service.')
-    }
+    const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
 
-    const requestFormat = options.formatAttachments.request.find(
-      (x) => x.format.format === V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST
-    )
-
-    const proofFormat = options.formatAttachments.presentation.find(
-      (x) => x.format.format === V2_PRESENTATION_EXCHANGE_PRESENTATION
-    )
-
-    const proofAttachment = requestFormat?.attachment.getDataAsJson<FormatRequestPresentationExchangeOptions>()
-
-    if (!proofAttachment) {
-      throw new AriesFrameworkError('Could not derive proofAttachment from requestFormat')
-    }
-    const proofPresentationRequestJson: string | undefined = proofFormat?.attachment.getDataAsJson()
-
-    if (!proofPresentationRequestJson) {
-      throw new AriesFrameworkError('Attachment not found in proof format')
-    }
-    const w3cVerifiablePresentation = JsonTransformer.fromJSON(proofPresentationRequestJson, W3cVerifiablePresentation)
-
-    // do we need to cast anything???
-    // const verifiablePresentation = proofPresentationRequestJson as unknown as IPresentation
+    const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
+    const presentationJson = attachment.getDataAsJson<IVerifiablePresentation>()
+    const signedPresentation = JsonTransformer.fromJSON(presentationJson, W3cVerifiablePresentation)
 
     // validate contents of presentation
     const pex: PEXv1 = new PEXv1()
-    pex.evaluatePresentation(proofAttachment.presentationDefinition, proofPresentationRequestJson)
+    const evaluationResults = pex.evaluatePresentation(requestJson.presentationDefinition, presentationJson)
 
-    // check the result
-    const verifyPresentationOptions: VerifyPresentationOptions = {
-      presentation: w3cVerifiablePresentation,
-      challenge: proofAttachment.options?.challenge,
+    // TODO: we need a way to return more information about the error to the framework user.
+    if (evaluationResults.areRequiredCredentialsPresent === Status.ERROR) {
+      return false
     }
-    const verifyResult = await this.w3cCredentialService.verifyPresentation(agentContext, verifyPresentationOptions)
+
+    const verifyResult = await w3cCredentialService.verifyPresentation(agentContext, {
+      presentation: signedPresentation,
+      challenge: requestJson.options.challenge,
+    })
 
     return verifyResult.verified
   }
 
-  public async getRequestedCredentialsForProofRequest(
+  public async getCredentialsForRequest(
     agentContext: AgentContext,
-    options: FormatGetRequestedCredentials
-  ): Promise<FormatRetrievedCredentialOptions<[PresentationExchangeProofFormat]>> {
-    const requestMessageJson = options.attachment.getDataAsJson<FormatRequestPresentationExchangeOptions>()
+    { requestAttachment }: FormatGetCredentialsForRequestOptions<PresentationExchangeProofFormat>
+  ): Promise<FormatGetCredentialsForRequestReturn<PresentationExchangeProofFormat>> {
+    const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
 
-    const presentationDefinition = requestMessageJson.presentationDefinition
+    return this._getCredentialsForRequest(agentContext, requestJson)
+  }
 
-    let uriList: string[] = []
-    for (const inputDescriptor of presentationDefinition.input_descriptors) {
-      uriList = [...uriList, ...inputDescriptor.schema.map((s) => s.uri)]
+  public async selectCredentialsForRequest(
+    agentContext: AgentContext,
+    { requestAttachment }: FormatSelectCredentialsForRequestOptions<PresentationExchangeProofFormat>
+  ): Promise<FormatSelectCredentialsForRequestReturn<PresentationExchangeProofFormat>> {
+    const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
+
+    const credentialsForRequest = await this._getCredentialsForRequest(agentContext, requestJson)
+
+    if (!credentialsForRequest.matches || !credentialsForRequest.verifiableCredential) {
+      throw new AriesFrameworkError('No matches found for presentation request')
     }
 
-    const query: Array<Query<W3cCredentialRecord>> = []
-    for (const inputDescriptor of presentationDefinition.input_descriptors) {
-      for (const schema of inputDescriptor.schema) {
-        const innerQuery: Query<W3cCredentialRecord> = {}
-        innerQuery.$or = [{ expandedType: [schema.uri] }, { contexts: [schema.uri] }]
-        query.push(innerQuery)
-      }
-    }
-
-    // query the wallet ourselves first to avoid the need to query the pex library for all
-    // credentials for every proof request
-    const credentials = await this.w3cCredentialService.findCredentialRecordsByQuery(agentContext, {
-      $or: [...query],
-    })
-
-    const pexCredentials = credentials.map((c) => JsonTransformer.toJSON(c) as IVerifiableCredential)
-
-    const pex: PEXv1 = new PEXv1()
-    const selectResults: SelectResults = pex.selectFrom(presentationDefinition, pexCredentials)
-
-    if (selectResults.verifiableCredential?.length === 0) {
-      throw new AriesFrameworkError('No matching credentials found.')
+    const selectedCredentials: IVerifiableCredential[] = []
+    for (const match of credentialsForRequest.matches) {
+      selectedCredentials.push(...this.retrieveSelectedCredentials(match, credentialsForRequest.verifiableCredential))
     }
 
     return {
-      proofFormats: {
-        presentationExchange: {
-          formats: selectResults,
-        },
-      },
+      credentials: selectedCredentials,
     }
   }
 
-  public async autoSelectCredentialsForProofRequest(
-    options: FormatRetrievedCredentialOptions<[PresentationExchangeProofFormat]>
-  ): Promise<FormatRequestedCredentialReturn<[PresentationExchangeProofFormat]>> {
-    const presentationExchange = options.proofFormats.presentationExchange
-    if (!presentationExchange) {
-      throw new AriesFrameworkError('No presentation options provided')
-    }
+  public async shouldAutoRespondToProposal(
+    agentContext: AgentContext,
+    { proposalAttachment, requestAttachment }: FormatAutoRespondProposalOptions
+  ): Promise<boolean> {
+    const proposalJson = proposalAttachment.getDataAsJson<PresentationExchangeProposalData>()
+    const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
 
-    if (
-      !presentationExchange.formats.verifiableCredential ||
-      presentationExchange.formats.verifiableCredential.length === 0
-    ) {
-      throw new AriesFrameworkError('No credentials provided')
-    }
-    const listOfAllCredentials = presentationExchange.formats.verifiableCredential
-
-    // check if this is INFO / (maybe WARNING. check when this is warning?)
-    presentationExchange.formats.areRequiredCredentialsPresent
-
-    // How to auto select the credentials:
-
-    //  1. loop over all matches and find the match for each submission requirement
-    //  2. then for each match we extract the associated credentials from the `presentationExchange.verifiableCredential` array
-    // match gives a jsonpath based on *.verifiableCredential[x] so add that as the json array key
-    const jsonPexCredentials = {
-      verifiableCredential: listOfAllCredentials,
-    }
-
-    if (!presentationExchange.formats.matches) {
-      throw new AriesFrameworkError('No matches found in PeX selectFrom filter')
-    }
-
-    let selectedCredentialsMatches: IVerifiableCredential[] = []
-
-    for (const match of presentationExchange.formats.matches) {
-      selectedCredentialsMatches = selectedCredentialsMatches.concat(
-        this.retrieveSelectedCredentials(match, jsonPexCredentials)
-      )
-    }
-    // TODO Check how to correlate it I think we may need to do something with the count here?
-
-    return {
-      proofFormats: {
-        presentationExchange: {
-          formats: selectedCredentialsMatches,
-        },
-      },
-    }
-  }
-
-  private ruleAll(
-    match: SubmissionRequirementMatch,
-    jsonPexCredentials: { verifiableCredential: IVerifiableCredential[] }
-  ): IVerifiableCredential[] {
-    const credentials: IVerifiableCredential[] = []
-
-    // extract all verifiable credentials for the given match (expressed as a jsonpath)
-    // from the the full list of credentials
-    if (match.from_nested) {
-      // nested query: loop through all sub objects recursively adding to the results array
-      for (let i = 0; i < match.from_nested.length; i++) {
-        credentials.push(...this.retrieveSelectedCredentials(match.from_nested[i], jsonPexCredentials))
-      }
-    } else {
-      for (const path of match.vc_path) {
-        credentials.push(...query(jsonPexCredentials, path))
-      }
-    }
-    return credentials
-  }
-
-  private rulePick(
-    match: SubmissionRequirementMatch,
-    jsonPexCredentials: { verifiableCredential: IVerifiableCredential[] },
-    index: number
-  ): IVerifiableCredential[] {
-    const credentials: IVerifiableCredential[] = []
-    // extract [count] verifiable credentials for the given match (expressed as a jsonpath)
-    // from the the full list of credentials
-
-    // if we have nested credentials (from_nested is defined) use count as number
-    // of recursive calls
-    if (match.from_nested) {
-      credentials.push(...this.retrieveSelectedCredentials(match.from_nested[index], jsonPexCredentials))
-    } else {
-      credentials.push(...query(jsonPexCredentials, match.vc_path[index]))
-    }
-    return credentials
-  }
-
-  private retrieveSelectedCredentials(
-    match: SubmissionRequirementMatch,
-    jsonPexCredentials: { verifiableCredential: IVerifiableCredential[] }
-  ): IVerifiableCredential[] {
-    let credentials: IVerifiableCredential[] = []
-
-    if (match.rule === Rules.All) {
-      credentials = this.ruleAll(match, jsonPexCredentials)
-    } else if (match.rule === Rules.Pick) {
-      if (!match.count) {
-        throw new AriesFrameworkError(`PeX Library missing match count`)
-      }
-      for (let i = 0; i < match.count; i++) {
-        // extract [count] verifiable credentials for the given match (expressed as a jsonpath)
-        // from the the full list of credentials
-
-        // if we have nested credentials (from_nested is defined) use count as number
-        // of recursive calls
-        if (match.from_nested) {
-          credentials.push(...this.rulePick(match, jsonPexCredentials, i))
-        } else {
-          credentials.push(...query(jsonPexCredentials, match.vc_path[i]))
-        }
-      }
-    } else {
-      throw new AriesFrameworkError(`PeX Library unsupported rule type: ${match.rule}`)
-    }
-    return credentials
-  }
-
-  public proposalAndRequestAreEqual(
-    proposalAttachments: ProofAttachmentFormat[],
-    requestAttachments: ProofAttachmentFormat[]
-  ): boolean {
-    const proposalAttachment = proposalAttachments.find(
-      (x) => x.format.format === V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL
-    )?.attachment
-    const requestAttachment = requestAttachments.find(
-      (x) => x.format.format === V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST
-    )?.attachment
-
-    if (!proposalAttachment) {
-      throw new AriesFrameworkError('Proposal message has no attachment linked to it')
-    }
-
-    if (!requestAttachment) {
-      throw new AriesFrameworkError('Request message has no attachment linked to it')
-    }
-
-    const proposalAttachmentData = proposalAttachment.getDataAsJson<InputDescriptorsSchema>()
-    const requestAttachmentData = requestAttachment.getDataAsJson<InputDescriptorsSchema>()
-
-    if (deepEquality(proposalAttachmentData.inputDescriptors, requestAttachmentData.inputDescriptors)) {
-      return true
-    }
-
+    // TODO
     return false
+  }
+
+  public async shouldAutoRespondToRequest(
+    agentContext: AgentContext,
+    { proposalAttachment, requestAttachment }: FormatAutoRespondRequestOptions
+  ): Promise<boolean> {
+    const proposalJson = proposalAttachment.getDataAsJson<PresentationExchangeProposalData>()
+    const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
+
+    // TODO
+    return false
+  }
+
+  public async shouldAutoRespondToPresentation(): Promise<boolean> {
+    // The presentation is already verified in processPresentation, so we can just return true here.
+    // It's only an ack, so it's just that we received the presentation.
+    return true
   }
 
   public supportsFormat(formatIdentifier: string): boolean {
@@ -586,31 +371,145 @@ export class PresentationExchangeProofFormatService extends ProofFormatService {
     return supportedFormats.includes(formatIdentifier)
   }
 
-  private signedProofCallBack(callBackParams: PresentationSignCallBackParams): IVerifiablePresentation {
-    const { presentation, proof, options } = callBackParams // The created partial proof and presentation, as well as original supplied options
-    const { signatureOptions, proofOptions } = options // extract the originally supplied signature and proof Options
-
-    if (!proofOptions?.type) {
-      throw new AriesFrameworkError('Missing proof type in proof options for signing the presentation.')
+  private retrieveSelectedCredentials(
+    match: SubmissionRequirementMatch,
+    credentials: IVerifiableCredential[]
+  ): IVerifiableCredential[] {
+    if (match.rule === Rules.All) {
+      return this.ruleAll(match, credentials)
+    } else if (match.rule === Rules.Pick) {
+      return this.rulePick(match, credentials)
     }
 
-    if (!proofOptions?.challenge) {
-      throw new AriesFrameworkError('Missing challenge in proof options for signing the presentation.')
+    throw new AriesFrameworkError(`Unsupported rule: ${match.rule}`)
+  }
+
+  private ruleAll(match: SubmissionRequirementMatch, credentials: IVerifiableCredential[]): IVerifiableCredential[] {
+    const selectedCredentials: IVerifiableCredential[] = []
+
+    if (!match.count) throw new AriesFrameworkError(`PeX Library missing match count`)
+
+    for (let matchIndex = 0; matchIndex < match.count; matchIndex++) {
+      // extract [count] verifiable credentials for the given match (expressed as a jsonpath)
+      // from the the full list of credentials
+
+      // if we have nested credentials (from_nested is defined) use count as number of recursive calls
+      if (match.from_nested) {
+        selectedCredentials.push(...this.retrieveSelectedCredentials(match.from_nested[matchIndex], credentials))
+      } else {
+        selectedCredentials.push(...query({ verifiableCredential: credentials }, match.vc_path[matchIndex]))
+      }
     }
 
-    if (!signatureOptions?.verificationMethod) {
-      throw new AriesFrameworkError('Missing verification method in proof options for signing the presentation.')
+    return selectedCredentials
+  }
+
+  private rulePick(match: SubmissionRequirementMatch, credentials: IVerifiableCredential[]): IVerifiableCredential[] {
+    const selectedCredentials: IVerifiableCredential[] = []
+
+    // extract [count] verifiable credentials for the given match (expressed as a jsonpath)
+    // from the the full list of credentials
+    if (match.from_nested) {
+      // nested query: loop through all sub objects recursively adding to the results array
+      for (let i = 0; i < match.from_nested.length; i++) {
+        selectedCredentials.push(...this.retrieveSelectedCredentials(match.from_nested[i], credentials))
+      }
+    } else {
+      for (const path of match.vc_path) {
+        selectedCredentials.push(...query({ verifiableCredential: credentials }, path))
+      }
     }
-    const w3Presentation = JsonTransformer.fromJSON(presentation, W3cPresentation)
-    const signPresentationOptions: SignPresentationOptions = {
-      presentation: w3Presentation,
-      purpose: proof.proofPurpose,
-      signatureType: proofOptions.type,
-      verificationMethod: signatureOptions.verificationMethod,
-      challenge: proofOptions.challenge,
+    return selectedCredentials
+  }
+
+  private async _getCredentialsForRequest(
+    agentContext: AgentContext,
+    presentationRequest: PresentationExchangeRequestData
+  ) {
+    const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
+
+    const presentationDefinition = presentationRequest.presentationDefinition
+
+    const query: Array<Query<W3cCredentialRecord>> = []
+    // The schema.uri can contain either an expanded type, or a context uri
+    for (const inputDescriptor of presentationDefinition.input_descriptors) {
+      for (const schema of inputDescriptor.schema) {
+        query.push({
+          $or: [{ expandedType: [schema.uri] }, { contexts: [schema.uri] }],
+        })
+      }
     }
-    return JsonTransformer.toJSON(
-      this.w3cCredentialService.signPresentation(this.agentContext, signPresentationOptions)
-    ) as IVerifiablePresentation
+
+    // query the wallet ourselves first to avoid the need to query the pex library for all
+    // credentials for every proof request
+    const credentials = await w3cCredentialService.findCredentialsByQuery(agentContext, {
+      $or: query,
+    })
+
+    const pexCredentials = credentials.map((c) => JsonTransformer.toJSON(c) as IVerifiableCredential)
+
+    const pex = new PEXv1()
+    const selectResults = pex.selectFrom(presentationDefinition, pexCredentials)
+
+    if (selectResults.areRequiredCredentialsPresent === Status.ERROR) {
+      throw new AriesFrameworkError(`No matching credentials found: ${selectResults.errors?.['0'].message}`)
+    }
+
+    return selectResults
+  }
+
+  private signPresentationCallbackWithAgentContext = (agentContext: AgentContext) => {
+    const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
+
+    return async (callBackParams: PresentationSignCallBackParams) => {
+      // The created partial proof and presentation, as well as original supplied options
+      const { presentation: presentationJson, proof, options } = callBackParams
+
+      // extract the originally supplied signature and proof Options
+      const { signatureOptions, proofOptions } = options
+
+      if (!proofOptions?.type) {
+        throw new AriesFrameworkError('Missing proof type in proof options for signing the presentation.')
+      }
+
+      if (!proofOptions?.challenge) {
+        throw new AriesFrameworkError('Missing challenge in proof options for signing the presentation.')
+      }
+
+      if (!signatureOptions?.verificationMethod) {
+        throw new AriesFrameworkError('Missing verification method in proof options for signing the presentation.')
+      }
+
+      const presentation = JsonTransformer.fromJSON(presentationJson, W3cPresentation)
+
+      const signedPresentation = await w3cCredentialService.signPresentation(agentContext, {
+        presentation,
+        purpose: proof.proofPurpose,
+        signatureType: proofOptions.type,
+        verificationMethod: signatureOptions.verificationMethod,
+        challenge: proofOptions.challenge,
+      })
+
+      return JsonTransformer.toJSON(signedPresentation) as IVerifiablePresentation
+    }
+  }
+
+  /**
+   * Returns an object of type {@link Attachment} for use in credential exchange messages.
+   * It looks up the correct format identifier and encodes the data as a base64 attachment.
+   *
+   * @param data The data to include in the attach object
+   * @param id the attach id from the formats component of the message
+   */
+  private getFormatData(data: unknown, id: string): Attachment {
+    const attachment = new Attachment({
+      id,
+      mimeType: 'application/json',
+      data: new AttachmentData({
+        base64: JsonEncoder.toBase64(data),
+      }),
+    })
+
+    return attachment
   }
 }

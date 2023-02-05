@@ -280,7 +280,7 @@ describe('V1CredentialProtocol', () => {
         attachment: requestAttachment,
         format: new CredentialFormatSpec({
           format: 'indy',
-          attachId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
+          attachmentId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
         }),
       })
 
@@ -310,7 +310,7 @@ describe('V1CredentialProtocol', () => {
       expect(credentialRepository.update).toHaveBeenCalledTimes(1)
       expect(indyCredentialFormatService.acceptOffer).toHaveBeenCalledWith(agentContext, {
         credentialRecord,
-        attachId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
+        attachmentId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
         offerAttachment,
         credentialFormats: {
           indy: {
@@ -337,7 +337,7 @@ describe('V1CredentialProtocol', () => {
         attachment: requestAttachment,
         format: new CredentialFormatSpec({
           format: 'indy',
-          attachId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
+          attachmentId: INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
         }),
       })
 
@@ -443,7 +443,7 @@ describe('V1CredentialProtocol', () => {
         attachment: credentialAttachment,
         format: new CredentialFormatSpec({
           format: 'the-format',
-          attachId: 'the-attach-id',
+          attachmentId: 'the-attach-id',
         }),
       })
 
@@ -473,7 +473,7 @@ describe('V1CredentialProtocol', () => {
         attachment: credentialAttachment,
         format: new CredentialFormatSpec({
           format: 'the-format',
-          attachId: 'the-attach-id',
+          attachmentId: 'the-attach-id',
         }),
       })
 
@@ -513,7 +513,7 @@ describe('V1CredentialProtocol', () => {
         attachment: credentialAttachment,
         format: new CredentialFormatSpec({
           format: 'the-format',
-          attachId: 'the-attach-id',
+          attachmentId: 'the-attach-id',
         }),
       })
 
@@ -536,7 +536,7 @@ describe('V1CredentialProtocol', () => {
         credentialRecord,
         requestAttachment,
         offerAttachment,
-        attachId: INDY_CREDENTIAL_ATTACHMENT_ID,
+        attachmentId: INDY_CREDENTIAL_ATTACHMENT_ID,
       })
     })
   })
@@ -724,7 +724,7 @@ describe('V1CredentialProtocol', () => {
       mockFunction(credentialRepository.getById).mockReturnValue(Promise.resolve(credential))
 
       // when
-      const credentialProblemReportMessage = credentialProtocol.createProblemReport(agentContext, { message })
+      const credentialProblemReportMessage = credentialProtocol.createProblemReport(agentContext, { description })
 
       credentialProblemReportMessage.setThread({ threadId })
       // then
@@ -907,76 +907,6 @@ describe('V1CredentialProtocol', () => {
         credentialRecord.credentials[0].credentialRecordId
       )
       expect(didCommMessageRepository.delete).toHaveBeenCalledTimes(3)
-    })
-  })
-
-  describe('declineOffer', () => {
-    const threadId = 'fd9c5ddb-ec11-4acd-bc32-540736249754'
-    let credential: CredentialExchangeRecord
-
-    beforeEach(() => {
-      credential = mockCredentialRecord({
-        state: CredentialState.OfferReceived,
-        tags: { threadId },
-      })
-    })
-
-    test(`updates state to ${CredentialState.Declined}`, async () => {
-      // given
-      const repositoryUpdateSpy = jest.spyOn(credentialRepository, 'update')
-
-      // when
-      await credentialProtocol.declineOffer(agentContext, credential)
-
-      // then
-      const expectedCredentialState = {
-        state: CredentialState.Declined,
-      }
-      expect(repositoryUpdateSpy).toHaveBeenCalledTimes(1)
-      expect(repositoryUpdateSpy).toHaveBeenNthCalledWith(
-        1,
-        agentContext,
-        expect.objectContaining(expectedCredentialState)
-      )
-    })
-
-    test(`emits stateChange event from ${CredentialState.OfferReceived} to ${CredentialState.Declined}`, async () => {
-      const eventListenerMock = jest.fn()
-      eventEmitter.on<CredentialStateChangedEvent>(CredentialEventTypes.CredentialStateChanged, eventListenerMock)
-
-      // given
-      mockFunction(credentialRepository.getSingleByQuery).mockReturnValue(Promise.resolve(credential))
-
-      // when
-      await credentialProtocol.declineOffer(agentContext, credential)
-
-      // then
-      expect(eventListenerMock).toHaveBeenCalledTimes(1)
-      const [[event]] = eventListenerMock.mock.calls
-      expect(event).toMatchObject({
-        type: 'CredentialStateChanged',
-        metadata: {
-          contextCorrelationId: 'mock',
-        },
-        payload: {
-          previousState: CredentialState.OfferReceived,
-          credentialRecord: expect.objectContaining({
-            state: CredentialState.Declined,
-          }),
-        },
-      })
-    })
-
-    const validState = CredentialState.OfferReceived
-    const invalidCredentialStates = Object.values(CredentialState).filter((state) => state !== validState)
-    test(`throws an error when state transition is invalid`, async () => {
-      await Promise.all(
-        invalidCredentialStates.map(async (state) => {
-          await expect(
-            credentialProtocol.declineOffer(agentContext, mockCredentialRecord({ state, tags: { threadId } }))
-          ).rejects.toThrowError(`Credential record is in invalid state ${state}. Valid states are: ${validState}.`)
-        })
-      )
     })
   })
 })

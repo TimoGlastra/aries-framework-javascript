@@ -6,6 +6,14 @@ import type { InboundMessageContext } from '../../../../agent/models/InboundMess
 import type { DependencyManager } from '../../../../plugins'
 import type { ProblemReportMessage } from '../../../problem-reports'
 import type {
+  CredentialFormat,
+  CredentialFormatPayload,
+  CredentialFormatService,
+  ExtractCredentialFormats,
+} from '../../formats'
+import type { CredentialFormatSpec } from '../../models/CredentialFormatSpec'
+import type { CredentialProtocol } from '../CredentialProtocol'
+import type {
   AcceptCredentialOptions,
   AcceptOfferOptions,
   AcceptProposalOptions,
@@ -19,14 +27,7 @@ import type {
   GetFormatDataReturn,
   NegotiateOfferOptions,
   NegotiateProposalOptions,
-} from '../../CredentialProtocolOptions'
-import type {
-  CredentialFormat,
-  CredentialFormatPayload,
-  CredentialFormatService,
-  ExtractCredentialFormats,
-} from '../../formats'
-import type { CredentialFormatSpec } from '../../models/CredentialFormatSpec'
+} from '../CredentialProtocolOptions'
 
 import { Protocol } from '../../../../agent/models/features/Protocol'
 import { AriesFrameworkError } from '../../../../error'
@@ -64,9 +65,10 @@ export interface V2CredentialProtocolConfig<CredentialFormatServices extends Cre
   credentialFormats: CredentialFormatServices
 }
 
-export class V2CredentialProtocol<
-  CFs extends CredentialFormatService[] = CredentialFormatService[]
-> extends BaseCredentialProtocol<CFs> {
+export class V2CredentialProtocol<CFs extends CredentialFormatService[] = CredentialFormatService[]>
+  extends BaseCredentialProtocol<CFs>
+  implements CredentialProtocol<CFs>
+{
   private credentialFormatCoordinator = new CredentialFormatCoordinator<CFs>()
   private credentialFormats: CFs
 
@@ -113,7 +115,7 @@ export class V2CredentialProtocol<
    */
   public async createProposal(
     agentContext: AgentContext,
-    { connection, credentialFormats, comment, autoAcceptCredential }: CreateProposalOptions<CFs>
+    { connectionRecord, credentialFormats, comment, autoAcceptCredential }: CreateProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>> {
     agentContext.config.logger.debug('Get the Format Service and Create Proposal Message')
 
@@ -125,7 +127,7 @@ export class V2CredentialProtocol<
     }
 
     const credentialRecord = new CredentialExchangeRecord({
-      connectionId: connection.id,
+      connectionId: connectionRecord.id,
       threadId: uuid(),
       state: CredentialState.ProposalSent,
       autoAcceptCredential,
@@ -324,7 +326,7 @@ export class V2CredentialProtocol<
    */
   public async createOffer(
     agentContext: AgentContext,
-    { credentialFormats, autoAcceptCredential, comment, connection }: CreateOfferOptions<CFs>
+    { credentialFormats, autoAcceptCredential, comment, connectionRecord }: CreateOfferOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<V2OfferCredentialMessage>> {
     const credentialRepository = agentContext.dependencyManager.resolve(CredentialRepository)
 
@@ -334,7 +336,7 @@ export class V2CredentialProtocol<
     }
 
     const credentialRecord = new CredentialExchangeRecord({
-      connectionId: connection?.id,
+      connectionId: connectionRecord?.id,
       threadId: uuid(),
       state: CredentialState.OfferSent,
       autoAcceptCredential,
@@ -531,7 +533,7 @@ export class V2CredentialProtocol<
    */
   public async createRequest(
     agentContext: AgentContext,
-    { credentialFormats, autoAcceptCredential, comment, connection }: CreateRequestOptions<CFs>
+    { credentialFormats, autoAcceptCredential, comment, connectionRecord }: CreateRequestOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<V2RequestCredentialMessage>> {
     const credentialRepository = agentContext.dependencyManager.resolve(CredentialRepository)
 
@@ -541,7 +543,7 @@ export class V2CredentialProtocol<
     }
 
     const credentialRecord = new CredentialExchangeRecord({
-      connectionId: connection.id,
+      connectionId: connectionRecord.id,
       threadId: uuid(),
       state: CredentialState.RequestSent,
       autoAcceptCredential,
@@ -837,13 +839,18 @@ export class V2CredentialProtocol<
    * @returns a {@link V2CredentialProblemReportMessage}
    *
    */
-  public createProblemReport(agentContext: AgentContext, options: CreateProblemReportOptions): ProblemReportMessage {
-    return new V2CredentialProblemReportMessage({
+  public async createProblemReport(
+    agentContext: AgentContext,
+    { credentialRecord, description }: CreateProblemReportOptions
+  ): Promise<CredentialProtocolMsgReturnType<ProblemReportMessage>> {
+    const message = new V2CredentialProblemReportMessage({
       description: {
-        en: options.message,
+        en: description,
         code: CredentialProblemReportReason.IssuanceAbandoned,
       },
     })
+
+    return { credentialRecord, message }
   }
 
   // AUTO ACCEPT METHODS
@@ -887,7 +894,7 @@ export class V2CredentialProtocol<
         proposalMessage.proposalAttachments
       )
 
-      const shouldAutoRespondToFormat = formatService.shouldAutoRespondToProposal(agentContext, {
+      const shouldAutoRespondToFormat = await formatService.shouldAutoRespondToProposal(agentContext, {
         credentialRecord,
         offerAttachment,
         proposalAttachment,
@@ -951,7 +958,7 @@ export class V2CredentialProtocol<
         proposalMessage.proposalAttachments
       )
 
-      const shouldAutoRespondToFormat = formatService.shouldAutoRespondToOffer(agentContext, {
+      const shouldAutoRespondToFormat = await formatService.shouldAutoRespondToOffer(agentContext, {
         credentialRecord,
         offerAttachment,
         proposalAttachment,
@@ -1023,7 +1030,7 @@ export class V2CredentialProtocol<
         requestMessage.requestAttachments
       )
 
-      const shouldAutoRespondToFormat = formatService.shouldAutoRespondToRequest(agentContext, {
+      const shouldAutoRespondToFormat = await formatService.shouldAutoRespondToRequest(agentContext, {
         credentialRecord,
         offerAttachment,
         requestAttachment,
@@ -1096,7 +1103,7 @@ export class V2CredentialProtocol<
         credentialMessage.credentialAttachments
       )
 
-      const shouldAutoRespondToFormat = formatService.shouldAutoRespondToCredential(agentContext, {
+      const shouldAutoRespondToFormat = await formatService.shouldAutoRespondToCredential(agentContext, {
         credentialRecord,
         offerAttachment,
         credentialAttachment,

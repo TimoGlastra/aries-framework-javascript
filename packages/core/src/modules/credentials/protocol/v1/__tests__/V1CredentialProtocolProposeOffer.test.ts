@@ -1,5 +1,5 @@
 import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
-import type { CreateOfferOptions, CreateProposalOptions } from '../../../CredentialProtocolOptions'
+import type { CreateOfferOptions, CreateProposalOptions } from '../../CredentialProtocolOptions'
 
 import { Subject } from 'rxjs'
 
@@ -122,7 +122,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
 
   describe('createProposal', () => {
     const proposeOptions: CreateProposalOptions<[IndyCredentialFormatService]> = {
-      connection,
+      connectionRecord,
       credentialFormats: {
         indy: {
           credentialDefinitionId: 'Th7MpTaRZVRYnPiabds81Y:3:CL:17:TAG',
@@ -143,7 +143,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
         attachment: proposalAttachment,
         format: new CredentialFormatSpec({
           format: 'indy',
-          attachId: 'indy-proposal',
+          attachmentId: 'indy-proposal',
         }),
       })
 
@@ -171,7 +171,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
         attachment: proposalAttachment,
         format: new CredentialFormatSpec({
           format: 'indy',
-          attachId: 'indy-proposal',
+          attachmentId: 'indy-proposal',
         }),
       })
 
@@ -196,7 +196,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
         attachment: proposalAttachment,
         format: new CredentialFormatSpec({
           format: 'indy',
-          attachId: 'indy-proposal',
+          attachmentId: 'indy-proposal',
         }),
         previewAttributes: credentialPreview.attributes,
       })
@@ -235,7 +235,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
   describe('createOffer', () => {
     const offerOptions: CreateOfferOptions<[IndyCredentialFormatService]> = {
       comment: 'some comment',
-      connection,
+      connectionRecord,
       credentialFormats: {
         indy: {
           attributes: credentialPreview.attributes,
@@ -249,7 +249,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
         attachment: offerAttachment,
         format: new CredentialFormatSpec({
           format: 'indy',
-          attachId: 'indy-offer',
+          attachmentId: 'indy-offer',
         }),
         previewAttributes: credentialPreview.attributes,
       })
@@ -280,7 +280,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
         attachment: offerAttachment,
         format: new CredentialFormatSpec({
           format: 'indy',
-          attachId: 'indy-offer',
+          attachmentId: 'indy-offer',
         }),
         previewAttributes: credentialPreview.attributes,
       })
@@ -306,7 +306,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
         attachment: offerAttachment,
         format: new CredentialFormatSpec({
           format: 'indy',
-          attachId: 'indy-offer',
+          attachmentId: 'indy-offer',
         }),
       })
 
@@ -320,7 +320,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
         attachment: offerAttachment,
         format: new CredentialFormatSpec({
           format: 'indy',
-          attachId: 'indy-offer',
+          attachmentId: 'indy-offer',
         }),
         previewAttributes: credentialPreview.attributes,
       })

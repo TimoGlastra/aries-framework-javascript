@@ -1,5 +1,5 @@
 import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
-import type { CreateOfferOptions } from '../../../CredentialProtocolOptions'
+import type { CreateOfferOptions } from '../../CredentialProtocolOptions'
 
 import { Subject } from 'rxjs'
 
@@ -88,7 +88,7 @@ const credentialPreview = V1CredentialPreview.fromRecord({
   age: '99',
 })
 const offerFormat = new CredentialFormatSpec({
-  attachId: 'offer-attachment-id',
+  attachmentId: 'offer-attachment-id',
   format: 'hlindy/cred-abstract@v2.0',
 })
 
@@ -122,7 +122,7 @@ describe('V2CredentialProtocolOffer', () => {
   describe('createOffer', () => {
     const offerOptions: CreateOfferOptions<[IndyCredentialFormatService]> = {
       comment: 'some comment',
-      connection,
+      connectionRecord,
       credentialFormats: {
         indy: {
           attributes: credentialPreview.attributes,

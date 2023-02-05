@@ -1,15 +1,15 @@
+import type { CredentialProtocol } from './CredentialProtocol'
+import type { AgentMessage } from '../../../agent/AgentMessage'
+import type { ConnectionRecord } from '../../connections/repository/ConnectionRecord'
 import type {
   CredentialFormat,
   CredentialFormatPayload,
   CredentialFormatService,
   ExtractCredentialFormats,
-} from './formats'
-import type { CredentialPreviewAttributeOptions } from './models'
-import type { AutoAcceptCredential } from './models/CredentialAutoAcceptType'
-import type { CredentialProtocol } from './protocol/CredentialProtocol'
-import type { CredentialExchangeRecord } from './repository/CredentialExchangeRecord'
-import type { AgentMessage } from '../../agent/AgentMessage'
-import type { ConnectionRecord } from '../connections/repository/ConnectionRecord'
+} from '../formats'
+import type { CredentialPreviewAttributeOptions } from '../models'
+import type { AutoAcceptCredential } from '../models/CredentialAutoAcceptType'
+import type { CredentialExchangeRecord } from '../repository/CredentialExchangeRecord'
 
 /**
  * Get the format data payload for a specific message from a list of CredentialFormat interfaces and a message
@@ -20,7 +20,7 @@ import type { ConnectionRecord } from '../connections/repository/ConnectionRecor
  * @example
  * ```
  *
- * type OfferFormatData = FormatDataMessagePayload<[IndyCredentialFormat, JsonLdCredentialFormat], 'offer'>
+ * type OfferFormatData = FormatDataMessagePayload<[IndyCredentialFormat, JsonLdCredentialFormat], 'createOffer'>
  *
  * // equal to
  * type OfferFormatData = {
@@ -90,7 +90,7 @@ export type GetFormatDataReturn<CFs extends CredentialFormat[] = CredentialForma
 }
 
 export interface CreateProposalOptions<CFs extends CredentialFormatService[]> {
-  connection: ConnectionRecord
+  connectionRecord: ConnectionRecord
   credentialFormats: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'createProposal'>
   autoAcceptCredential?: AutoAcceptCredential
   comment?: string
@@ -112,7 +112,7 @@ export interface NegotiateProposalOptions<CFs extends CredentialFormatService[]>
 
 export interface CreateOfferOptions<CFs extends CredentialFormatService[]> {
   // Create offer can also be used for connection-less, so connection is optional
-  connection?: ConnectionRecord
+  connectionRecord?: ConnectionRecord
   credentialFormats: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'createOffer'>
   autoAcceptCredential?: AutoAcceptCredential
   comment?: string
@@ -133,7 +133,7 @@ export interface NegotiateOfferOptions<CFs extends CredentialFormatService[]> {
 }
 
 export interface CreateRequestOptions<CFs extends CredentialFormatService[]> {
-  connection: ConnectionRecord
+  connectionRecord: ConnectionRecord
   credentialFormats: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'createRequest'>
   autoAcceptCredential?: AutoAcceptCredential
   comment?: string
@@ -151,7 +151,8 @@ export interface AcceptCredentialOptions {
 }
 
 export interface CreateProblemReportOptions {
-  message: string
+  credentialRecord: CredentialExchangeRecord
+  description: string
 }
 
 export interface CredentialProtocolMsgReturnType<MessageType extends AgentMessage> {

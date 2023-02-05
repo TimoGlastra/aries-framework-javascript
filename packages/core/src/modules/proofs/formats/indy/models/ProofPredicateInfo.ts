@@ -11,7 +11,7 @@ export class ProofPredicateInfo {
     if (options) {
       this.name = options.name
       this.nonRevoked = options.nonRevoked
-      this.restrictions = options.restrictions
+      this.restrictions = options.restrictions?.map((r) => new AttributeFilter(r))
       this.predicateType = options.predicateType
       this.predicateValue = options.predicateValue
     }
