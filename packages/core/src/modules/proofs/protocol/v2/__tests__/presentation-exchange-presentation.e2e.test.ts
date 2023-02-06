@@ -13,7 +13,7 @@ import {
 } from '../../../formats/presentation-exchange/PresentationExchangeProofFormat'
 import { ProofState } from '../../../models/ProofState'
 import { V2PresentationMessage, V2RequestPresentationMessage } from '../messages'
-import { V2ProposalPresentationMessage } from '../messages/V2ProposalPresentationMessage'
+import { V2ProposePresentationMessage } from '../messages/V2ProposePresentationMessage'
 
 describe('Present Proof', () => {
   let faberAgent: Agent
@@ -64,7 +64,7 @@ describe('Present Proof', () => {
 
     const proposal = await didCommMessageRepository.findAgentMessage(faberAgent.context, {
       associatedRecordId: faberProofExchangeRecord.id,
-      messageClass: V2ProposalPresentationMessage,
+      messageClass: V2ProposePresentationMessage,
     })
 
     expect(proposal).toMatchObject({

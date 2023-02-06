@@ -17,7 +17,7 @@ import { LedgerApi } from '../../modules/ledger/LedgerApi'
 import { ProofRepository } from '../../modules/proofs'
 import { ProofsApi } from '../../modules/proofs/ProofsApi'
 import { V1ProofProtocol } from '../../modules/proofs/protocol/v1'
-import { V2ProofService } from '../../modules/proofs/protocol/v2'
+import { V2ProofProtocol } from '../../modules/proofs/protocol/v2'
 import {
   MediationRecipientService,
   MediationRepository,
@@ -162,7 +162,7 @@ describe('Agent', () => {
       expect(container.resolve(TrustPingService)).toBeInstanceOf(TrustPingService)
 
       expect(container.resolve(V1ProofProtocol)).toBeInstanceOf(V1ProofProtocol)
-      expect(container.resolve(V2ProofService)).toBeInstanceOf(V2ProofService)
+      expect(container.resolve(V2ProofProtocol)).toBeInstanceOf(V2ProofProtocol)
       expect(container.resolve(ProofsApi)).toBeInstanceOf(ProofsApi)
       expect(container.resolve(ProofRepository)).toBeInstanceOf(ProofRepository)
 
@@ -205,7 +205,7 @@ describe('Agent', () => {
       expect(container.resolve(TrustPingService)).toBe(container.resolve(TrustPingService))
 
       expect(container.resolve(V1ProofProtocol)).toBe(container.resolve(V1ProofProtocol))
-      expect(container.resolve(V2ProofService)).toBe(container.resolve(V2ProofService))
+      expect(container.resolve(V2ProofProtocol)).toBe(container.resolve(V2ProofProtocol))
       expect(container.resolve(ProofsApi)).toBe(container.resolve(ProofsApi))
       expect(container.resolve(ProofRepository)).toBe(container.resolve(ProofRepository))
 

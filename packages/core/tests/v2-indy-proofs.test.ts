@@ -17,7 +17,7 @@ import {
 import { getGroupKeysFromIndyProofFormatData } from '../src/modules/proofs/formats/indy/__tests__/groupKeys'
 import {
   V2PresentationMessage,
-  V2ProposalPresentationMessage,
+  V2ProposePresentationMessage,
   V2RequestPresentationMessage,
 } from '../src/modules/proofs/protocol/v2/messages'
 import { DidCommMessageRepository } from '../src/storage/didcomm'
@@ -80,7 +80,7 @@ describe('Present Proof', () => {
 
     const proposal = await didCommMessageRepository.findAgentMessage(faberAgent.context, {
       associatedRecordId: faberProofExchangeRecord.id,
-      messageClass: V2ProposalPresentationMessage,
+      messageClass: V2ProposePresentationMessage,
     })
 
     expect(proposal).toMatchObject({
@@ -247,7 +247,7 @@ describe('Present Proof', () => {
     const requestMessage = await aliceAgent.proofs.findRequestMessage(aliceProofExchangeRecord.id)
     const presentationMessage = await aliceAgent.proofs.findPresentationMessage(aliceProofExchangeRecord.id)
 
-    expect(proposalMessage).toBeInstanceOf(V2ProposalPresentationMessage)
+    expect(proposalMessage).toBeInstanceOf(V2ProposePresentationMessage)
     expect(requestMessage).toBeInstanceOf(V2RequestPresentationMessage)
     expect(presentationMessage).toBeInstanceOf(V2PresentationMessage)
 

@@ -96,7 +96,7 @@ export interface RequestProofOptions<PPs extends ProofProtocol[] = ProofProtocol
  */
 export interface AcceptProofRequestOptions<PPs extends ProofProtocol[] = ProofProtocol[]> extends BaseOptions {
   proofRecordId: string
-  proofFormats: ProofFormatPayload<ProofFormatsFromProtocols<PPs>, 'acceptRequest'>
+  proofFormats?: ProofFormatPayload<ProofFormatsFromProtocols<PPs>, 'acceptRequest'>
 
   // TODO: where to send goalCode?
   goalCode?: string
@@ -128,7 +128,7 @@ export interface AcceptProofOptions {
  */
 export interface GetCredentialsForProofRequestOptions<PPs extends ProofProtocol[] = ProofProtocol[]> {
   proofRecordId: string
-  proofFormats: ProofFormatCredentialForRequestPayload<
+  proofFormats?: ProofFormatCredentialForRequestPayload<
     ProofFormatsFromProtocols<PPs>,
     'getCredentialsForRequest',
     'input'
@@ -149,7 +149,7 @@ export interface GetCredentialsForProofRequestReturn<PPs extends ProofProtocol[]
  */
 export interface SelectCredentialsForProofRequestOptions<PPs extends ProofProtocol[] = ProofProtocol[]> {
   proofRecordId: string
-  proofFormats: ProofFormatCredentialForRequestPayload<
+  proofFormats?: ProofFormatCredentialForRequestPayload<
     ProofFormatsFromProtocols<PPs>,
     'getCredentialsForRequest',
     'input'

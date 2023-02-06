@@ -13,17 +13,16 @@ import { DidCommMessageRepository } from '../../../../../storage'
 import { ConnectionService, DidExchangeState } from '../../../../connections'
 import { IndyLedgerService } from '../../../../ledger/services/IndyLedgerService'
 import { ProofEventTypes } from '../../../ProofEvents'
+import { credDef } from '../../../__tests__/fixtures'
 import { PresentationProblemReportReason } from '../../../errors/PresentationProblemReportReason'
 import { V2_INDY_PRESENTATION, V2_INDY_PRESENTATION_REQUEST } from '../../../formats'
 import { IndyProofFormatService } from '../../../formats/indy/IndyProofFormatService'
 import { PresentationExchangeProofFormatService } from '../../../formats/presentation-exchange/PresentationExchangeProofFormatService'
 import { ProofState } from '../../../models/ProofState'
-import { V2ProofService } from '../V2ProofService'
-import { V2PresentationProblemReportMessage, V2RequestPresentationMessage } from '../messages'
 import { ProofExchangeRecord } from '../../../repository/ProofExchangeRecord'
 import { ProofRepository } from '../../../repository/ProofRepository'
-
-import { credDef } from '../../../__tests__/fixtures'
+import { V2ProofProtocol } from '../V2ProofProtocol'
+import { V2PresentationProblemReportMessage, V2RequestPresentationMessage } from '../messages'
 
 // Mock classes
 jest.mock('../repository/ProofRepository')
@@ -100,7 +99,7 @@ const mockProofExchangeRecord = ({
 
 describe('V2ProofService', () => {
   let proofRepository: ProofRepository
-  let proofService: V2ProofService
+  let proofService: V2ProofProtocol
   let ledgerService: IndyLedgerService
   let wallet: Wallet
   let eventEmitter: EventEmitter
@@ -121,7 +120,7 @@ describe('V2ProofService', () => {
     indyProofFormatService = new IndyProofFormatServiceMock()
     presentationExchangeFormatService = new PresentationExchangeFormatServiceMock()
 
-    proofService = new V2ProofService(
+    proofService = new V2ProofProtocol(
       agentConfig,
       connectionService,
       proofRepository,

@@ -243,7 +243,7 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
     const proofRequest = JsonTransformer.fromJSON(proofRequestJson, ProofRequest)
 
     // Set default values
-    const { filterByNonRevocationRequirements = true } = proofFormats.indy ?? {}
+    const { filterByNonRevocationRequirements = true } = proofFormats?.indy ?? {}
 
     const credentialsForRequest = await this._getCredentialsForRequest(agentContext, proofRequest, {
       filterByNonRevocationRequirements,
@@ -260,7 +260,7 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
     const proofRequest = JsonTransformer.fromJSON(proofRequestJson, ProofRequest)
 
     // Set default values
-    const { filterByNonRevocationRequirements = true } = proofFormats.indy ?? {}
+    const { filterByNonRevocationRequirements = true } = proofFormats?.indy ?? {}
 
     const selectedCredentials = this._selectCredentialsForRequest(agentContext, proofRequest, {
       filterByNonRevocationRequirements,

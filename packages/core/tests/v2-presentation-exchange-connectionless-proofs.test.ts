@@ -4,7 +4,7 @@ import type { JsonCredential } from '../src/modules/credentials/formats/jsonld/J
 import type { ProofStateChangedEvent } from '../src/modules/proofs'
 import type { CreateProofRequestOptions } from '../src/modules/proofs/ProofsApiOptions'
 import type { PresentationExchangeProofFormat } from '../src/modules/proofs/formats/presentation-exchange/PresentationExchangeProofFormat'
-import type { V2ProofService } from '../src/modules/proofs/protocol/v2/V2ProofService'
+import type { V2ProofProtocol } from '../src/modules/proofs/protocol/v2/V2ProofProtocol'
 import type { Wallet } from '../src/wallet/Wallet'
 import type { PresentationDefinitionV1 } from '@sphereon/pex-models'
 
@@ -67,7 +67,7 @@ describe('Present Proof', () => {
       id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
     }
 
-    const outOfBandRequestOptions: CreateProofRequestOptions<[PresentationExchangeProofFormat], [V2ProofService]> = {
+    const outOfBandRequestOptions: CreateProofRequestOptions<[PresentationExchangeProofFormat], [V2ProofProtocol]> = {
       protocolVersion: 'v2',
       proofFormats: {
         presentationExchange: {
@@ -379,7 +379,7 @@ describe('Present Proof', () => {
       id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
     }
 
-    const outOfBandRequestOptions: CreateProofRequestOptions<[PresentationExchangeProofFormat], [V2ProofService]> = {
+    const outOfBandRequestOptions: CreateProofRequestOptions<[PresentationExchangeProofFormat], [V2ProofProtocol]> = {
       protocolVersion: 'v2',
       proofFormats: {
         presentationExchange: {

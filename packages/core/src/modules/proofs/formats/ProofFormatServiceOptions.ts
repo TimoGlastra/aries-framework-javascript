@@ -86,7 +86,7 @@ export interface FormatAcceptRequestOptions<PF extends ProofFormat> {
 
 export interface FormatGetCredentialsForRequestOptions<PF extends ProofFormat> {
   proofRecord: ProofExchangeRecord
-  proofFormats: ProofFormatCredentialForRequestPayload<[PF], 'getCredentialsForRequest', 'input'>
+  proofFormats?: ProofFormatCredentialForRequestPayload<[PF], 'getCredentialsForRequest', 'input'>
 
   requestAttachment: Attachment
   proposalAttachment?: Attachment
@@ -97,7 +97,7 @@ export type FormatGetCredentialsForRequestReturn<PF extends ProofFormat> =
 
 export interface FormatSelectCredentialsForRequestOptions<PF extends ProofFormat> {
   proofRecord: ProofExchangeRecord
-  proofFormats: ProofFormatCredentialForRequestPayload<[PF], 'selectCredentialsForRequest', 'input'>
+  proofFormats?: ProofFormatCredentialForRequestPayload<[PF], 'selectCredentialsForRequest', 'input'>
 
   requestAttachment: Attachment
   proposalAttachment?: Attachment

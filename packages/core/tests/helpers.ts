@@ -21,8 +21,8 @@ import type {
   JsonCredential,
   JsonLdCredentialDetailFormat,
 } from '../src/modules/credentials/formats/jsonld/JsonLdCredentialFormat'
-import type { ProofAttributeInfo, ProofPredicateInfo } from '../src/modules/proofs/formats/indy/models'
 import type { AutoAcceptProof } from '../src/modules/proofs/models/ProofAutoAcceptType'
+import type { ProofState } from '../src/modules/proofs/models/ProofState'
 import type { Awaited } from '../src/types'
 import type { CredDef, Schema } from 'indy-sdk'
 import type { Observable } from 'rxjs'
@@ -37,6 +37,11 @@ import { BbsModule } from '../../bbs-signatures/src/BbsModule'
 import { agentDependencies, WalletScheme } from '../../node/src'
 import {
   CredentialsModule,
+  V1ProofProtocol,
+  V2ProofProtocol,
+  IndyProofFormatService,
+  PresentationExchangeProofFormatService,
+  ProofsModule,
   IndyCredentialFormatService,
   JsonLdCredentialFormatService,
   V1CredentialProtocol,
@@ -70,12 +75,7 @@ import { OutOfBandState } from '../src/modules/oob/domain/OutOfBandState'
 import { OutOfBandInvitation } from '../src/modules/oob/messages'
 import { OutOfBandRecord } from '../src/modules/oob/repository'
 import { PredicateType } from '../src/modules/proofs/formats/indy/models'
-import { ProofState } from '../src/modules/proofs/models/ProofState'
-import {
-  V1PresentationPreview,
-  V1PresentationPreviewAttribute,
-  V1PresentationPreviewPredicate,
-} from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
+import { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
 import { customDocumentLoader } from '../src/modules/vc/__tests__/documentLoader'
 import { KeyDerivationMethod } from '../src/types'
 import { LinkedAttachment } from '../src/utils/LinkedAttachment'
@@ -603,149 +603,6 @@ export async function issueCredential({
   }
 }
 
-export async function issueConnectionLessCredential({
-  issuerAgent,
-  holderAgent,
-  credentialTemplate,
-}: {
-  issuerAgent: Agent
-  holderAgent: Agent
-  credentialTemplate: IndyOfferCredentialFormat
-}) {
-  const issuerReplay = new ReplaySubject<CredentialStateChangedEvent>()
-  const holderReplay = new ReplaySubject<CredentialStateChangedEvent>()
-
-  issuerAgent.events
-    .observable<CredentialStateChangedEvent>(CredentialEventTypes.CredentialStateChanged)
-    .subscribe(issuerReplay)
-  holderAgent.events
-    .observable<CredentialStateChangedEvent>(CredentialEventTypes.CredentialStateChanged)
-    .subscribe(holderReplay)
-
-  // eslint-disable-next-line prefer-const
-  let { credentialRecord: issuerCredentialRecord, message } = await issuerAgent.credentials.createOffer({
-    comment: 'V1 Out of Band offer',
-    protocolVersion: 'v1',
-    credentialFormats: {
-      indy: {
-        attributes: credentialTemplate.attributes,
-        credentialDefinitionId: credentialTemplate.credentialDefinitionId,
-      },
-    },
-    autoAcceptCredential: AutoAcceptCredential.ContentApproved,
-  })
-
-  const { message: offerMessage } = await issuerAgent.oob.createLegacyConnectionlessInvitation({
-    recordId: issuerCredentialRecord.id,
-    domain: 'https://example.org',
-    message,
-  })
-
-  await holderAgent.receiveMessage(offerMessage.toJSON())
-
-  let holderCredentialRecord = await waitForCredentialRecordSubject(holderReplay, {
-    threadId: issuerCredentialRecord.threadId,
-    state: CredentialState.OfferReceived,
-  })
-  const acceptOfferOptions: AcceptCredentialOfferOptions = {
-    credentialRecordId: holderCredentialRecord.id,
-    autoAcceptCredential: AutoAcceptCredential.ContentApproved,
-  }
-
-  await holderAgent.credentials.acceptOffer(acceptOfferOptions)
-
-  holderCredentialRecord = await waitForCredentialRecordSubject(holderReplay, {
-    threadId: issuerCredentialRecord.threadId,
-    state: CredentialState.Done,
-  })
-
-  issuerCredentialRecord = await waitForCredentialRecordSubject(issuerReplay, {
-    threadId: issuerCredentialRecord.threadId,
-    state: CredentialState.Done,
-  })
-
-  return {
-    issuerCredential: issuerCredentialRecord,
-    holderCredential: holderCredentialRecord,
-  }
-}
-
-export async function presentProof({
-  verifierAgent,
-  verifierConnectionId,
-  holderAgent,
-  presentationTemplate: { attributes, predicates },
-}: {
-  verifierAgent: Agent
-  verifierConnectionId: string
-  holderAgent: Agent
-  presentationTemplate: {
-    attributes?: Record<string, ProofAttributeInfo>
-    predicates?: Record<string, ProofPredicateInfo>
-  }
-}) {
-  const verifierReplay = new ReplaySubject<ProofStateChangedEvent>()
-  const holderReplay = new ReplaySubject<ProofStateChangedEvent>()
-
-  verifierAgent.events.observable<ProofStateChangedEvent>(ProofEventTypes.ProofStateChanged).subscribe(verifierReplay)
-  holderAgent.events.observable<ProofStateChangedEvent>(ProofEventTypes.ProofStateChanged).subscribe(holderReplay)
-
-  let holderProofExchangeRecordPromise = waitForProofExchangeRecordSubject(holderReplay, {
-    state: ProofState.RequestReceived,
-  })
-
-  let verifierRecord = await verifierAgent.proofs.requestProof({
-    connectionId: verifierConnectionId,
-    proofFormats: {
-      indy: {
-        name: 'test-proof-request',
-        requestedAttributes: attributes,
-        requestedPredicates: predicates,
-        version: '1.0',
-        nonce: '947121108704767252195123',
-      },
-    },
-    protocolVersion: 'v2',
-  })
-
-  let holderRecord = await holderProofExchangeRecordPromise
-
-  const requestedCredentials = await holderAgent.proofs.autoSelectCredentialsForProofRequest({
-    proofRecordId: holderRecord.id,
-    config: {
-      filterByPresentationPreview: true,
-    },
-  })
-
-  const verifierProofExchangeRecordPromise = waitForProofExchangeRecordSubject(verifierReplay, {
-    threadId: holderRecord.threadId,
-    state: ProofState.PresentationReceived,
-  })
-
-  await holderAgent.proofs.acceptRequest({
-    proofRecordId: holderRecord.id,
-    proofFormats: { indy: requestedCredentials.proofFormats.indy },
-  })
-
-  verifierRecord = await verifierProofExchangeRecordPromise
-
-  // assert presentation is valid
-  expect(verifierRecord.isVerified).toBe(true)
-
-  holderProofExchangeRecordPromise = waitForProofExchangeRecordSubject(holderReplay, {
-    threadId: holderRecord.threadId,
-    state: ProofState.Done,
-  })
-
-  verifierRecord = await verifierAgent.proofs.acceptPresentation(verifierRecord.id)
-  holderRecord = await holderProofExchangeRecordPromise
-
-  return {
-    verifierProof: verifierRecord,
-    holderProof: holderRecord,
-  }
-}
-
 /**
  * Returns mock of function with correct type annotations according to original function `fn`.
  * It can be used also for class methods.
@@ -1017,7 +874,6 @@ export async function setupJsonLdProofsTestMultipleCredentials(
   aliceAgent.registerInboundTransport(new SubjectInboundTransport(aliceMessages))
   aliceAgent.registerOutboundTransport(new SubjectOutboundTransport(subjectMap))
   await aliceAgent.initialize()
-  const { definition } = await prepareForIssuance(faberAgent, ['name', 'age', 'image_0', 'image_1'])
 
   const [agentAConnection, agentBConnection] = await makeConnection(faberAgent, aliceAgent)
   expect(agentAConnection.isReady).toBe(true)
@@ -1026,34 +882,10 @@ export async function setupJsonLdProofsTestMultipleCredentials(
   const faberConnection = agentAConnection
   const aliceConnection = agentBConnection
 
-  const presentationPreview = new V1PresentationPreview({
-    attributes: [
-      {
-        name: 'name',
-        credentialDefinitionId: definition.id,
-        referent: '0',
-        value: 'John',
-      },
-      {
-        name: 'image_0',
-        credentialDefinitionId: definition.id,
-      },
-    ],
-    predicates: [
-      {
-        name: 'age',
-        credentialDefinitionId: definition.id,
-        predicate: PredicateType.GreaterThanOrEqualTo,
-        threshold: 50,
-      },
-    ],
-  })
-
   const issuerSeed = 'testseed000000000000000000000001'
   const holderSeed = 'testseed000000000000000000000001'
 
   //  create issuer did for test
-
   const faberWallet = faberAgent.injectionContainer.resolve<Wallet>(InjectionSymbols.Wallet)
   const aliceWallet = aliceAgent.injectionContainer.resolve<Wallet>(InjectionSymbols.Wallet)
 
@@ -1297,22 +1129,24 @@ export async function setupJsonLdProofsTestMultipleCredentials(
   return {
     faberAgent,
     aliceAgent,
-    credDefId: definition.id,
     faberConnection,
     aliceConnection,
-    presentationPreview,
     faberReplay,
     aliceReplay,
   }
 }
 
 // TODO move common code out into separate method
+// Helper type to get the type of the agents (with the custom modules) for the credential tests
+export type JsonLdProofsTestsAgent = Awaited<ReturnType<typeof setupJsonLdProofsTest>>['aliceAgent']
 export async function setupJsonLdProofsTest(faberName: string, aliceName: string, autoAcceptProofs?: AutoAcceptProof) {
   const unique = uuid().substring(0, 4)
 
   const autoAcceptCredentials = AutoAcceptCredential.Always
   const indyCredentialFormat = new IndyCredentialFormatService()
   const jsonLdCredentialFormat = new JsonLdCredentialFormatService()
+  const indyProofFormat = new IndyProofFormatService()
+  const PresentationExchangeProofFormat = new PresentationExchangeProofFormatService()
 
   const modules = {
     // Initialize custom credentials module (with jsonLdCredentialFormat enabled)
@@ -1325,6 +1159,16 @@ export async function setupJsonLdProofsTest(faberName: string, aliceName: string
         }),
       ],
     }),
+    // Initialize custom proofs module (with PresentationExchangeProofFormat enabled)
+    proofs: new ProofsModule({
+      autoAcceptProofs,
+      proofProtocols: [
+        new V1ProofProtocol({ indyProofFormat }),
+        new V2ProofProtocol({
+          proofFormats: [indyProofFormat, PresentationExchangeProofFormat],
+        }),
+      ],
+    }),
     // Register custom w3cVc module so we can define the test document loader
     w3cVc: new W3cVcModule({
       documentLoader: customDocumentLoader,
@@ -1333,7 +1177,6 @@ export async function setupJsonLdProofsTest(faberName: string, aliceName: string
   const faberAgentOptions = getAgentOptions(
     `${faberName}-${unique}`,
     {
-      autoAcceptProofs,
       endpoints: ['rxjs:faber'],
     },
     modules
@@ -1342,7 +1185,6 @@ export async function setupJsonLdProofsTest(faberName: string, aliceName: string
   const aliceAgentOptions = getAgentOptions(
     `${aliceName}-${unique}`,
     {
-      autoAcceptProofs,
       endpoints: ['rxjs:alice'],
     },
     modules
@@ -1363,7 +1205,6 @@ export async function setupJsonLdProofsTest(faberName: string, aliceName: string
   aliceAgent.registerInboundTransport(new SubjectInboundTransport(aliceMessages))
   aliceAgent.registerOutboundTransport(new SubjectOutboundTransport(subjectMap))
   await aliceAgent.initialize()
-  const { definition } = await prepareForIssuance(faberAgent, ['name', 'age', 'image_0', 'image_1'])
 
   const [agentAConnection, agentBConnection] = await makeConnection(faberAgent, aliceAgent)
   expect(agentAConnection.isReady).toBe(true)
@@ -1372,36 +1213,12 @@ export async function setupJsonLdProofsTest(faberName: string, aliceName: string
   const faberConnection = agentAConnection
   const aliceConnection = agentBConnection
 
-  const presentationPreview = new V1PresentationPreview({
-    attributes: [
-      {
-        name: 'name',
-        credentialDefinitionId: definition.id,
-        referent: '0',
-        value: 'John',
-      },
-      {
-        name: 'image_0',
-        credentialDefinitionId: definition.id,
-      },
-    ],
-    predicates: [
-      {
-        name: 'age',
-        credentialDefinitionId: definition.id,
-        predicate: PredicateType.GreaterThanOrEqualTo,
-        threshold: 50,
-      },
-    ],
-  })
-
   const issuerSeed = 'testseed000000000000000000000001'
   const holderSeed = 'testseed000000000000000000000001'
 
   //  create issuer did for test
-
-  const faberWallet = faberAgent.injectionContainer.resolve<Wallet>(InjectionSymbols.Wallet)
-  const aliceWallet = aliceAgent.injectionContainer.resolve<Wallet>(InjectionSymbols.Wallet)
+  const faberWallet = faberAgent.context.wallet
+  const aliceWallet = aliceAgent.context.wallet
 
   const faberKey = await faberWallet.createKey({ keyType: KeyType.Ed25519, seed: issuerSeed })
   const issuerDidKey = new DidKey(faberKey)
@@ -1542,10 +1359,8 @@ export async function setupJsonLdProofsTest(faberName: string, aliceName: string
   return {
     faberAgent,
     aliceAgent,
-    credDefId: definition.id,
     faberConnection,
     aliceConnection,
-    presentationPreview,
     faberReplay,
     aliceReplay,
   }

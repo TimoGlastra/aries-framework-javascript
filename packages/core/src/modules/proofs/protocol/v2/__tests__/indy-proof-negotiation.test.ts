@@ -16,7 +16,7 @@ import { ProofAttributeInfo } from '../../../formats/indy/models/ProofAttributeI
 import { ProofPredicateInfo } from '../../../formats/indy/models/ProofPredicateInfo'
 import { ProofRequest } from '../../../formats/indy/models/ProofRequest'
 import { ProofState } from '../../../models/ProofState'
-import { V2ProposalPresentationMessage, V2RequestPresentationMessage } from '../messages'
+import { V2ProposePresentationMessage, V2RequestPresentationMessage } from '../messages'
 
 describe('Present Proof', () => {
   let faberAgent: Agent
@@ -73,7 +73,7 @@ describe('Present Proof', () => {
 
     let proposal = await didCommMessageRepository.findAgentMessage(faberAgent.context, {
       associatedRecordId: faberProofExchangeRecord.id,
-      messageClass: V2ProposalPresentationMessage,
+      messageClass: V2ProposePresentationMessage,
     })
 
     expect(proposal).toMatchObject({
@@ -97,7 +97,7 @@ describe('Present Proof', () => {
       comment: 'V2 propose proof test 1',
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let proposalAttach = proposal?.proposalsAttach[0].getDataAsJson() as any
+    let proposalAttach = proposal?.proposalAttachments[0].getDataAsJson() as any
     let attributesGroup = Object.keys(proposalAttach.requested_attributes ?? {})[0]
     let predicatesGroup = Object.keys(proposalAttach.requested_predicates ?? {})[0]
     expect(proposalAttach).toMatchObject({
@@ -245,7 +245,7 @@ describe('Present Proof', () => {
 
     proposal = await didCommMessageRepository.findAgentMessage(faberAgent.context, {
       associatedRecordId: faberProofExchangeRecord.id,
-      messageClass: V2ProposalPresentationMessage,
+      messageClass: V2ProposePresentationMessage,
     })
 
     expect(proposal).toMatchObject({
@@ -269,7 +269,7 @@ describe('Present Proof', () => {
       comment: 'V2 propose proof test 2',
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    proposalAttach = proposal?.proposalsAttach[0].getDataAsJson() as any
+    proposalAttach = proposal?.proposalAttachments[0].getDataAsJson() as any
     attributesGroup = Object.keys(proposalAttach.requested_attributes ?? {})[0]
     predicatesGroup = Object.keys(proposalAttach.requested_predicates ?? {})[0]
     expect(proposalAttach).toMatchObject({
@@ -379,7 +379,7 @@ describe('Present Proof', () => {
     })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    proposalAttach = proposal?.proposalsAttach[0].getDataAsJson() as any
+    proposalAttach = proposal?.proposalAttachments[0].getDataAsJson() as any
     attributesGroup = Object.keys(proposalAttach.requested_attributes ?? {})[0]
     predicatesGroup = Object.keys(proposalAttach.requested_predicates ?? {})[0]
     expect(proposalAttach).toMatchObject({
@@ -412,7 +412,7 @@ describe('Present Proof', () => {
     )) as V2RequestPresentationMessage
 
     const proofRequest = JsonTransformer.fromJSON(
-      proofRequestMessage.requestPresentationsAttach[0].getDataAsJson(),
+      proofRequestMessage.requestAttachments[0].getDataAsJson(),
       ProofRequest
     )
     const predicateKey = proofRequest.requestedPredicates?.keys().next().value

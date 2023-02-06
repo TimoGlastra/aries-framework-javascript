@@ -122,7 +122,7 @@ export interface NegotiateRequestOptions<PFs extends ProofFormatService[]> exten
 
 export interface GetCredentialsForRequestOptions<PFs extends ProofFormatService[]> {
   proofRecord: ProofExchangeRecord
-  proofFormats: ProofFormatCredentialForRequestPayload<ExtractProofFormats<PFs>, 'getCredentialsForRequest', 'input'>
+  proofFormats?: ProofFormatCredentialForRequestPayload<ExtractProofFormats<PFs>, 'getCredentialsForRequest', 'input'>
 }
 
 export interface GetCredentialsForRequestReturn<PFs extends ProofFormatService[]> {
@@ -131,7 +131,11 @@ export interface GetCredentialsForRequestReturn<PFs extends ProofFormatService[]
 
 export interface SelectCredentialsForRequestOptions<PFs extends ProofFormatService[]> {
   proofRecord: ProofExchangeRecord
-  proofFormats: ProofFormatCredentialForRequestPayload<ExtractProofFormats<PFs>, 'selectCredentialsForRequest', 'input'>
+  proofFormats?: ProofFormatCredentialForRequestPayload<
+    ExtractProofFormats<PFs>,
+    'selectCredentialsForRequest',
+    'input'
+  >
 }
 
 export interface SelectCredentialsForRequestReturn<PFs extends ProofFormatService[]> {

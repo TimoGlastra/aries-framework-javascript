@@ -109,7 +109,6 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
     proofRepository: ProofRepository,
     routingService: RoutingService,
     didCommMessageRepository: DidCommMessageRepository,
-
     config: ProofsModuleConfig<PPs>
   ) {
     this.messageSender = messageSender

@@ -254,7 +254,7 @@ describe('Auto accept present proof', () => {
       })
 
       const data: IVerifiablePresentation | undefined =
-        presentation?.presentationsAttach[0].getDataAsJson<IVerifiablePresentation>()
+        presentation?.presentationAttachments[0].getDataAsJson<IVerifiablePresentation>()
 
       // expect 3 VCs: one from group A, one from group B, one from group C
       expect(data?.verifiableCredential.length).toBe(3)
@@ -347,7 +347,7 @@ describe('Auto accept present proof', () => {
       })
 
       const data: IVerifiablePresentation | undefined =
-        presentation?.presentationsAttach[0].getDataAsJson<IVerifiablePresentation>()
+        presentation?.presentationAttachments[0].getDataAsJson<IVerifiablePresentation>()
 
       // expect 2 VCs: one from group A, one from either group B or group C (in this case B)
       expect(data?.verifiableCredential.length).toBe(2)
@@ -436,7 +436,7 @@ describe('Auto accept present proof', () => {
       })
 
       const data: IVerifiablePresentation | undefined =
-        presentation?.presentationsAttach[0].getDataAsJson<IVerifiablePresentation>()
+        presentation?.presentationAttachments[0].getDataAsJson<IVerifiablePresentation>()
 
       // expect 2 VCs: one from group A, one from either group B or group C (in this case B)
       expect(data?.verifiableCredential.length).toBe(3)
