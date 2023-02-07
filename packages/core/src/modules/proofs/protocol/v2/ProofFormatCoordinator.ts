@@ -349,7 +349,7 @@ export class ProofFormatCoordinator<PFs extends ProofFormatService[]> {
       formatServices,
     }: {
       proofRecord: ProofExchangeRecord
-      proofFormats: ProofFormatCredentialForRequestPayload<
+      proofFormats?: ProofFormatCredentialForRequestPayload<
         ExtractProofFormats<PFs>,
         'getCredentialsForRequest',
         'input'
@@ -369,11 +369,7 @@ export class ProofFormatCoordinator<PFs extends ProofFormatService[]> {
       messageClass: V2ProposePresentationMessage,
     })
 
-    const credentialsForRequest: ProofFormatCredentialForRequestPayload<
-      ExtractProofFormats<PFs>,
-      'getCredentialsForRequest',
-      'output'
-    > = {}
+    const credentialsForRequest: Record<string, unknown> = {}
 
     for (const formatService of formatServices) {
       const requestAttachment = this.getAttachmentForService(
@@ -407,7 +403,7 @@ export class ProofFormatCoordinator<PFs extends ProofFormatService[]> {
       formatServices,
     }: {
       proofRecord: ProofExchangeRecord
-      proofFormats: ProofFormatCredentialForRequestPayload<
+      proofFormats?: ProofFormatCredentialForRequestPayload<
         ExtractProofFormats<PFs>,
         'selectCredentialsForRequest',
         'input'
@@ -429,11 +425,7 @@ export class ProofFormatCoordinator<PFs extends ProofFormatService[]> {
       messageClass: V2ProposePresentationMessage,
     })
 
-    const credentialsForRequest: ProofFormatCredentialForRequestPayload<
-      ExtractProofFormats<PFs>,
-      'selectCredentialsForRequest',
-      'output'
-    > = {}
+    const credentialsForRequest: Record<string, unknown> = {}
 
     for (const formatService of formatServices) {
       const requestAttachment = this.getAttachmentForService(

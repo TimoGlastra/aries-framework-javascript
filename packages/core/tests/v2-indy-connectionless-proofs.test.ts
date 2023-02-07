@@ -9,15 +9,13 @@ import { V1CredentialPreview } from '../src'
 import { Agent } from '../src/agent/Agent'
 import { Attachment, AttachmentData } from '../src/decorators/attachment/Attachment'
 import { HandshakeProtocol } from '../src/modules/connections/models/HandshakeProtocol'
+import { ProofState, AutoAcceptProof, ProofEventTypes } from '../src/modules/proofs'
 import {
-  PredicateType,
-  ProofState,
   ProofAttributeInfo,
   AttributeFilter,
   ProofPredicateInfo,
-  AutoAcceptProof,
-  ProofEventTypes,
-} from '../src/modules/proofs'
+  PredicateType,
+} from '../src/modules/proofs/formats/indy/models'
 import { MediatorPickupStrategy } from '../src/modules/routing/MediatorPickupStrategy'
 import { LinkedAttachment } from '../src/utils/LinkedAttachment'
 import { uuid } from '../src/utils/uuid'
@@ -86,7 +84,6 @@ describe('Present Proof', () => {
         indy: {
           name: 'test-proof-request',
           version: '1.0',
-          nonce: '12345678901',
           requestedAttributes: attributes,
           requestedPredicates: predicates,
         },
@@ -106,11 +103,8 @@ describe('Present Proof', () => {
 
     testLogger.test('Alice accepts presentation request from Faber')
 
-    const requestedCredentials = await aliceAgent.proofs.autoSelectCredentialsForProofRequest({
+    const requestedCredentials = await aliceAgent.proofs.selectCredentialsForRequest({
       proofRecordId: aliceProofExchangeRecord.id,
-      config: {
-        filterByPresentationPreview: true,
-      },
     })
 
     const faberProofExchangeRecordPromise = waitForProofExchangeRecordSubject(faberReplay, {
@@ -135,7 +129,7 @@ describe('Present Proof', () => {
     })
 
     // Faber accepts presentation
-    await faberAgent.proofs.acceptPresentation(faberProofExchangeRecord.id)
+    await faberAgent.proofs.acceptPresentation({ proofRecordId: faberProofExchangeRecord.id })
 
     // Alice waits till it receives presentation ack
     aliceProofExchangeRecord = await aliceProofExchangeRecordPromise
@@ -191,7 +185,6 @@ describe('Present Proof', () => {
         indy: {
           name: 'test-proof-request',
           version: '1.0',
-          nonce: '12345678901',
           requestedAttributes: attributes,
           requestedPredicates: predicates,
         },
@@ -260,7 +253,6 @@ describe('Present Proof', () => {
 
     const aliceOptions = getAgentOptions(`Connectionless proofs with mediator Alice-${unique}`, {
       autoAcceptProofs: AutoAcceptProof.Always,
-      // logger: new TestLogger(LogLevel.test),
       mediatorConnectionsInvite: aliceMediationOutOfBandRecord.outOfBandInvitation.toUrl({
         domain: 'https://example.com',
       }),
@@ -356,7 +348,6 @@ describe('Present Proof', () => {
         indy: {
           name: 'test-proof-request',
           version: '1.0',
-          nonce: '12345678901',
           requestedAttributes: attributes,
           requestedPredicates: predicates,
         },

@@ -118,7 +118,7 @@ export function getAgentOptions<AgentModules extends AgentModulesInput | EmptyMo
     ],
     // TODO: determine the log level based on an environment variable. This will make it
     // possible to run e.g. failed github actions in debug mode for extra logs
-    logger: new TestLogger(LogLevel.off, name),
+    logger: new TestLogger(LogLevel.debug, name),
     ...extraConfig,
   }
 
@@ -225,7 +225,8 @@ export function waitForProofExchangeRecordSubject(
     timeoutMs?: number
   }
 ) {
-  const observable = subject instanceof ReplaySubject ? subject.asObservable() : subject
+  const observable: Observable<ProofStateChangedEvent> =
+    subject instanceof ReplaySubject ? subject.asObservable() : subject
   return firstValueFrom(
     observable.pipe(
       filter((e) => previousState === undefined || e.payload.previousState === previousState),
@@ -824,6 +825,8 @@ export async function setupJsonLdProofsTestMultipleCredentials(
   const autoAcceptCredentials = AutoAcceptCredential.Always
   const indyCredentialFormat = new IndyCredentialFormatService()
   const jsonLdCredentialFormat = new JsonLdCredentialFormatService()
+  const indyProofFormat = new IndyProofFormatService()
+  const PresentationExchangeProofFormat = new PresentationExchangeProofFormatService()
 
   const modules = {
     // Initialize custom credentials module (with jsonLdCredentialFormat enabled)
@@ -833,6 +836,16 @@ export async function setupJsonLdProofsTestMultipleCredentials(
         new V1CredentialProtocol({ indyCredentialFormat }),
         new V2CredentialProtocol({
           credentialFormats: [indyCredentialFormat, jsonLdCredentialFormat],
+        }),
+      ],
+    }),
+    // Initialize custom proofs module (with PresentationExchangeProofFormat enabled)
+    proofs: new ProofsModule({
+      autoAcceptProofs,
+      proofProtocols: [
+        new V1ProofProtocol({ indyProofFormat }),
+        new V2ProofProtocol({
+          proofFormats: [indyProofFormat, PresentationExchangeProofFormat],
         }),
       ],
     }),

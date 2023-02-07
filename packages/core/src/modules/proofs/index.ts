@@ -4,7 +4,6 @@ export * from './models'
 export * from './protocol'
 export * from './repository'
 export * from './ProofEvents'
-export * from './ProofResponseCoordinator'
 
 // Api
 export * from './ProofsApi'

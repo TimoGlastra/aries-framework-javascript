@@ -408,7 +408,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
       // Assert
       proofRecord.assertProtocolVersion('v2')
-      proofRecord.assertState(ProofState.RequestSent)
+      proofRecord.assertState(ProofState.ProposalSent)
       connectionService.assertConnectionOrServiceDecorator(messageContext, {
         previousReceivedMessage,
         previousSentMessage,

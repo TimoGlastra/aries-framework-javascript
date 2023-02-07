@@ -9,7 +9,6 @@ import { Subject } from 'rxjs'
 
 import { AriesFrameworkError, CredentialFormatSpec } from '../../../../..'
 import { getAgentConfig, getAgentContext, getMockConnection, mockFunction } from '../../../../../../tests/helpers'
-import { Dispatcher } from '../../../../../agent/Dispatcher'
 import { EventEmitter } from '../../../../../agent/EventEmitter'
 import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
 import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
@@ -19,7 +18,6 @@ import { JsonEncoder } from '../../../../../utils/JsonEncoder'
 import { AckStatus } from '../../../../common/messages/AckMessage'
 import { DidExchangeState } from '../../../../connections'
 import { ConnectionService } from '../../../../connections/services/ConnectionService'
-import { RoutingService } from '../../../../routing/services/RoutingService'
 import { CredentialEventTypes } from '../../../CredentialEvents'
 import { credReq } from '../../../__tests__/fixtures'
 import { CredentialProblemReportReason } from '../../../errors/CredentialProblemReportReason'
@@ -53,16 +51,12 @@ const CredentialRepositoryMock = CredentialRepository as jest.Mock<CredentialRep
 const IndyCredentialFormatServiceMock = IndyCredentialFormatService as jest.Mock<IndyCredentialFormatService>
 const JsonLdCredentialFormatServiceMock = JsonLdCredentialFormatService as jest.Mock<JsonLdCredentialFormatService>
 const DidCommMessageRepositoryMock = DidCommMessageRepository as jest.Mock<DidCommMessageRepository>
-const RoutingServiceMock = RoutingService as jest.Mock<RoutingService>
 const ConnectionServiceMock = ConnectionService as jest.Mock<ConnectionService>
-const DispatcherMock = Dispatcher as jest.Mock<Dispatcher>
 
 const credentialRepository = new CredentialRepositoryMock()
 const didCommMessageRepository = new DidCommMessageRepositoryMock()
-const routingService = new RoutingServiceMock()
 const indyCredentialFormatService = new IndyCredentialFormatServiceMock()
 const jsonLdCredentialFormatService = new JsonLdCredentialFormatServiceMock()
-const dispatcher = new DispatcherMock()
 const connectionService = new ConnectionServiceMock()
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -83,8 +77,6 @@ const agentContext = getAgentContext({
   registerInstances: [
     [CredentialRepository, credentialRepository],
     [DidCommMessageRepository, didCommMessageRepository],
-    [RoutingService, routingService],
-    [Dispatcher, dispatcher],
     [ConnectionService, connectionService],
     [EventEmitter, eventEmitter],
   ],
@@ -687,22 +679,25 @@ describe('credentialProtocol', () => {
   })
 
   describe('createProblemReport', () => {
-    test('returns problem report message base once get error', () => {
+    test('returns problem report message base once get error', async () => {
       // given
       const credentialRecord = mockCredentialRecord({
         state: CredentialState.OfferReceived,
         threadId: 'somethreadid',
         connectionId: 'b1e2f039-aa39-40be-8643-6ce2797b5190',
       })
-      const message = 'Indy error'
+      const description = 'Indy error'
       mockFunction(credentialRepository.getById).mockResolvedValue(credentialRecord)
 
       // when
-      const credentialProblemReportMessage = credentialProtocol.createProblemReport(agentContext, { description })
+      const { message } = await credentialProtocol.createProblemReport(agentContext, {
+        description,
+        credentialRecord,
+      })
 
-      credentialProblemReportMessage.setThread({ threadId: 'somethreadid' })
+      message.setThread({ threadId: 'somethreadid' })
       // then
-      expect(credentialProblemReportMessage.toJSON()).toMatchObject({
+      expect(message.toJSON()).toMatchObject({
         '@id': expect.any(String),
         '@type': 'https://didcomm.org/issue-credential/2.0/problem-report',
         '~thread': {
@@ -710,21 +705,21 @@ describe('credentialProtocol', () => {
         },
         description: {
           code: CredentialProblemReportReason.IssuanceAbandoned,
-          en: message,
+          en: description,
         },
       })
     })
   })
 
   describe('processProblemReport', () => {
-    const credentialProblemReportMessage = new V2CredentialProblemReportMessage({
+    const message = new V2CredentialProblemReportMessage({
       description: {
         en: 'Indy error',
         code: CredentialProblemReportReason.IssuanceAbandoned,
       },
     })
-    credentialProblemReportMessage.setThread({ threadId: 'somethreadid' })
-    const messageContext = new InboundMessageContext(credentialProblemReportMessage, {
+    message.setThread({ threadId: 'somethreadid' })
+    const messageContext = new InboundMessageContext(message, {
       connection,
       agentContext,
     })

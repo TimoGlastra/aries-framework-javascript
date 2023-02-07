@@ -7,9 +7,6 @@ import type { ProblemReportMessage } from '../../../problem-reports'
 import type { ProofFormatService } from '../../formats'
 import type { ProofFormat } from '../../formats/ProofFormat'
 import type { IndyProofFormat } from '../../formats/indy/IndyProofFormat'
-import type { ProofAttributeInfo } from '../../formats/indy/models'
-import type { ProofRequest } from '../../formats/indy/models/ProofRequest'
-import type { RequestedCredentials } from '../../formats/indy/models/RequestedCredentials'
 import type { ProofProtocol } from '../ProofProtocol'
 import type {
   AcceptPresentationOptions,
@@ -37,9 +34,6 @@ import { MessageValidator } from '../../../../utils/MessageValidator'
 import { uuid } from '../../../../utils/uuid'
 import { AckStatus } from '../../../common/messages/AckMessage'
 import { ConnectionService } from '../../../connections'
-import { CredentialsApi } from '../../../credentials'
-import { IndyCredentialInfo } from '../../../credentials/formats/indy/models/IndyCredentialInfo'
-import { IndyHolderService } from '../../../indy'
 import { ProofsModuleConfig } from '../../ProofsModuleConfig'
 import { PresentationProblemReportReason } from '../../errors/PresentationProblemReportReason'
 import { createRequestFromPreview } from '../../formats/indy/util'
@@ -210,15 +204,13 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
         previousSentMessage,
       })
 
-      // TODO: processProposal on format? or manual verify here?
-
       // Update record
-      await this.updateState(agentContext, proofRecord, ProofState.ProposalReceived)
       await didCommMessageRepository.saveOrUpdateAgentMessage(agentContext, {
         agentMessage: proposalMessage,
         associatedRecordId: proofRecord.id,
         role: DidCommMessageRole.Receiver,
       })
+      await this.updateState(agentContext, proofRecord, ProofState.ProposalReceived)
     } else {
       agentContext.config.logger.debug('Proof record does not exists yet for incoming proposal')
 
@@ -234,15 +226,15 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
       // Assert
       connectionService.assertConnectionOrServiceDecorator(messageContext)
 
-      // Save record
-      await proofRepository.save(agentContext, proofRecord)
-      this.emitStateChangedEvent(agentContext, proofRecord, null)
-
       await didCommMessageRepository.saveOrUpdateAgentMessage(agentContext, {
         agentMessage: proposalMessage,
         associatedRecordId: proofRecord.id,
         role: DidCommMessageRole.Sender,
       })
+
+      // Save record
+      await proofRepository.save(agentContext, proofRecord)
+      this.emitStateChangedEvent(agentContext, proofRecord, null)
     }
 
     return proofRecord
@@ -1091,7 +1083,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
     return {
       proposal: proposalMessage
         ? {
-            indy: indyProposeProof,
+            indy: indyProposeProof?.toJSON(),
           }
         : undefined,
       request: requestMessage
@@ -1105,75 +1097,6 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
           }
         : undefined,
     }
-  }
-
-  /**
-   * Retrieves the linked attachments for an {@link indyProofRequest}
-   * @param indyProofRequest The proof request for which the linked attachments have to be found
-   * @param requestedCredentials The requested credentials
-   * @returns a list of attachments that are linked to the requested credentials
-   */
-  private async getRequestedAttachmentsForRequestedCredentials(
-    agentContext: AgentContext,
-    indyProofRequest: ProofRequest,
-    requestedCredentials: RequestedCredentials
-  ): Promise<Attachment[] | undefined> {
-    const attachments: Attachment[] = []
-    const credentialIds = new Set<string>()
-    const requestedAttributesNames: (string | undefined)[] = []
-
-    const indyHolderService = agentContext.dependencyManager.resolve(IndyHolderService)
-    const credentialApi = agentContext.dependencyManager.resolve(CredentialsApi)
-
-    // Get the credentialIds if it contains a hashlink
-    for (const [referent, requestedAttribute] of Object.entries(requestedCredentials.requestedAttributes)) {
-      // Find the requested Attributes
-      const requestedAttributes = indyProofRequest.requestedAttributes.get(referent) as ProofAttributeInfo
-
-      // List the requested attributes
-      requestedAttributesNames.push(...(requestedAttributes.names ?? [requestedAttributes.name]))
-
-      //Get credentialInfo
-      if (!requestedAttribute.credentialInfo) {
-        const indyCredentialInfo = await indyHolderService.getCredential(agentContext, requestedAttribute.credentialId)
-        requestedAttribute.credentialInfo = JsonTransformer.fromJSON(indyCredentialInfo, IndyCredentialInfo)
-      }
-
-      // Find the attributes that have a hashlink as a value
-      for (const attribute of Object.values(requestedAttribute.credentialInfo.attributes)) {
-        if (attribute.toLowerCase().startsWith('hl:')) {
-          credentialIds.add(requestedAttribute.credentialId)
-        }
-      }
-    }
-
-    // Only continues if there is an attribute value that contains a hashlink
-    for (const credentialId of credentialIds) {
-      // Get the credentialRecord that matches the ID
-
-      const [credentialRecord] = await credentialApi.findAllByQuery({
-        credentialIds: [credentialId],
-      })
-
-      if (credentialRecord && credentialRecord.linkedAttachments) {
-        // Get the credentials that have a hashlink as value and are requested
-        const requestedCredentials = credentialRecord.credentialAttributes?.filter(
-          (credential) =>
-            credential.value.toLowerCase().startsWith('hl:') && requestedAttributesNames.includes(credential.name)
-        )
-
-        // Get the linked attachments that match the requestedCredentials
-        const linkedAttachments = credentialRecord.linkedAttachments.filter((attachment) =>
-          requestedCredentials?.map((credential) => credential.value.split(':')[1]).includes(attachment.id)
-        )
-
-        if (linkedAttachments) {
-          attachments.push(...linkedAttachments)
-        }
-      }
-    }
-
-    return attachments.length ? attachments : undefined
   }
 
   private assertOnlyIndyFormat(proofFormats: Record<string, unknown>) {

@@ -6,7 +6,6 @@ import type { V1PresentationPreview } from '../../v1/models/V1PresentationPrevie
 import { setupProofsTest, waitForProofExchangeRecord } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
 import { DidCommMessageRepository } from '../../../../../storage'
-import { V2_INDY_PRESENTATION_PROPOSAL } from '../../../formats/indy/IndyProofFormat'
 import { ProofState } from '../../../models/ProofState'
 import { V2ProposePresentationMessage } from '../messages/V2ProposePresentationMessage'
 
@@ -47,7 +46,6 @@ describe('Present Proof', () => {
       proofFormats: {
         indy: {
           name: 'ProofRequest',
-          nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
           version: '1.0',
           attributes: presentationPreview.attributes,
           predicates: presentationPreview.predicates,
@@ -71,7 +69,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_INDY_PRESENTATION_PROPOSAL,
+          format: 'hlindy/proof-req@v2',
         },
       ],
       proposalsAttach: [

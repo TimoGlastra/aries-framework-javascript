@@ -54,7 +54,6 @@ describe('Present Proof', () => {
       proofFormats: {
         indy: {
           name: 'proof-request',
-          nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
           version: '1.0',
           attributes: presentationPreview.attributes.filter((attribute) => attribute.name !== 'name'),
           predicates: presentationPreview.predicates,
@@ -200,7 +199,6 @@ describe('Present Proof', () => {
       proofFormats: {
         indy: {
           name: 'proof-request',
-          nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
           version: '1.0',
           attributes: presentationPreview.attributes.filter((attribute) => attribute.name === 'name'),
           predicates: presentationPreview.predicates,
@@ -327,29 +325,25 @@ describe('Present Proof', () => {
       aliceProofExchangeRecord.id
     )) as V1RequestPresentationMessage
 
-    const predicateKey = proofRequestMessage.indyProofRequest?.requestedPredicates?.keys().next().value
+    const predicateKey = Object.keys(proofRequestMessage.indyProofRequest?.requested_predicates ?? {})[0]
     const predicate = Object.values(predicates)[0]
 
     expect(proofRequestMessage.indyProofRequest).toMatchObject({
       name: 'Proof Request',
       version: '1.0',
-      requestedAttributes: new Map<string, ProofAttributeInfo>(
-        Object.entries({
-          '0': new ProofAttributeInfo({
-            name: 'name',
-            restrictions: [
-              new AttributeFilter({
-                credentialDefinitionId: credDefId,
-              }),
-            ],
-          }),
-        })
-      ),
-      requestedPredicates: new Map<string, ProofPredicateInfo>(
-        Object.entries({
-          [predicateKey]: predicate,
-        })
-      ),
+      requested_attributes: {
+        '0': {
+          name: 'name',
+          restrictions: [
+            {
+              cred_def_id: credDefId,
+            },
+          ],
+        },
+      },
+      requested_predicates: {
+        [predicateKey]: predicate,
+      },
     })
   })
 })

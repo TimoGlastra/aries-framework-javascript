@@ -46,7 +46,6 @@ describe('Present Proof', () => {
       proofFormats: {
         indy: {
           name: 'ProofRequest',
-          nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
           version: '1.0',
           attributes: presentationPreview.attributes,
           predicates: presentationPreview.predicates,

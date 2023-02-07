@@ -9,7 +9,6 @@ import { setupProofsTest, waitForProofExchangeRecord } from '../../../../../../t
 import testLogger from '../../../../../../tests/logger'
 import { DidCommMessageRepository } from '../../../../../storage/didcomm'
 import { JsonTransformer } from '../../../../../utils/JsonTransformer'
-import { V2_INDY_PRESENTATION_PROPOSAL, V2_INDY_PRESENTATION_REQUEST } from '../../../formats/indy/IndyProofFormat'
 import { AttributeFilter } from '../../../formats/indy/models/AttributeFilter'
 import { PredicateType } from '../../../formats/indy/models/PredicateType'
 import { ProofAttributeInfo } from '../../../formats/indy/models/ProofAttributeInfo'
@@ -57,7 +56,6 @@ describe('Present Proof', () => {
       proofFormats: {
         indy: {
           name: 'proof-request',
-          nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
           version: '1.0',
           attributes: presentationPreview.attributes.filter((attribute) => attribute.name !== 'name'),
           predicates: presentationPreview.predicates,
@@ -81,7 +79,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_INDY_PRESENTATION_PROPOSAL,
+          format: 'hlindy/proof-req@v2',
         },
       ],
       proposalsAttach: [
@@ -229,7 +227,6 @@ describe('Present Proof', () => {
       proofFormats: {
         indy: {
           name: 'proof-request',
-          nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
           version: '1.0',
           attributes: presentationPreview.attributes.filter((attribute) => attribute.name === 'name'),
           predicates: presentationPreview.predicates,
@@ -253,7 +250,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_INDY_PRESENTATION_PROPOSAL,
+          format: 'hlindy/proof-req@v2',
         },
       ],
       proposalsAttach: [
@@ -331,10 +328,10 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_INDY_PRESENTATION_REQUEST,
+          format: 'hlindy/proof-req@v2',
         },
       ],
-      requestPresentationsAttach: [
+      requestAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -362,7 +359,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_INDY_PRESENTATION_PROPOSAL,
+          format: 'hlindy/proof-req@v2',
         },
       ],
       proposalsAttach: [
@@ -422,23 +419,20 @@ describe('Present Proof', () => {
       name: 'proof-request',
       nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
       version: '1.0',
-      requestedAttributes: new Map<string, ProofAttributeInfo>(
-        Object.entries({
-          '0': new ProofAttributeInfo({
-            name: 'name',
-            restrictions: [
-              new AttributeFilter({
-                credentialDefinitionId: credDefId,
-              }),
-            ],
-          }),
-        })
-      ),
-      requestedPredicates: new Map<string, ProofPredicateInfo>(
-        Object.entries({
-          [predicateKey]: predicate,
-        })
-      ),
+      requested_attributes: {
+        '0': {
+          name: 'name',
+          restrictions: [
+            {
+              cred_def_id: credDefId,
+            },
+          ],
+        },
+      },
+
+      requested_predicates: {
+        [predicateKey]: predicate,
+      },
     })
   })
 })

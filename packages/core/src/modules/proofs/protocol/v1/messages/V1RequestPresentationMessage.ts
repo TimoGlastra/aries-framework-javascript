@@ -27,7 +27,7 @@ export class V1RequestPresentationMessage extends AgentMessage {
     if (options) {
       this.id = options.id ?? this.generateId()
       this.comment = options.comment
-      this.requestPresentationAttachments = options.requestPresentationAttachments
+      this.requestAttachments = options.requestPresentationAttachments
     }
   }
 
@@ -52,17 +52,15 @@ export class V1RequestPresentationMessage extends AgentMessage {
     each: true,
   })
   @IsInstance(Attachment, { each: true })
-  public requestPresentationAttachments!: Attachment[]
+  public requestAttachments!: Attachment[]
 
   public get indyProofRequest(): IndyProofRequest | null {
-    const attachment = this.requestPresentationAttachments.find(
-      (attachment) => attachment.id === INDY_PROOF_REQUEST_ATTACHMENT_ID
-    )
+    const attachment = this.requestAttachments.find((attachment) => attachment.id === INDY_PROOF_REQUEST_ATTACHMENT_ID)
     // Extract proof request from attachment
     return attachment?.getDataAsJson<IndyProofRequest>() ?? null
   }
 
   public getRequestAttachmentById(id: string): Attachment | undefined {
-    return this.requestPresentationAttachments.find((attachment) => attachment.id === id)
+    return this.requestAttachments.find((attachment) => attachment.id === id)
   }
 }

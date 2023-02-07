@@ -1,5 +1,3 @@
-import type { AgentContext } from '../../../../../agent'
-import type { Wallet } from '../../../../../wallet/Wallet'
 import type { ProofStateChangedEvent } from '../../../ProofEvents'
 import type { CustomProofTags } from '../../../repository/ProofExchangeRecord'
 
@@ -10,14 +8,12 @@ import { EventEmitter } from '../../../../../agent/EventEmitter'
 import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
 import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
 import { DidCommMessageRepository } from '../../../../../storage'
+import { uuid } from '../../../../../utils/uuid'
 import { ConnectionService, DidExchangeState } from '../../../../connections'
-import { IndyLedgerService } from '../../../../ledger/services/IndyLedgerService'
 import { ProofEventTypes } from '../../../ProofEvents'
-import { credDef } from '../../../__tests__/fixtures'
 import { PresentationProblemReportReason } from '../../../errors/PresentationProblemReportReason'
-import { V2_INDY_PRESENTATION, V2_INDY_PRESENTATION_REQUEST } from '../../../formats'
 import { IndyProofFormatService } from '../../../formats/indy/IndyProofFormatService'
-import { PresentationExchangeProofFormatService } from '../../../formats/presentation-exchange/PresentationExchangeProofFormatService'
+import { ProofFormatSpec } from '../../../models/ProofFormatSpec'
 import { ProofState } from '../../../models/ProofState'
 import { ProofExchangeRecord } from '../../../repository/ProofExchangeRecord'
 import { ProofRepository } from '../../../repository/ProofRepository'
@@ -25,22 +21,35 @@ import { V2ProofProtocol } from '../V2ProofProtocol'
 import { V2PresentationProblemReportMessage, V2RequestPresentationMessage } from '../messages'
 
 // Mock classes
-jest.mock('../repository/ProofRepository')
-jest.mock('../../../modules/ledger/services/IndyLedgerService')
-jest.mock('../../indy/services/IndyHolderService')
-jest.mock('../../indy/services/IndyIssuerService')
-jest.mock('../../indy/services/IndyVerifierService')
-jest.mock('../../connections/services/ConnectionService')
-jest.mock('../../../storage/Repository')
+jest.mock('../../../repository/ProofRepository')
+jest.mock('../../../../connections/services/ConnectionService')
+jest.mock('../../../../../storage/Repository')
 
 // Mock typed object
 const ProofRepositoryMock = ProofRepository as jest.Mock<ProofRepository>
-const IndyLedgerServiceMock = IndyLedgerService as jest.Mock<IndyLedgerService>
 const connectionServiceMock = ConnectionService as jest.Mock<ConnectionService>
 const didCommMessageRepositoryMock = DidCommMessageRepository as jest.Mock<DidCommMessageRepository>
 const IndyProofFormatServiceMock = IndyProofFormatService as jest.Mock<IndyProofFormatService>
-const PresentationExchangeFormatServiceMock =
-  PresentationExchangeProofFormatService as jest.Mock<PresentationExchangeProofFormatService>
+
+const proofRepository = new ProofRepositoryMock()
+const connectionService = new connectionServiceMock()
+const didCommMessageRepository = new didCommMessageRepositoryMock()
+const indyProofFormatService = new IndyProofFormatServiceMock()
+
+const agentConfig = getAgentConfig('V2ProofProtocolTest')
+const eventEmitter = new EventEmitter(agentConfig.agentDependencies, new Subject())
+
+const agentContext = getAgentContext({
+  registerInstances: [
+    [ProofRepository, proofRepository],
+    [DidCommMessageRepository, didCommMessageRepository],
+    [ConnectionService, connectionService],
+    [EventEmitter, eventEmitter],
+  ],
+  agentConfig,
+})
+
+const proofProtocol = new V2ProofProtocol({ proofFormats: [indyProofFormatService] })
 
 const connection = getMockConnection({
   id: '123',
@@ -66,30 +75,16 @@ const mockProofExchangeRecord = ({
   id,
 }: {
   state?: ProofState
-  requestMessage?: V2RequestPresentationMessage
   tags?: CustomProofTags
   threadId?: string
   connectionId?: string
   id?: string
 } = {}) => {
-  const requestPresentationMessage = new V2RequestPresentationMessage({
-    attachmentInfo: [
-      {
-        format: {
-          attachmentId: 'abdc8b63-29c6-49ad-9e10-98f9d85db9a2',
-          format: V2_INDY_PRESENTATION,
-        },
-        attachment: requestAttachment,
-      },
-    ],
-    comment: 'some comment',
-  })
-
   const proofRecord = new ProofExchangeRecord({
     protocolVersion: 'v2',
     id,
     state: state || ProofState.RequestSent,
-    threadId: threadId ?? requestPresentationMessage.id,
+    threadId: threadId ?? uuid(),
     connectionId: connectionId ?? '123',
     tags,
   })
@@ -97,60 +92,23 @@ const mockProofExchangeRecord = ({
   return proofRecord
 }
 
-describe('V2ProofService', () => {
-  let proofRepository: ProofRepository
-  let proofService: V2ProofProtocol
-  let ledgerService: IndyLedgerService
-  let wallet: Wallet
-  let eventEmitter: EventEmitter
-  let connectionService: ConnectionService
-  let didCommMessageRepository: DidCommMessageRepository
-  let indyProofFormatService: IndyProofFormatService
-  let presentationExchangeFormatService: PresentationExchangeProofFormatService
-  let agentContext: AgentContext
-
-  beforeEach(() => {
-    agentContext = getAgentContext()
-    const agentConfig = getAgentConfig('V2ProofServiceTest')
-    proofRepository = new ProofRepositoryMock()
-    ledgerService = new IndyLedgerServiceMock()
-    eventEmitter = new EventEmitter(agentConfig.agentDependencies, new Subject())
-    connectionService = new connectionServiceMock()
-    didCommMessageRepository = new didCommMessageRepositoryMock()
-    indyProofFormatService = new IndyProofFormatServiceMock()
-    presentationExchangeFormatService = new PresentationExchangeFormatServiceMock()
-
-    proofService = new V2ProofProtocol(
-      agentConfig,
-      connectionService,
-      proofRepository,
-      didCommMessageRepository,
-      eventEmitter,
-      indyProofFormatService,
-      presentationExchangeFormatService,
-      wallet
-    )
-
-    mockFunction(ledgerService.getCredentialDefinition).mockReturnValue(Promise.resolve(credDef))
-  })
-
+describe('V2ProofProtocol', () => {
   describe('processProofRequest', () => {
     let presentationRequest: V2RequestPresentationMessage
     let messageContext: InboundMessageContext<V2RequestPresentationMessage>
 
     beforeEach(() => {
       presentationRequest = new V2RequestPresentationMessage({
-        attachmentInfo: [
-          {
-            format: {
-              attachmentId: 'abdc8b63-29c6-49ad-9e10-98f9d85db9a2',
-              format: V2_INDY_PRESENTATION_REQUEST,
-            },
-            attachment: requestAttachment,
-          },
+        formats: [
+          new ProofFormatSpec({
+            attachmentId: 'abdc8b63-29c6-49ad-9e10-98f9d85db9a2',
+            format: 'hlindy/proof-req@v2.0',
+          }),
         ],
+        requestAttachments: [requestAttachment],
         comment: 'Proof Request',
       })
+
       messageContext = new InboundMessageContext(presentationRequest, { agentContext, connection })
     })
 
@@ -158,7 +116,7 @@ describe('V2ProofService', () => {
       const repositorySaveSpy = jest.spyOn(proofRepository, 'save')
 
       // when
-      const returnedProofExchangeRecord = await proofService.processRequest(messageContext)
+      const returnedProofExchangeRecord = await proofProtocol.processRequest(messageContext)
 
       // then
       const expectedProofExchangeRecord = {
@@ -180,7 +138,7 @@ describe('V2ProofService', () => {
       eventEmitter.on<ProofStateChangedEvent>(ProofEventTypes.ProofStateChanged, eventListenerMock)
 
       // when
-      await proofService.processRequest(messageContext)
+      await proofProtocol.processRequest(messageContext)
 
       // then
       expect(eventListenerMock).toHaveBeenCalledWith({
@@ -259,7 +217,7 @@ describe('V2ProofService', () => {
       mockFunction(proofRepository.getSingleByQuery).mockReturnValue(Promise.resolve(proof))
 
       // when
-      const returnedCredentialRecord = await proofService.processProblemReport(messageContext)
+      const returnedCredentialRecord = await proofProtocol.processProblemReport(messageContext)
 
       // then
       const expectedCredentialRecord = {

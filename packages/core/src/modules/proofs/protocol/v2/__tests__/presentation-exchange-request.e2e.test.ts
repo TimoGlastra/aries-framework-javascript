@@ -1,4 +1,4 @@
-import type { Agent } from '../../../../../agent/Agent'
+import type { JsonLdProofsTestsAgent } from '../../../../../../tests/helpers'
 import type { ConnectionRecord } from '../../../../connections/repository/ConnectionRecord'
 import type { ProofExchangeRecord } from '../../../repository/ProofExchangeRecord'
 
@@ -6,16 +6,12 @@ import { setupJsonLdProofsTest, waitForProofExchangeRecord } from '../../../../.
 import testLogger from '../../../../../../tests/logger'
 import { DidCommMessageRepository } from '../../../../../storage'
 import { TEST_INPUT_DESCRIPTORS_CITIZENSHIP } from '../../../__tests__/fixtures'
-import {
-  V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL,
-  V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
-} from '../../../formats/presentation-exchange/PresentationExchangeProofFormat'
 import { ProofState } from '../../../models/ProofState'
 import { V2RequestPresentationMessage } from '../messages'
 
-describe('Present Proof', () => {
-  let faberAgent: Agent
-  let aliceAgent: Agent
+describe('Present Proof | V2 | DIF Presentation Exchange', () => {
+  let faberAgent: JsonLdProofsTestsAgent
+  let aliceAgent: JsonLdProofsTestsAgent
   let aliceConnection: ConnectionRecord
   let faberProofExchangeRecord: ProofExchangeRecord
   let aliceProofExchangeRecord: ProofExchangeRecord
@@ -46,11 +42,7 @@ describe('Present Proof', () => {
       protocolVersion: 'v2',
       proofFormats: {
         presentationExchange: {
-          // this is of type PresentationDefinitionV1 (see pex library)
-          presentationDefinition: {
-            id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
-            input_descriptors: [TEST_INPUT_DESCRIPTORS_CITIZENSHIP],
-          },
+          inputDescriptors: [TEST_INPUT_DESCRIPTORS_CITIZENSHIP],
         },
       },
       comment: 'V2 Presentation Exchange propose proof test',
@@ -60,22 +52,21 @@ describe('Present Proof', () => {
     faberProofExchangeRecord = await faberPresentationRecordPromise
 
     const proposal = await faberAgent.proofs.findProposalMessage(faberProofExchangeRecord.id)
-
     expect(proposal).toMatchObject({
       type: 'https://didcomm.org/present-proof/2.0/propose-presentation',
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL,
+          format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
-      proposalsAttach: [
+      proposalAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
           data: {
             json: {
-              input_descriptors: expect.any(Array),
+              input_descriptors: [TEST_INPUT_DESCRIPTORS_CITIZENSHIP],
             },
           },
         },
@@ -121,10 +112,10 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
+          format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
-      requestPresentationsAttach: [
+      requestAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',

@@ -67,7 +67,7 @@ export interface ProofsApi<PPs extends ProofProtocol[]> {
   ): Promise<SelectCredentialsForProofRequestReturn<PPs>>
 
   // Get credentials for request
-  getCredentialsForProofRequest(
+  getCredentialsForRequest(
     options: GetCredentialsForProofRequestOptions<PPs>
   ): Promise<GetCredentialsForProofRequestReturn<PPs>>
 
@@ -538,7 +538,7 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
    */
   public async getCredentialsForRequest(
     options: GetCredentialsForProofRequestOptions<PPs>
-  ): Promise<SelectCredentialsForProofRequestReturn<PPs>> {
+  ): Promise<GetCredentialsForProofRequestReturn<PPs>> {
     const proofRecord = await this.getById(options.proofRecordId)
 
     const protocol = this.getProtocol(proofRecord.protocolVersion)

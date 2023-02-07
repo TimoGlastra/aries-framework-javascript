@@ -2,9 +2,6 @@ import type { SubjectMessage } from '../../../tests/transport/SubjectInboundTran
 import type { CredentialStateChangedEvent } from '../src/modules/credentials'
 import type { JsonCredential } from '../src/modules/credentials/formats/jsonld/JsonLdCredentialFormat'
 import type { ProofStateChangedEvent } from '../src/modules/proofs'
-import type { CreateProofRequestOptions } from '../src/modules/proofs/ProofsApiOptions'
-import type { PresentationExchangeProofFormat } from '../src/modules/proofs/formats/presentation-exchange/PresentationExchangeProofFormat'
-import type { V2ProofProtocol } from '../src/modules/proofs/protocol/v2/V2ProofProtocol'
 import type { Wallet } from '../src/wallet/Wallet'
 import type { PresentationDefinitionV1 } from '@sphereon/pex-models'
 
@@ -17,18 +14,27 @@ import { InjectionSymbols } from '../src/constants'
 import { KeyType } from '../src/crypto/KeyType'
 import { HandshakeProtocol } from '../src/modules/connections/models/HandshakeProtocol'
 import {
+  AutoAcceptCredential,
+  CredentialEventTypes,
   CredentialsModule,
+  CredentialState,
   IndyCredentialFormatService,
   JsonLdCredentialFormatService,
   V1CredentialProtocol,
   V2CredentialProtocol,
-  AutoAcceptCredential,
-  CredentialEventTypes,
-  CredentialState,
 } from '../src/modules/credentials'
 import { DidKey } from '../src/modules/dids'
-import { ProofEventTypes, ProofState, AutoAcceptProof } from '../src/modules/proofs'
+import {
+  ProofsModule,
+  V1ProofProtocol,
+  AutoAcceptProof,
+  IndyProofFormatService,
+  PresentationExchangeProofFormatService,
+  ProofEventTypes,
+  ProofState,
+} from '../src/modules/proofs'
 import { TEST_INPUT_DESCRIPTORS_CITIZENSHIP } from '../src/modules/proofs/__tests__/fixtures'
+import { V2ProofProtocol } from '../src/modules/proofs/protocol/v2/V2ProofProtocol'
 import { MediatorPickupStrategy } from '../src/modules/routing/MediatorPickupStrategy'
 import { W3cVcModule } from '../src/modules/vc'
 import { customDocumentLoader } from '../src/modules/vc/__tests__/documentLoader'
@@ -67,7 +73,12 @@ describe('Present Proof', () => {
       id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
     }
 
-    const outOfBandRequestOptions: CreateProofRequestOptions<[PresentationExchangeProofFormat], [V2ProofProtocol]> = {
+    let aliceProofExchangeRecordPromise = waitForProofExchangeRecordSubject(aliceReplay, {
+      state: ProofState.RequestReceived,
+    })
+
+    // eslint-disable-next-line prefer-const
+    let { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
       protocolVersion: 'v2',
       proofFormats: {
         presentationExchange: {
@@ -78,16 +89,7 @@ describe('Present Proof', () => {
           presentationDefinition,
         },
       },
-    }
-
-    let aliceProofExchangeRecordPromise = waitForProofExchangeRecordSubject(aliceReplay, {
-      state: ProofState.RequestReceived,
     })
-
-    // eslint-disable-next-line prefer-const
-    let { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest(
-      outOfBandRequestOptions
-    )
 
     const { message: requestMessage } = await faberAgent.oob.createLegacyConnectionlessInvitation({
       recordId: faberProofExchangeRecord.id,
@@ -101,11 +103,8 @@ describe('Present Proof', () => {
 
     testLogger.test('Alice accepts presentation request from Faber')
 
-    const requestedCredentials = await aliceAgent.proofs.autoSelectCredentialsForProofRequest({
+    const requestedCredentials = await aliceAgent.proofs.selectCredentialsForRequest({
       proofRecordId: aliceProofExchangeRecord.id,
-      config: {
-        filterByPresentationPreview: true,
-      },
     })
 
     const acceptPresentationOptions = {
@@ -132,7 +131,7 @@ describe('Present Proof', () => {
     })
 
     // Faber accepts presentation
-    await faberAgent.proofs.acceptPresentation(faberProofExchangeRecord.id)
+    await faberAgent.proofs.acceptPresentation({ proofRecordId: faberProofExchangeRecord.id })
 
     // Alice waits till it receives presentation ack
     aliceProofExchangeRecord = await aliceProofExchangeRecordPromise
@@ -196,6 +195,8 @@ describe('Present Proof', () => {
 
     const indyCredentialFormat = new IndyCredentialFormatService()
     const jsonLdCredentialFormat = new JsonLdCredentialFormatService()
+    const indyProofFormat = new IndyProofFormatService()
+    const presentationExchangeProofFormatService = new PresentationExchangeProofFormatService()
 
     const unique = uuid().substring(0, 4)
 
@@ -206,6 +207,15 @@ describe('Present Proof', () => {
           new V1CredentialProtocol({ indyCredentialFormat }),
           new V2CredentialProtocol({
             credentialFormats: [indyCredentialFormat, jsonLdCredentialFormat],
+          }),
+        ],
+      }),
+      // Initialize custom proofs module (with presentationExchangeFormat enabled)
+      proofs: new ProofsModule({
+        proofProtocols: [
+          new V1ProofProtocol({ indyProofFormat }),
+          new V2ProofProtocol({
+            proofFormats: [indyProofFormat, presentationExchangeProofFormatService],
           }),
         ],
       }),
@@ -379,20 +389,6 @@ describe('Present Proof', () => {
       id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
     }
 
-    const outOfBandRequestOptions: CreateProofRequestOptions<[PresentationExchangeProofFormat], [V2ProofProtocol]> = {
-      protocolVersion: 'v2',
-      proofFormats: {
-        presentationExchange: {
-          options: {
-            challenge: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
-            domain: '',
-          },
-          presentationDefinition,
-        },
-      },
-      autoAcceptProof: AutoAcceptProof.ContentApproved,
-    }
-
     const aliceProofExchangeRecordPromise = waitForProofExchangeRecordSubject(aliceReplay, {
       state: ProofState.Done,
       timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
@@ -404,9 +400,19 @@ describe('Present Proof', () => {
     })
 
     // eslint-disable-next-line prefer-const
-    let { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest(
-      outOfBandRequestOptions
-    )
+    let { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
+      protocolVersion: 'v2',
+      proofFormats: {
+        presentationExchange: {
+          options: {
+            challenge: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
+            domain: '',
+          },
+          presentationDefinition,
+        },
+      },
+      autoAcceptProof: AutoAcceptProof.ContentApproved,
+    })
 
     const { message: requestMessage } = await faberAgent.oob.createLegacyConnectionlessInvitation({
       recordId: faberProofExchangeRecord.id,

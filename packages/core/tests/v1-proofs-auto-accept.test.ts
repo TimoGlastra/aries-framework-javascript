@@ -1,14 +1,13 @@
 import type { Agent, ConnectionRecord } from '../src'
 import type { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
 
+import { AutoAcceptProof, ProofState } from '../src'
 import {
-  AutoAcceptProof,
-  ProofState,
   ProofAttributeInfo,
   AttributeFilter,
   ProofPredicateInfo,
   PredicateType,
-} from '../src'
+} from '../src/modules/proofs/formats/indy/models'
 
 import { setupProofsTest, waitForProofExchangeRecord } from './helpers'
 import testLogger from './logger'
@@ -45,7 +44,6 @@ describe('Auto accept present proof', () => {
         protocolVersion: 'v1',
         proofFormats: {
           indy: {
-            nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
             name: 'abc',
             version: '1.0',
             attributes: presentationPreview.attributes,
@@ -94,7 +92,6 @@ describe('Auto accept present proof', () => {
           indy: {
             name: 'proof-request',
             version: '1.0',
-            nonce: '1298236324864',
             requestedAttributes: attributes,
             requestedPredicates: predicates,
           },
@@ -135,7 +132,6 @@ describe('Auto accept present proof', () => {
         protocolVersion: 'v1',
         proofFormats: {
           indy: {
-            nonce: '1298236324864',
             name: 'abc',
             version: '1.0',
             attributes: presentationPreview.attributes,
@@ -191,7 +187,6 @@ describe('Auto accept present proof', () => {
           indy: {
             name: 'proof-request',
             version: '1.0',
-            nonce: '1298236324866',
             requestedAttributes: attributes,
             requestedPredicates: predicates,
           },
@@ -203,7 +198,7 @@ describe('Auto accept present proof', () => {
         state: ProofState.RequestReceived,
       })
 
-      const { proofFormats } = await aliceAgent.proofs.autoSelectCredentialsForProofRequest({ proofRecordId })
+      const { proofFormats } = await aliceAgent.proofs.selectCredentialsForRequest({ proofRecordId })
       await aliceAgent.proofs.acceptRequest({ proofRecordId, proofFormats })
 
       await Promise.all([

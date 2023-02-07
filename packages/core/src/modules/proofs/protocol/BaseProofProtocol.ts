@@ -25,13 +25,13 @@ import type { Query } from '../../../storage/StorageService'
 import type { ProblemReportMessage } from '../../problem-reports'
 import type { ProofStateChangedEvent } from '../ProofEvents'
 import type { ExtractProofFormats, ProofFormatService } from '../formats'
-import type { ProofState } from '../models/ProofState'
 import type { ProofExchangeRecord } from '../repository'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { DidCommMessageRepository } from '../../../storage'
 import { JsonTransformer } from '../../../utils/JsonTransformer'
 import { ProofEventTypes } from '../ProofEvents'
+import { ProofState } from '../models/ProofState'
 import { ProofRepository } from '../repository'
 
 export abstract class BaseProofProtocol<PFs extends ProofFormatService[] = ProofFormatService[]>
@@ -124,7 +124,7 @@ export abstract class BaseProofProtocol<PFs extends ProofFormatService[] = Proof
 
     // Update record
     proofRecord.errorMessage = `${proofProblemReportMessage.description.code}: ${proofProblemReportMessage.description.en}`
-    await this.update(agentContext, proofRecord)
+    await this.updateState(agentContext, proofRecord, ProofState.Abandoned)
     return proofRecord
   }
 

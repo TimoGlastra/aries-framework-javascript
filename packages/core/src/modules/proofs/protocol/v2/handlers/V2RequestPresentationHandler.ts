@@ -25,6 +25,8 @@ export class V2RequestPresentationHandler implements MessageHandler {
       requestMessage: messageContext.message,
     })
 
+    messageContext.agentContext.config.logger.debug(`Should auto respond to request: ${shouldAutoRespond}`)
+
     if (shouldAutoRespond) {
       return await this.acceptRequest(proofRecord, messageContext)
     }

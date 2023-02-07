@@ -70,7 +70,7 @@ const agentContext = getAgentContext({
 // @ts-ignore
 indyCredentialFormatService.credentialRecordType = 'indy'
 
-const connection = getMockConnection({
+const connectionRecord = getMockConnection({
   id: '123',
   state: DidExchangeState.Completed,
 })
@@ -107,7 +107,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
 
   beforeEach(async () => {
     // mock function implementations
-    mockFunction(connectionService.getById).mockResolvedValue(connection)
+    mockFunction(connectionService.getById).mockResolvedValue(connectionRecord)
     mockFunction(indyLedgerService.getCredentialDefinition).mockResolvedValue(credDef)
     mockFunction(indyLedgerService.getSchema).mockResolvedValue(schema)
 
@@ -122,7 +122,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
 
   describe('createProposal', () => {
     const proposeOptions: CreateProposalOptions<[IndyCredentialFormatService]> = {
-      connectionRecord,
+      connectionRecord: connectionRecord,
       credentialFormats: {
         indy: {
           credentialDefinitionId: 'Th7MpTaRZVRYnPiabds81Y:3:CL:17:TAG',
@@ -136,6 +136,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
       },
       comment: 'v1 propose credential test',
     }
+
     test(`creates credential record in ${CredentialState.OfferSent} state with offer, thread id`, async () => {
       const repositorySaveSpy = jest.spyOn(credentialRepository, 'save')
 
@@ -157,7 +158,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
           type: CredentialExchangeRecord.type,
           id: expect.any(String),
           createdAt: expect.any(Date),
-          connectionId: connection.id,
+          connectionId: connectionRecord.id,
           state: CredentialState.ProposalSent,
         })
       )
@@ -267,7 +268,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
         id: expect.any(String),
         createdAt: expect.any(Date),
         threadId: createdCredentialRecord.threadId,
-        connectionId: connection.id,
+        connectionId: connectionRecord.id,
         state: CredentialState.OfferSent,
       })
     })
@@ -356,7 +357,10 @@ describe('V1CredentialProtocolProposeOffer', () => {
       credentialPreview: credentialPreview,
       offerAttachments: [offerAttachment],
     })
-    const messageContext = new InboundMessageContext(credentialOfferMessage, { agentContext, connection })
+    const messageContext = new InboundMessageContext(credentialOfferMessage, {
+      agentContext,
+      connection: connectionRecord,
+    })
 
     test(`creates and return credential record in ${CredentialState.OfferReceived} state with offer, thread ID`, async () => {
       // when
@@ -371,7 +375,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
           id: expect.any(String),
           createdAt: expect.any(Date),
           threadId: credentialOfferMessage.id,
-          connectionId: connection.id,
+          connectionId: connectionRecord.id,
           state: CredentialState.OfferReceived,
           credentialAttributes: undefined,
         })

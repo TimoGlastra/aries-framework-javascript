@@ -3,11 +3,6 @@ import type { ConnectionRecord, ProofExchangeRecord } from '../src'
 
 import { AriesFrameworkError, ProofState } from '../src'
 import { TEST_INPUT_DESCRIPTORS_CITIZENSHIP } from '../src/modules/proofs/__tests__/fixtures'
-import {
-  V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL,
-  V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
-  V2_PRESENTATION_EXCHANGE_PRESENTATION,
-} from '../src/modules/proofs/formats/presentation-exchange/PresentationExchangeProofFormat'
 
 import { setupJsonLdProofsTest, waitForProofExchangeRecord } from './helpers'
 import testLogger from './logger'
@@ -66,7 +61,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL,
+          format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
       proposalsAttach: [
@@ -120,7 +115,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
+          format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
       requestPresentationsAttach: [
@@ -183,7 +178,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_PRESENTATION_EXCHANGE_PRESENTATION,
+          format: 'dif/presentation-exchange/submission@v1.0',
         },
       ],
       presentationsAttach: [
@@ -277,7 +272,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
+          format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
       requestPresentationsAttach: [
@@ -347,7 +342,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_PRESENTATION_EXCHANGE_PRESENTATION,
+          format: 'dif/presentation-exchange/submission@v1.0',
         },
       ],
       presentationsAttach: [
@@ -442,7 +437,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
+          format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
       requestPresentationsAttach: [
@@ -488,7 +483,7 @@ describe('Present Proof', () => {
       proofRecordId: aliceProofExchangeRecord.id,
     })
 
-    const credentials = requestedCredentials.proofFormats.presentationExchange?.credentials
+    const credentials = requestedCredentials.proofFormats.presentationExchange?.verifiableCredential
     if (!credentials) {
       throw new AriesFrameworkError('No credential found in getCredentialsForRequest')
     }
@@ -519,7 +514,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_PRESENTATION_EXCHANGE_PRESENTATION,
+          format: 'dif/presentation-exchange/submission@v1.0',
         },
       ],
       presentationsAttach: [

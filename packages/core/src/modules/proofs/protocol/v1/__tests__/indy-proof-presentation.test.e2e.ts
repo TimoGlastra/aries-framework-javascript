@@ -47,7 +47,6 @@ describe('Present Proof', () => {
       proofFormats: {
         indy: {
           name: 'ProofRequest',
-          nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
           version: '1.0',
           attributes: presentationPreview.attributes,
           predicates: presentationPreview.predicates,
@@ -150,11 +149,8 @@ describe('Present Proof', () => {
   })
 
   test(`Alice accepts presentation request from Faber`, async () => {
-    const requestedCredentials = await aliceAgent.proofs.autoSelectCredentialsForProofRequest({
+    const requestedCredentials = await aliceAgent.proofs.selectCredentialsForRequest({
       proofRecordId: aliceProofExchangeRecord.id,
-      config: {
-        filterByPresentationPreview: true,
-      },
     })
 
     const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
@@ -217,7 +213,7 @@ describe('Present Proof', () => {
     })
 
     // Faber accepts the presentation provided by Alice
-    await faberAgent.proofs.acceptPresentation(faberProofExchangeRecord.id)
+    await faberAgent.proofs.acceptPresentation({ proofRecordId: faberProofExchangeRecord.id })
 
     // Alice waits until she received a presentation acknowledgement
     testLogger.test('Alice waits until she receives a presentation acknowledgement')

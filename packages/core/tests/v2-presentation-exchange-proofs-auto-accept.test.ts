@@ -1,4 +1,6 @@
-import type { Agent, ConnectionRecord } from '../src'
+import type { JsonLdProofsTestsAgent } from './helpers'
+import type { ConnectionRecord } from '../src'
+import type { PresentationDefinitionV1 } from '@sphereon/pex-models'
 import type { IVerifiablePresentation } from '@sphereon/ssi-types'
 
 import { V2PresentationMessage, AutoAcceptProof, ProofState } from '../src'
@@ -52,10 +54,11 @@ const inputDescriptors = [
       },
     ],
   },
-]
+] satisfies PresentationDefinitionV1['input_descriptors']
+
 describe('Auto accept present proof', () => {
-  let faberAgent: Agent
-  let aliceAgent: Agent
+  let faberAgent: JsonLdProofsTestsAgent
+  let aliceAgent: JsonLdProofsTestsAgent
   let faberConnection: ConnectionRecord
   let aliceConnection: ConnectionRecord
 
@@ -134,10 +137,7 @@ describe('Auto accept present proof', () => {
         protocolVersion: 'v2',
         proofFormats: {
           presentationExchange: {
-            presentationDefinition: {
-              id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
-              input_descriptors: [inputDescriptorCitizenship],
-            },
+            inputDescriptors: [inputDescriptorCitizenship],
           },
         },
         comment: 'V2 Presentation Exchange propose proof test',
@@ -210,33 +210,7 @@ describe('Auto accept present proof', () => {
         protocolVersion: 'v2',
         proofFormats: {
           presentationExchange: {
-            // this is of type PresentationDefinitionV1 (see pex library)
-            presentationDefinition: {
-              id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
-              input_descriptors: inputDescriptors,
-              submission_requirements: [
-                {
-                  name: 'Vaccine Information',
-                  purpose: 'We need to know if you are vaccinated',
-                  rule: 'all',
-                  from: 'A',
-                },
-                {
-                  name: 'Citizenship Information',
-                  purpose: 'We need to know if you are a resident',
-                  rule: 'pick',
-                  count: 1,
-                  from: 'B',
-                },
-                {
-                  name: 'More Vaccine Information',
-                  purpose: 'We need to know if you are vaccinated (again)',
-                  rule: 'pick',
-                  count: 1,
-                  from: 'C',
-                },
-              ],
-            },
+            inputDescriptors,
           },
         },
         comment: 'V2 Presentation Exchange propose proof test',
@@ -295,41 +269,7 @@ describe('Auto accept present proof', () => {
         protocolVersion: 'v2',
         proofFormats: {
           presentationExchange: {
-            // this is of type PresentationDefinitionV1 (see pex library)
-            presentationDefinition: {
-              id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
-              input_descriptors: inputDescriptors,
-              submission_requirements: [
-                {
-                  name: 'Vaccine Information',
-                  purpose: 'We need to know if you are vaccinated',
-                  rule: 'all',
-                  from: 'A',
-                },
-                {
-                  name: 'Citizenship Combined With Vaccine Information',
-                  purpose: 'We need to know if you are either a resident or vaccinated',
-                  rule: 'pick', // OR query: retrieve 1 from B OR 1 from C
-                  count: 1,
-                  from_nested: [
-                    {
-                      name: 'Citizenship Information',
-                      purpose: 'We need to know if you are a resident',
-                      rule: 'pick',
-                      count: 1,
-                      from: 'B',
-                    },
-                    {
-                      name: 'More Vaccine Information',
-                      purpose: 'We need to know if you are vaccinated',
-                      rule: 'pick',
-                      count: 1,
-                      from: 'C',
-                    },
-                  ],
-                },
-              ],
-            },
+            inputDescriptors,
           },
         },
         comment: 'V2 Presentation Exchange propose proof test',
@@ -385,40 +325,7 @@ describe('Auto accept present proof', () => {
         protocolVersion: 'v2',
         proofFormats: {
           presentationExchange: {
-            // this is of type PresentationDefinitionV1 (see pex library)
-            presentationDefinition: {
-              id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
-              input_descriptors: inputDescriptors,
-              submission_requirements: [
-                {
-                  name: 'Vaccine Information',
-                  purpose: 'We need to know if you are vaccinated',
-                  rule: 'all',
-                  from: 'A',
-                },
-                {
-                  name: 'Citizenship Combined With Vaccine Information',
-                  purpose: 'We need to know if you are either a resident or vaccinated',
-                  rule: 'all', // AND query: retrieve 1 from B AND 1 from C
-                  from_nested: [
-                    {
-                      name: 'Citizenship Information',
-                      purpose: 'We need to know if you are a resident',
-                      rule: 'pick',
-                      count: 1,
-                      from: 'B',
-                    },
-                    {
-                      name: 'More Vaccine Information',
-                      purpose: 'We need to know if you are vaccinated',
-                      rule: 'pick',
-                      count: 1,
-                      from: 'C',
-                    },
-                  ],
-                },
-              ],
-            },
+            inputDescriptors,
           },
         },
         comment: 'V2 Presentation Exchange propose proof test',
@@ -485,10 +392,7 @@ describe('Auto accept present proof', () => {
         protocolVersion: 'v2',
         proofFormats: {
           presentationExchange: {
-            presentationDefinition: {
-              id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
-              input_descriptors: [inputDescriptorCitizenship],
-            },
+            inputDescriptors: [inputDescriptorCitizenship],
           },
         },
         comment: 'V2 Presentation Exchange propose proof test',

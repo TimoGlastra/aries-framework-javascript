@@ -23,13 +23,13 @@ import type { Query } from '../../../storage/StorageService'
 import type { ProblemReportMessage } from '../../problem-reports'
 import type { CredentialStateChangedEvent } from '../CredentialEvents'
 import type { CredentialFormatService, ExtractCredentialFormats } from '../formats'
-import type { CredentialState } from '../models/CredentialState'
 import type { CredentialExchangeRecord } from '../repository'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { DidCommMessageRepository } from '../../../storage'
 import { JsonTransformer } from '../../../utils'
 import { CredentialEventTypes } from '../CredentialEvents'
+import { CredentialState } from '../models/CredentialState'
 import { CredentialRepository } from '../repository'
 
 /**
@@ -150,7 +150,7 @@ export abstract class BaseCredentialProtocol<CFs extends CredentialFormatService
 
     // Update record
     credentialRecord.errorMessage = `${credentialProblemReportMessage.description.code}: ${credentialProblemReportMessage.description.en}`
-    await this.update(agentContext, credentialRecord)
+    await this.updateState(agentContext, credentialRecord, CredentialState.Abandoned)
     return credentialRecord
   }
 

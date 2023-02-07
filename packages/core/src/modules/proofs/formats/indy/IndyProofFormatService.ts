@@ -276,7 +276,13 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
     const proposalJson = proposalAttachment.getDataAsJson<IndyProofRequest>()
     const requestJson = requestAttachment.getDataAsJson<IndyProofRequest>()
 
-    return areIndyProofRequestsEqual(proposalJson, requestJson)
+    const areRequestsEqual = areIndyProofRequestsEqual(proposalJson, requestJson)
+    agentContext.config.logger.debug(`Indy request and proposal are are equal: ${areRequestsEqual}`, {
+      proposalJson,
+      requestJson,
+    })
+
+    return areRequestsEqual
   }
 
   public async shouldAutoRespondToRequest(

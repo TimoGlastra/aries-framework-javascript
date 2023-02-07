@@ -6,7 +6,6 @@ import type { V1PresentationPreview } from '../../v1/models/V1PresentationPrevie
 import { setupProofsTest, waitForProofExchangeRecord } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
 import { DidCommMessageRepository } from '../../../../../storage'
-import { V2_INDY_PRESENTATION_PROPOSAL, V2_INDY_PRESENTATION_REQUEST, V2_INDY_PRESENTATION } from '../../../formats'
 import { ProofState } from '../../../models/ProofState'
 import { ProofExchangeRecord } from '../../../repository/ProofExchangeRecord'
 import { V2PresentationMessage, V2RequestPresentationMessage } from '../messages'
@@ -50,7 +49,6 @@ describe('Present Proof', () => {
       proofFormats: {
         indy: {
           name: 'ProofRequest',
-          nonce: '947121108704767252195126',
           version: '1.0',
           attributes: presentationPreview.attributes,
           predicates: presentationPreview.predicates,
@@ -74,7 +72,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_INDY_PRESENTATION_PROPOSAL,
+          format: 'hlindy/proof-req@v2',
         },
       ],
       proposalsAttach: [
@@ -126,10 +124,10 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_INDY_PRESENTATION_REQUEST,
+          format: 'hlindy/proof-req@v2',
         },
       ],
-      requestPresentationsAttach: [
+      requestAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -155,11 +153,8 @@ describe('Present Proof', () => {
     // Alice retrieves the requested credentials and accepts the presentation request
     testLogger.test('Alice accepts presentation request from Faber')
 
-    const requestedCredentials = await aliceAgent.proofs.autoSelectCredentialsForProofRequest({
+    const requestedCredentials = await aliceAgent.proofs.selectCredentialsForRequest({
       proofRecordId: aliceProofExchangeRecord.id,
-      config: {
-        filterByPresentationPreview: true,
-      },
     })
 
     const faberPresentationRecordPromise = waitForProofExchangeRecord(faberAgent, {
@@ -186,7 +181,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: V2_INDY_PRESENTATION,
+          format: 'hlindy/proof@v2',
         },
       ],
       presentationsAttach: [
@@ -219,7 +214,7 @@ describe('Present Proof', () => {
 
     // Faber accepts the presentation provided by Alice
     testLogger.test('Faber accepts the presentation provided by Alice')
-    await faberAgent.proofs.acceptPresentation(faberProofExchangeRecord.id)
+    await faberAgent.proofs.acceptPresentation({ proofRecordId: faberProofExchangeRecord.id })
 
     // Alice waits until she received a presentation acknowledgement
     testLogger.test('Alice waits until she receives a presentation acknowledgement')

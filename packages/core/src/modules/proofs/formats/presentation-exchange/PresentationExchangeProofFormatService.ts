@@ -32,15 +32,15 @@ import { query } from 'jsonpath'
 
 import { Attachment, AttachmentData } from '../../../../decorators/attachment/Attachment'
 import { AriesFrameworkError } from '../../../../error'
-import { JsonEncoder, JsonTransformer } from '../../../../utils'
+import { JsonTransformer } from '../../../../utils'
 import { uuid } from '../../../../utils/uuid'
 import { DidResolverService } from '../../../dids'
 import { W3cCredentialService, W3cPresentation, W3cVerifiablePresentation } from '../../../vc'
 import { ProofFormatSpec } from '../../models/ProofFormatSpec'
 
-export const V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL = 'dif/presentation-exchange/definitions@v1.0'
-export const V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST = 'dif/presentation-exchange/definitions@v1.0'
-export const V2_PRESENTATION_EXCHANGE_PRESENTATION = 'dif/presentation-exchange/submission@v1.0'
+const V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL = 'dif/presentation-exchange/definitions@v1.0'
+const V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST = 'dif/presentation-exchange/definitions@v1.0'
+const V2_PRESENTATION_EXCHANGE_PRESENTATION = 'dif/presentation-exchange/submission@v1.0'
 
 export class PresentationExchangeProofFormatService implements ProofFormatService<PresentationExchangeProofFormat> {
   public readonly formatKey = 'presentationExchange' as const
@@ -501,12 +501,13 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
    * @param data The data to include in the attach object
    * @param id the attach id from the formats component of the message
    */
-  private getFormatData(data: unknown, id: string): Attachment {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getFormatData(data: any, id: string): Attachment {
     const attachment = new Attachment({
       id,
       mimeType: 'application/json',
       data: new AttachmentData({
-        base64: JsonEncoder.toBase64(data),
+        json: data,
       }),
     })
 
