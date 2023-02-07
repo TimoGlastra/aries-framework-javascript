@@ -1,5 +1,5 @@
 import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
-import type { CreateOfferOptions } from '../../CredentialProtocolOptions'
+import type { CreateCredentialOfferOptions } from '../../CredentialProtocolOptions'
 
 import { Subject } from 'rxjs'
 
@@ -120,7 +120,7 @@ describe('V2CredentialProtocolOffer', () => {
   })
 
   describe('createOffer', () => {
-    const offerOptions: CreateOfferOptions<[IndyCredentialFormatService]> = {
+    const offerOptions: CreateCredentialOfferOptions<[IndyCredentialFormatService]> = {
       comment: 'some comment',
       connectionRecord,
       credentialFormats: {

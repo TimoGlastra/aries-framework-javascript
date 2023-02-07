@@ -4,20 +4,20 @@ import type { FeatureRegistry } from '../../../../agent/FeatureRegistry'
 import type { InboundMessageContext } from '../../../../agent/models/InboundMessageContext'
 import type { DependencyManager } from '../../../../plugins'
 import type { ProblemReportMessage } from '../../../problem-reports'
-import type { GetFormatDataReturn } from '../../CredentialsApiOptions'
+import type { GetCredentialFormatDataReturn } from '../../CredentialsApiOptions'
 import type { CredentialFormatService, ExtractCredentialFormats, IndyCredentialFormat } from '../../formats'
 import type { CredentialProtocol } from '../CredentialProtocol'
 import type {
   AcceptCredentialOptions,
-  AcceptOfferOptions,
-  AcceptProposalOptions,
-  AcceptRequestOptions,
-  CreateOfferOptions,
-  CreateProblemReportOptions,
-  CreateProposalOptions,
+  AcceptCredentialOfferOptions,
+  AcceptCredentialProposalOptions,
+  AcceptCredentialRequestOptions,
+  CreateCredentialOfferOptions,
+  CreateCredentialProblemReportOptions,
+  CreateCredentialProposalOptions,
   CredentialProtocolMsgReturnType,
-  NegotiateOfferOptions,
-  NegotiateProposalOptions,
+  NegotiateCredentialOfferOptions,
+  NegotiateCredentialProposalOptions,
 } from '../CredentialProtocolOptions'
 
 import { Protocol } from '../../../../agent/models/features'
@@ -123,7 +123,7 @@ export class V1CredentialProtocol
       credentialFormats,
       comment,
       autoAcceptCredential,
-    }: CreateProposalOptions<[IndyCredentialFormatServiceLike]>
+    }: CreateCredentialProposalOptions<[IndyCredentialFormatServiceLike]>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>> {
     this.assertOnlyIndyFormat(credentialFormats)
 
@@ -291,7 +291,7 @@ export class V1CredentialProtocol
       credentialFormats,
       comment,
       autoAcceptCredential,
-    }: AcceptProposalOptions<[IndyCredentialFormatServiceLike]>
+    }: AcceptCredentialProposalOptions<[IndyCredentialFormatServiceLike]>
   ): Promise<CredentialProtocolMsgReturnType<V1OfferCredentialMessage>> {
     // Assert
     credentialRecord.assertProtocolVersion('v1')
@@ -353,7 +353,7 @@ export class V1CredentialProtocol
    * Negotiate a credential proposal as issuer (by sending a credential offer message) to the connection
    * associated with the credential record.
    *
-   * @param options configuration for the offer see {@link NegotiateProposalOptions}
+   * @param options configuration for the offer see {@link NegotiateCredentialProposalOptions}
    * @returns Credential record associated with the credential offer and the corresponding new offer message
    *
    */
@@ -364,7 +364,7 @@ export class V1CredentialProtocol
       credentialRecord,
       comment,
       autoAcceptCredential,
-    }: NegotiateProposalOptions<[IndyCredentialFormatServiceLike]>
+    }: NegotiateCredentialProposalOptions<[IndyCredentialFormatServiceLike]>
   ): Promise<CredentialProtocolMsgReturnType<V1OfferCredentialMessage>> {
     // Assert
     credentialRecord.assertProtocolVersion('v1')
@@ -421,7 +421,7 @@ export class V1CredentialProtocol
       autoAcceptCredential,
       comment,
       connectionRecord,
-    }: CreateOfferOptions<[IndyCredentialFormatServiceLike]>
+    }: CreateCredentialOfferOptions<[IndyCredentialFormatServiceLike]>
   ): Promise<CredentialProtocolMsgReturnType<V1OfferCredentialMessage>> {
     // Assert
     this.assertOnlyIndyFormat(credentialFormats)
@@ -587,7 +587,7 @@ export class V1CredentialProtocol
       credentialFormats,
       comment,
       autoAcceptCredential,
-    }: AcceptOfferOptions<[IndyCredentialFormatServiceLike]>
+    }: AcceptCredentialOfferOptions<[IndyCredentialFormatServiceLike]>
   ): Promise<CredentialProtocolMsgReturnType<V1RequestCredentialMessage>> {
     // Assert credential
     credentialRecord.assertProtocolVersion('v1')
@@ -654,7 +654,7 @@ export class V1CredentialProtocol
       credentialRecord,
       autoAcceptCredential,
       comment,
-    }: NegotiateOfferOptions<[IndyCredentialFormatServiceLike]>
+    }: NegotiateCredentialOfferOptions<[IndyCredentialFormatServiceLike]>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>> {
     // Assert
     credentialRecord.assertProtocolVersion('v1')
@@ -808,7 +808,7 @@ export class V1CredentialProtocol
       credentialFormats,
       comment,
       autoAcceptCredential,
-    }: AcceptRequestOptions<[IndyCredentialFormatServiceLike]>
+    }: AcceptCredentialRequestOptions<[IndyCredentialFormatServiceLike]>
   ): Promise<CredentialProtocolMsgReturnType<V1IssueCredentialMessage>> {
     // Assert
     credentialRecord.assertProtocolVersion('v1')
@@ -1017,7 +1017,7 @@ export class V1CredentialProtocol
    */
   public async createProblemReport(
     agentContext: AgentContext,
-    { credentialRecord, description }: CreateProblemReportOptions
+    { credentialRecord, description }: CreateCredentialProblemReportOptions
   ): Promise<CredentialProtocolMsgReturnType<ProblemReportMessage>> {
     const message = new V1CredentialProblemReportMessage({
       description: {
@@ -1221,7 +1221,7 @@ export class V1CredentialProtocol
   public async getFormatData(
     agentContext: AgentContext,
     credentialExchangeId: string
-  ): Promise<GetFormatDataReturn<ExtractCredentialFormats<[IndyCredentialFormatServiceLike]>>> {
+  ): Promise<GetCredentialFormatDataReturn<ExtractCredentialFormats<[IndyCredentialFormatServiceLike]>>> {
     // TODO: we could looking at fetching all record using a single query and then filtering based on the type of the message.
     const [proposalMessage, offerMessage, requestMessage, credentialMessage] = await Promise.all([
       this.findProposalMessage(agentContext, credentialExchangeId),

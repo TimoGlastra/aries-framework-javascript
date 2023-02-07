@@ -9,7 +9,7 @@ import type {
   FindProofRequestMessageReturn,
   GetCredentialsForProofRequestOptions,
   GetCredentialsForProofRequestReturn,
-  GetFormatDataReturn,
+  GetProofFormatDataReturn,
   NegotiateProofProposalOptions,
   NegotiateProofRequestOptions,
   ProposeProofOptions,
@@ -80,7 +80,7 @@ export interface ProofsApi<PPs extends ProofProtocol[]> {
   findById(proofRecordId: string): Promise<ProofExchangeRecord | null>
   deleteById(proofId: string, options?: DeleteProofOptions): Promise<void>
   update(proofRecord: ProofExchangeRecord): Promise<void>
-  getFormatData(proofRecordId: string): Promise<GetFormatDataReturn<ProofFormatsFromProtocols<PPs>>>
+  getFormatData(proofRecordId: string): Promise<GetProofFormatDataReturn<ProofFormatsFromProtocols<PPs>>>
 
   // DidComm Message Records
   findProposalMessage(proofRecordId: string): Promise<FindProofProposalMessageReturn<PPs>>
@@ -583,7 +583,7 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
     return proofRecord
   }
 
-  public async getFormatData(proofRecordId: string): Promise<GetFormatDataReturn<ProofFormatsFromProtocols<PPs>>> {
+  public async getFormatData(proofRecordId: string): Promise<GetProofFormatDataReturn<ProofFormatsFromProtocols<PPs>>> {
     const proofRecord = await this.getById(proofRecordId)
     const protocol = this.getProtocol(proofRecord.protocolVersion)
 

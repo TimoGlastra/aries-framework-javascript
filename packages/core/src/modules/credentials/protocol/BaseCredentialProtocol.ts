@@ -1,18 +1,18 @@
 import type { CredentialProtocol } from './CredentialProtocol'
 import type {
-  CreateProposalOptions,
+  CreateCredentialProposalOptions,
   CredentialProtocolMsgReturnType,
   DeleteCredentialOptions,
-  AcceptProposalOptions,
-  NegotiateProposalOptions,
-  CreateOfferOptions,
-  NegotiateOfferOptions,
-  CreateRequestOptions,
-  AcceptOfferOptions,
-  AcceptRequestOptions,
+  AcceptCredentialProposalOptions,
+  NegotiateCredentialProposalOptions,
+  CreateCredentialOfferOptions,
+  NegotiateCredentialOfferOptions,
+  CreateCredentialRequestOptions,
+  AcceptCredentialOfferOptions,
+  AcceptCredentialRequestOptions,
   AcceptCredentialOptions,
-  GetFormatDataReturn,
-  CreateProblemReportOptions,
+  GetCredentialFormatDataReturn,
+  CreateCredentialProblemReportOptions,
 } from './CredentialProtocolOptions'
 import type { AgentContext } from '../../../agent'
 import type { AgentMessage } from '../../../agent/AgentMessage'
@@ -46,44 +46,44 @@ export abstract class BaseCredentialProtocol<CFs extends CredentialFormatService
   // methods for proposal
   public abstract createProposal(
     agentContext: AgentContext,
-    options: CreateProposalOptions<CFs>
+    options: CreateCredentialProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   public abstract processProposal(
     messageContext: InboundMessageContext<AgentMessage>
   ): Promise<CredentialExchangeRecord>
   public abstract acceptProposal(
     agentContext: AgentContext,
-    options: AcceptProposalOptions<CFs>
+    options: AcceptCredentialProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   public abstract negotiateProposal(
     agentContext: AgentContext,
-    options: NegotiateProposalOptions<CFs>
+    options: NegotiateCredentialProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for offer
   public abstract createOffer(
     agentContext: AgentContext,
-    options: CreateOfferOptions<CFs>
+    options: CreateCredentialOfferOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   public abstract processOffer(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
   public abstract acceptOffer(
     agentContext: AgentContext,
-    options: AcceptOfferOptions<CFs>
+    options: AcceptCredentialOfferOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   public abstract negotiateOffer(
     agentContext: AgentContext,
-    options: NegotiateOfferOptions<CFs>
+    options: NegotiateCredentialOfferOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for request
   public abstract createRequest(
     agentContext: AgentContext,
-    options: CreateRequestOptions<CFs>
+    options: CreateCredentialRequestOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   public abstract processRequest(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
   public abstract acceptRequest(
     agentContext: AgentContext,
-    options: AcceptRequestOptions<CFs>
+    options: AcceptCredentialRequestOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for issue
@@ -101,7 +101,7 @@ export abstract class BaseCredentialProtocol<CFs extends CredentialFormatService
   // methods for problem-report
   public abstract createProblemReport(
     agentContext: AgentContext,
-    options: CreateProblemReportOptions
+    options: CreateCredentialProblemReportOptions
   ): Promise<CredentialProtocolMsgReturnType<ProblemReportMessage>>
 
   public abstract findProposalMessage(
@@ -123,7 +123,7 @@ export abstract class BaseCredentialProtocol<CFs extends CredentialFormatService
   public abstract getFormatData(
     agentContext: AgentContext,
     credentialExchangeId: string
-  ): Promise<GetFormatDataReturn<ExtractCredentialFormats<CFs>>>
+  ): Promise<GetCredentialFormatDataReturn<ExtractCredentialFormats<CFs>>>
 
   public abstract register(dependencyManager: DependencyManager, featureRegistry: FeatureRegistry): void
 

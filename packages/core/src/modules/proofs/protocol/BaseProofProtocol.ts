@@ -1,18 +1,18 @@
 import type { ProofProtocol } from './ProofProtocol'
 import type {
-  CreateProposalOptions,
-  CreateRequestOptions,
+  CreateProofProposalOptions,
+  CreateProofRequestOptions,
   DeleteProofOptions,
-  GetFormatDataReturn,
-  CreateProblemReportOptions,
+  GetProofFormatDataReturn,
+  CreateProofProblemReportOptions,
   ProofProtocolMsgReturnType,
   AcceptPresentationOptions,
-  AcceptProposalOptions,
-  AcceptRequestOptions,
+  AcceptProofProposalOptions,
+  AcceptProofRequestOptions,
   GetCredentialsForRequestOptions,
   GetCredentialsForRequestReturn,
-  NegotiateProposalOptions,
-  NegotiateRequestOptions,
+  NegotiateProofProposalOptions,
+  NegotiateProofRequestOptions,
   SelectCredentialsForRequestOptions,
   SelectCredentialsForRequestReturn,
 } from './ProofProtocolOptions'
@@ -44,31 +44,31 @@ export abstract class BaseProofProtocol<PFs extends ProofFormatService[] = Proof
   // methods for proposal
   public abstract createProposal(
     agentContext: AgentContext,
-    options: CreateProposalOptions<PFs>
+    options: CreateProofProposalOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
   public abstract processProposal(messageContext: InboundMessageContext<AgentMessage>): Promise<ProofExchangeRecord>
   public abstract acceptProposal(
     agentContext: AgentContext,
-    options: AcceptProposalOptions<PFs>
+    options: AcceptProofProposalOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
   public abstract negotiateProposal(
     agentContext: AgentContext,
-    options: NegotiateProposalOptions<PFs>
+    options: NegotiateProofProposalOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
 
   // methods for request
   public abstract createRequest(
     agentContext: AgentContext,
-    options: CreateRequestOptions<PFs>
+    options: CreateProofRequestOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
   public abstract processRequest(messageContext: InboundMessageContext<AgentMessage>): Promise<ProofExchangeRecord>
   public abstract acceptRequest(
     agentContext: AgentContext,
-    options: AcceptRequestOptions<PFs>
+    options: AcceptProofRequestOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
   public abstract negotiateRequest(
     agentContext: AgentContext,
-    options: NegotiateRequestOptions<PFs>
+    options: NegotiateProofRequestOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
 
   // retrieving credentials for request
@@ -93,7 +93,7 @@ export abstract class BaseProofProtocol<PFs extends ProofFormatService[] = Proof
   // method for problem report
   public abstract createProblemReport(
     agentContext: AgentContext,
-    options: CreateProblemReportOptions
+    options: CreateProofProblemReportOptions
   ): Promise<ProofProtocolMsgReturnType<ProblemReportMessage>>
 
   public abstract findProposalMessage(agentContext: AgentContext, proofExchangeId: string): Promise<AgentMessage | null>
@@ -105,7 +105,7 @@ export abstract class BaseProofProtocol<PFs extends ProofFormatService[] = Proof
   public abstract getFormatData(
     agentContext: AgentContext,
     proofExchangeId: string
-  ): Promise<GetFormatDataReturn<ExtractProofFormats<PFs>>>
+  ): Promise<GetProofFormatDataReturn<ExtractProofFormats<PFs>>>
 
   public async processProblemReport(
     messageContext: InboundMessageContext<ProblemReportMessage>

@@ -15,17 +15,17 @@ import type { ProofFormatSpec } from '../../models/ProofFormatSpec'
 import type { ProofProtocol } from '../ProofProtocol'
 import type {
   AcceptPresentationOptions,
-  AcceptProposalOptions,
-  AcceptRequestOptions,
-  CreateProblemReportOptions,
-  CreateProposalOptions,
-  CreateRequestOptions,
-  FormatDataMessagePayload,
+  AcceptProofProposalOptions,
+  AcceptProofRequestOptions,
+  CreateProofProblemReportOptions,
+  CreateProofProposalOptions,
+  CreateProofRequestOptions,
+  ProofFormatDataMessagePayload,
   GetCredentialsForRequestOptions,
   GetCredentialsForRequestReturn,
-  GetFormatDataReturn,
-  NegotiateProposalOptions,
-  NegotiateRequestOptions,
+  GetProofFormatDataReturn,
+  NegotiateProofProposalOptions,
+  NegotiateProofRequestOptions,
   ProofProtocolMsgReturnType,
   SelectCredentialsForRequestOptions,
   SelectCredentialsForRequestReturn,
@@ -99,7 +99,14 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
   public async createProposal(
     agentContext: AgentContext,
-    { connectionRecord, proofFormats, comment, autoAcceptProof, goalCode, parentThreadId }: CreateProposalOptions<PFs>
+    {
+      connectionRecord,
+      proofFormats,
+      comment,
+      autoAcceptProof,
+      goalCode,
+      parentThreadId,
+    }: CreateProofProposalOptions<PFs>
   ): Promise<{ proofRecord: ProofExchangeRecord; message: AgentMessage }> {
     const proofRepository = agentContext.dependencyManager.resolve(ProofRepository)
 
@@ -220,7 +227,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
   public async acceptProposal(
     agentContext: AgentContext,
-    { proofRecord, proofFormats, autoAcceptProof, comment, goalCode, willConfirm }: AcceptProposalOptions<PFs>
+    { proofRecord, proofFormats, autoAcceptProof, comment, goalCode, willConfirm }: AcceptProofProposalOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<V2RequestPresentationMessage>> {
     // Assert
     proofRecord.assertProtocolVersion('v2')
@@ -271,13 +278,13 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
    * Negotiate a proof proposal as verifier (by sending a proof request message) to the connection
    * associated with the proof record.
    *
-   * @param options configuration for the request see {@link NegotiateProposalOptions}
+   * @param options configuration for the request see {@link NegotiateProofProposalOptions}
    * @returns Proof exchange record associated with the proof request
    *
    */
   public async negotiateProposal(
     agentContext: AgentContext,
-    { proofRecord, proofFormats, autoAcceptProof, comment, goalCode, willConfirm }: NegotiateProposalOptions<PFs>
+    { proofRecord, proofFormats, autoAcceptProof, comment, goalCode, willConfirm }: NegotiateProofProposalOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<V2RequestPresentationMessage>> {
     // Assert
     proofRecord.assertProtocolVersion('v2')
@@ -326,7 +333,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
       parentThreadId,
       goalCode,
       willConfirm,
-    }: CreateRequestOptions<PFs>
+    }: CreateProofRequestOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<V2RequestPresentationMessage>> {
     const proofRepository = agentContext.dependencyManager.resolve(ProofRepository)
 
@@ -453,7 +460,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
   public async acceptRequest(
     agentContext: AgentContext,
-    { proofRecord, autoAcceptProof, comment, proofFormats, goalCode }: AcceptRequestOptions<PFs>
+    { proofRecord, autoAcceptProof, comment, proofFormats, goalCode }: AcceptProofRequestOptions<PFs>
   ) {
     const didCommMessageRepository = agentContext.dependencyManager.resolve(DidCommMessageRepository)
 
@@ -508,7 +515,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
    */
   public async negotiateRequest(
     agentContext: AgentContext,
-    { proofRecord, proofFormats, autoAcceptProof, comment, goalCode }: NegotiateRequestOptions<PFs>
+    { proofRecord, proofFormats, autoAcceptProof, comment, goalCode }: NegotiateProofRequestOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<V2ProposeCredentialMessage>> {
     // Assert
     proofRecord.assertProtocolVersion('v2')
@@ -754,7 +761,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
   public async createProblemReport(
     agentContext: AgentContext,
-    { description, proofRecord }: CreateProblemReportOptions
+    { description, proofRecord }: CreateProofProblemReportOptions
   ): Promise<ProofProtocolMsgReturnType<ProblemReportMessage>> {
     const message = new V2PresentationProblemReportMessage({
       description: {
@@ -970,7 +977,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
     })
   }
 
-  public async getFormatData(agentContext: AgentContext, proofRecordId: string): Promise<GetFormatDataReturn> {
+  public async getFormatData(agentContext: AgentContext, proofRecordId: string): Promise<GetProofFormatDataReturn> {
     // TODO: we could looking at fetching all record using a single query and then filtering based on the type of the message.
     const [proposalMessage, requestMessage, presentationMessage] = await Promise.all([
       this.findProposalMessage(agentContext, proofRecordId),
@@ -986,7 +993,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
       presentation: [presentationMessage?.formats, presentationMessage?.presentationAttachments],
     } as const
 
-    const formatData: GetFormatDataReturn = {}
+    const formatData: GetProofFormatDataReturn = {}
 
     // We loop through all of the message keys as defined above
     for (const [messageKey, [formats, attachments]] of Object.entries(messages)) {
@@ -996,7 +1003,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
       // Find all format services associated with the message
       const formatServices = this.getFormatServicesFromMessage(formats)
 
-      const messageFormatData: FormatDataMessagePayload = {}
+      const messageFormatData: ProofFormatDataMessagePayload = {}
 
       // Loop through all of the format services, for each we will extract the attachment data and assign this to the object
       // using the unique format key (e.g. indy)
@@ -1005,7 +1012,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
         messageFormatData[formatService.formatKey] = attachment.getDataAsJson()
       }
 
-      formatData[messageKey as keyof GetFormatDataReturn] = messageFormatData
+      formatData[messageKey as keyof GetProofFormatDataReturn] = messageFormatData
     }
 
     return formatData

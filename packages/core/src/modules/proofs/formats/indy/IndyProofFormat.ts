@@ -1,6 +1,6 @@
-import type { ProofAttributeInfo, ProofPredicateInfo } from './models'
-import type { RequestedAttribute } from './models/RequestedAttribute'
-import type { RequestedPredicate } from './models/RequestedPredicate'
+import type { ProofAttributeInfoOptions, ProofPredicateInfoOptions } from './models'
+import type { RequestedAttributeOptions } from './models/RequestedAttribute'
+import type { RequestedPredicateOptions } from './models/RequestedPredicate'
 import type { V1PresentationPreviewAttributeOptions, V1PresentationPreviewPredicateOptions } from '../../protocol/v1'
 import type { ProofFormat } from '../ProofFormat'
 import type { IndyProof, IndyProofRequest } from 'indy-sdk'
@@ -23,9 +23,8 @@ export interface IndyRequestProofFormat {
   version: string
   // TODO: update to AnonCredsNonRevokedInterval when moving to AnonCreds package
   nonRevoked?: { from?: number; to?: number }
-  // TODO: should not be needed to pass class instances
-  requestedAttributes?: Record<string, ProofAttributeInfo>
-  requestedPredicates?: Record<string, ProofPredicateInfo>
+  requestedAttributes?: Record<string, ProofAttributeInfoOptions>
+  requestedPredicates?: Record<string, ProofPredicateInfoOptions>
 }
 
 /**
@@ -34,18 +33,17 @@ export interface IndyRequestProofFormat {
 export type IndyAcceptProofRequestFormat = Partial<IndySelectedCredentialsForProofRequest>
 
 export interface IndySelectedCredentialsForProofRequest {
-  requestedAttributes: Record<string, RequestedAttribute>
-  requestedPredicates: Record<string, RequestedPredicate>
+  requestedAttributes: Record<string, RequestedAttributeOptions>
+  requestedPredicates: Record<string, RequestedPredicateOptions>
   selfAttestedAttributes: Record<string, string>
 }
 
-// TODO: should not require classes (will be solved once we use the AnonCreds interfaces)
 /**
  * Interface for getting credentials for an indy proof request.
  */
 export interface IndyCredentialsForProofRequest {
-  attributes: Record<string, RequestedAttribute[]>
-  predicates: Record<string, RequestedPredicate[]>
+  attributes: Record<string, RequestedAttributeOptions[]>
+  predicates: Record<string, RequestedPredicateOptions[]>
 }
 
 export interface IndyGetCredentialsForProofRequestOptions {

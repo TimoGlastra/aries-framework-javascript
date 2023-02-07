@@ -33,7 +33,7 @@ import type { CredentialExchangeRecord } from '../repository/CredentialExchangeR
  * }
  * ```
  */
-export type FormatDataMessagePayload<
+export type CredentialFormatDataMessagePayload<
   CFs extends CredentialFormat[] = CredentialFormat[],
   M extends keyof CredentialFormat['formatData'] = keyof CredentialFormat['formatData']
 > = {
@@ -80,37 +80,37 @@ export type CredentialFormatsFromProtocols<Type extends CredentialProtocol[]> = 
  * }
  * ```
  */
-export type GetFormatDataReturn<CFs extends CredentialFormat[] = CredentialFormat[]> = {
+export type GetCredentialFormatDataReturn<CFs extends CredentialFormat[] = CredentialFormat[]> = {
   proposalAttributes?: CredentialPreviewAttributeOptions[]
-  proposal?: FormatDataMessagePayload<CFs, 'proposal'>
-  offer?: FormatDataMessagePayload<CFs, 'offer'>
+  proposal?: CredentialFormatDataMessagePayload<CFs, 'proposal'>
+  offer?: CredentialFormatDataMessagePayload<CFs, 'offer'>
   offerAttributes?: CredentialPreviewAttributeOptions[]
-  request?: FormatDataMessagePayload<CFs, 'request'>
-  credential?: FormatDataMessagePayload<CFs, 'credential'>
+  request?: CredentialFormatDataMessagePayload<CFs, 'request'>
+  credential?: CredentialFormatDataMessagePayload<CFs, 'credential'>
 }
 
-export interface CreateProposalOptions<CFs extends CredentialFormatService[]> {
+export interface CreateCredentialProposalOptions<CFs extends CredentialFormatService[]> {
   connectionRecord: ConnectionRecord
   credentialFormats: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'createProposal'>
   autoAcceptCredential?: AutoAcceptCredential
   comment?: string
 }
 
-export interface AcceptProposalOptions<CFs extends CredentialFormatService[]> {
+export interface AcceptCredentialProposalOptions<CFs extends CredentialFormatService[]> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'acceptProposal'>
   autoAcceptCredential?: AutoAcceptCredential
   comment?: string
 }
 
-export interface NegotiateProposalOptions<CFs extends CredentialFormatService[]> {
+export interface NegotiateCredentialProposalOptions<CFs extends CredentialFormatService[]> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'createOffer'>
   autoAcceptCredential?: AutoAcceptCredential
   comment?: string
 }
 
-export interface CreateOfferOptions<CFs extends CredentialFormatService[]> {
+export interface CreateCredentialOfferOptions<CFs extends CredentialFormatService[]> {
   // Create offer can also be used for connection-less, so connection is optional
   connectionRecord?: ConnectionRecord
   credentialFormats: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'createOffer'>
@@ -118,28 +118,28 @@ export interface CreateOfferOptions<CFs extends CredentialFormatService[]> {
   comment?: string
 }
 
-export interface AcceptOfferOptions<CFs extends CredentialFormatService[]> {
+export interface AcceptCredentialOfferOptions<CFs extends CredentialFormatService[]> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'acceptOffer'>
   autoAcceptCredential?: AutoAcceptCredential
   comment?: string
 }
 
-export interface NegotiateOfferOptions<CFs extends CredentialFormatService[]> {
+export interface NegotiateCredentialOfferOptions<CFs extends CredentialFormatService[]> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'createProposal'>
   autoAcceptCredential?: AutoAcceptCredential
   comment?: string
 }
 
-export interface CreateRequestOptions<CFs extends CredentialFormatService[]> {
+export interface CreateCredentialRequestOptions<CFs extends CredentialFormatService[]> {
   connectionRecord: ConnectionRecord
   credentialFormats: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'createRequest'>
   autoAcceptCredential?: AutoAcceptCredential
   comment?: string
 }
 
-export interface AcceptRequestOptions<CFs extends CredentialFormatService[]> {
+export interface AcceptCredentialRequestOptions<CFs extends CredentialFormatService[]> {
   credentialRecord: CredentialExchangeRecord
   credentialFormats?: CredentialFormatPayload<ExtractCredentialFormats<CFs>, 'acceptRequest'>
   autoAcceptCredential?: AutoAcceptCredential
@@ -150,7 +150,7 @@ export interface AcceptCredentialOptions {
   credentialRecord: CredentialExchangeRecord
 }
 
-export interface CreateProblemReportOptions {
+export interface CreateCredentialProblemReportOptions {
   credentialRecord: CredentialExchangeRecord
   description: string
 }

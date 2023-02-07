@@ -10,16 +10,16 @@ import type { IndyProofFormat } from '../../formats/indy/IndyProofFormat'
 import type { ProofProtocol } from '../ProofProtocol'
 import type {
   AcceptPresentationOptions,
-  AcceptProposalOptions,
-  AcceptRequestOptions,
-  CreateProblemReportOptions,
-  CreateProposalOptions,
-  CreateRequestOptions,
+  AcceptProofProposalOptions,
+  AcceptProofRequestOptions,
+  CreateProofProblemReportOptions,
+  CreateProofProposalOptions,
+  CreateProofRequestOptions,
   GetCredentialsForRequestOptions,
   GetCredentialsForRequestReturn,
-  GetFormatDataReturn,
-  NegotiateProposalOptions,
-  NegotiateRequestOptions,
+  GetProofFormatDataReturn,
+  NegotiateProofProposalOptions,
+  NegotiateProofRequestOptions,
   ProofProtocolMsgReturnType,
   SelectCredentialsForRequestOptions,
   SelectCredentialsForRequestReturn,
@@ -115,7 +115,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
       comment,
       parentThreadId,
       autoAcceptProof,
-    }: CreateProposalOptions<[IndyProofFormatServiceLike]>
+    }: CreateProofProposalOptions<[IndyProofFormatServiceLike]>
   ): Promise<ProofProtocolMsgReturnType<V1ProposePresentationMessage>> {
     this.assertOnlyIndyFormat(proofFormats)
 
@@ -242,7 +242,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
 
   public async acceptProposal(
     agentContext: AgentContext,
-    { proofRecord, proofFormats, comment, autoAcceptProof }: AcceptProposalOptions<[IndyProofFormatServiceLike]>
+    { proofRecord, proofFormats, comment, autoAcceptProof }: AcceptProofProposalOptions<[IndyProofFormatServiceLike]>
   ): Promise<ProofProtocolMsgReturnType<V1RequestPresentationMessage>> {
     // Assert
     proofRecord.assertProtocolVersion('v1')
@@ -306,7 +306,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
 
   public async negotiateProposal(
     agentContext: AgentContext,
-    { proofFormats, proofRecord, comment, autoAcceptProof }: NegotiateProposalOptions<[IndyProofFormatServiceLike]>
+    { proofFormats, proofRecord, comment, autoAcceptProof }: NegotiateProofProposalOptions<[IndyProofFormatServiceLike]>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>> {
     // Assert
     proofRecord.assertProtocolVersion('v1')
@@ -350,7 +350,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
       comment,
       parentThreadId,
       autoAcceptProof,
-    }: CreateRequestOptions<[IndyProofFormatServiceLike]>
+    }: CreateProofRequestOptions<[IndyProofFormatServiceLike]>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>> {
     this.assertOnlyIndyFormat(proofFormats)
 
@@ -489,7 +489,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
 
   public async negotiateRequest(
     agentContext: AgentContext,
-    { proofFormats, proofRecord, comment, autoAcceptProof }: NegotiateRequestOptions<[IndyProofFormatServiceLike]>
+    { proofFormats, proofRecord, comment, autoAcceptProof }: NegotiateProofRequestOptions<[IndyProofFormatServiceLike]>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>> {
     // Assert
     proofRecord.assertProtocolVersion('v1')
@@ -537,7 +537,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
 
   public async acceptRequest(
     agentContext: AgentContext,
-    { proofRecord, proofFormats, autoAcceptProof, comment }: AcceptRequestOptions<[IndyProofFormatServiceLike]>
+    { proofRecord, proofFormats, autoAcceptProof, comment }: AcceptProofRequestOptions<[IndyProofFormatServiceLike]>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>> {
     // Assert
     proofRecord.assertProtocolVersion('v1')
@@ -855,7 +855,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
 
   public async createProblemReport(
     agentContext: AgentContext,
-    { proofRecord, description }: CreateProblemReportOptions
+    { proofRecord, description }: CreateProofProblemReportOptions
   ): Promise<ProofProtocolMsgReturnType<ProblemReportMessage>> {
     const message = new V1PresentationProblemReportMessage({
       description: {
@@ -1050,7 +1050,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
   public async getFormatData(
     agentContext: AgentContext,
     proofRecordId: string
-  ): Promise<GetFormatDataReturn<ProofFormat[]>> {
+  ): Promise<GetProofFormatDataReturn<ProofFormat[]>> {
     // TODO: we could looking at fetching all record using a single query and then filtering based on the type of the message.
     const [proposalMessage, requestMessage, presentationMessage] = await Promise.all([
       this.findProposalMessage(agentContext, proofRecordId),

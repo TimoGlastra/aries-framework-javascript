@@ -33,7 +33,7 @@ import type { ProofExchangeRecord } from '../repository'
  * }
  * ```
  */
-export type FormatDataMessagePayload<
+export type ProofFormatDataMessagePayload<
   CFs extends ProofFormat[] = ProofFormat[],
   M extends keyof ProofFormat['formatData'] = keyof ProofFormat['formatData']
 > = {
@@ -66,25 +66,25 @@ export type ProofFormatsFromProtocols<Type extends ProofProtocol[]> = Type[numbe
     : never
   : never
 
-export type GetFormatDataReturn<PFs extends ProofFormat[] = ProofFormat[]> = {
-  proposal?: FormatDataMessagePayload<PFs, 'proposal'>
-  request?: FormatDataMessagePayload<PFs, 'request'>
-  presentation?: FormatDataMessagePayload<PFs, 'presentation'>
+export type GetProofFormatDataReturn<PFs extends ProofFormat[] = ProofFormat[]> = {
+  proposal?: ProofFormatDataMessagePayload<PFs, 'proposal'>
+  request?: ProofFormatDataMessagePayload<PFs, 'request'>
+  presentation?: ProofFormatDataMessagePayload<PFs, 'presentation'>
 }
 
-export interface BaseOptions {
+interface BaseOptions {
   goalCode?: string
   comment?: string
   autoAcceptProof?: AutoAcceptProof
 }
 
-export interface CreateProposalOptions<PFs extends ProofFormatService[]> extends BaseOptions {
+export interface CreateProofProposalOptions<PFs extends ProofFormatService[]> extends BaseOptions {
   connectionRecord: ConnectionRecord
   proofFormats: ProofFormatPayload<ExtractProofFormats<PFs>, 'createProposal'>
   parentThreadId?: string
 }
 
-export interface AcceptProposalOptions<PFs extends ProofFormatService[]> extends BaseOptions {
+export interface AcceptProofProposalOptions<PFs extends ProofFormatService[]> extends BaseOptions {
   proofRecord: ProofExchangeRecord
   proofFormats?: ProofFormatPayload<ExtractProofFormats<PFs>, 'acceptProposal'>
 
@@ -92,7 +92,7 @@ export interface AcceptProposalOptions<PFs extends ProofFormatService[]> extends
   willConfirm?: boolean
 }
 
-export interface NegotiateProposalOptions<PFs extends ProofFormatService[]> extends BaseOptions {
+export interface NegotiateProofProposalOptions<PFs extends ProofFormatService[]> extends BaseOptions {
   proofRecord: ProofExchangeRecord
   proofFormats: ProofFormatPayload<ExtractProofFormats<PFs>, 'createRequest'>
 
@@ -100,7 +100,7 @@ export interface NegotiateProposalOptions<PFs extends ProofFormatService[]> exte
   willConfirm?: boolean
 }
 
-export interface CreateRequestOptions<PFs extends ProofFormatService[]> extends BaseOptions {
+export interface CreateProofRequestOptions<PFs extends ProofFormatService[]> extends BaseOptions {
   // Create request can also be used for connection-less, so connection is optional
   connectionRecord?: ConnectionRecord
   proofFormats: ProofFormatPayload<ExtractProofFormats<PFs>, 'createRequest'>
@@ -110,12 +110,12 @@ export interface CreateRequestOptions<PFs extends ProofFormatService[]> extends 
   willConfirm?: boolean
 }
 
-export interface AcceptRequestOptions<PFs extends ProofFormatService[]> extends BaseOptions {
+export interface AcceptProofRequestOptions<PFs extends ProofFormatService[]> extends BaseOptions {
   proofRecord: ProofExchangeRecord
   proofFormats?: ProofFormatPayload<ExtractProofFormats<PFs>, 'acceptRequest'>
 }
 
-export interface NegotiateRequestOptions<PFs extends ProofFormatService[]> extends BaseOptions {
+export interface NegotiateProofRequestOptions<PFs extends ProofFormatService[]> extends BaseOptions {
   proofRecord: ProofExchangeRecord
   proofFormats: ProofFormatPayload<ExtractProofFormats<PFs>, 'createProposal'>
 }
@@ -150,7 +150,7 @@ export interface AcceptPresentationOptions {
   proofRecord: ProofExchangeRecord
 }
 
-export interface CreateProblemReportOptions {
+export interface CreateProofProblemReportOptions {
   proofRecord: ProofExchangeRecord
   description: string
 }

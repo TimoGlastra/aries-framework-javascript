@@ -1,9 +1,9 @@
-import type { GetFormatDataReturn } from '../../../protocol/ProofProtocolOptions'
+import type { GetProofFormatDataReturn } from '../../../protocol/ProofProtocolOptions'
 import type { IndyProofFormat } from '../IndyProofFormat'
 
 import { AriesFrameworkError } from '../../../../../error'
 
-export function getGroupKeysFromIndyProofFormatData(formatData: GetFormatDataReturn<[IndyProofFormat]>): {
+export function getGroupKeysFromIndyProofFormatData(formatData: GetProofFormatDataReturn<[IndyProofFormat]>): {
   proposeKey1: string
   proposeKey2: string
   requestKey1: string

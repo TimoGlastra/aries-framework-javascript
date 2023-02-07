@@ -8,7 +8,7 @@ import type {
   FindCredentialOfferMessageReturn,
   FindCredentialProposalMessageReturn,
   FindCredentialRequestMessageReturn,
-  GetFormatDataReturn,
+  GetCredentialFormatDataReturn,
   NegotiateCredentialOfferOptions,
   NegotiateCredentialProposalOptions,
   OfferCredentialOptions,
@@ -77,7 +77,7 @@ export interface CredentialsApi<CPs extends CredentialProtocol[]> {
   findById(credentialRecordId: string): Promise<CredentialExchangeRecord | null>
   deleteById(credentialRecordId: string, options?: DeleteCredentialOptions): Promise<void>
   update(credentialRecord: CredentialExchangeRecord): Promise<void>
-  getFormatData(credentialRecordId: string): Promise<GetFormatDataReturn<CredentialFormatsFromProtocols<CPs>>>
+  getFormatData(credentialRecordId: string): Promise<GetCredentialFormatDataReturn<CredentialFormatsFromProtocols<CPs>>>
 
   // DidComm Message Records
   findProposalMessage(credentialExchangeId: string): Promise<FindCredentialProposalMessageReturn<CPs>>
@@ -598,7 +598,7 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
 
   public async getFormatData(
     credentialRecordId: string
-  ): Promise<GetFormatDataReturn<CredentialFormatsFromProtocols<CPs>>> {
+  ): Promise<GetCredentialFormatDataReturn<CredentialFormatsFromProtocols<CPs>>> {
     const credentialRecord = await this.getById(credentialRecordId)
     const protocol = this.getProtocol(credentialRecord.protocolVersion)
 

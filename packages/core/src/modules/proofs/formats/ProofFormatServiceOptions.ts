@@ -50,18 +50,17 @@ export interface ProofFormatProcessOptions {
   proofRecord: ProofExchangeRecord
 }
 
-export interface FormatProcessPresentationOptions extends ProofFormatProcessOptions {
+export interface ProofFormatProcessPresentationOptions extends ProofFormatProcessOptions {
   requestAttachment: Attachment
 }
 
-// TODO: proof specific interface naming?
-export interface FormatCreateProposalOptions<PF extends ProofFormat> {
+export interface ProofFormatCreateProposalOptions<PF extends ProofFormat> {
   proofRecord: ProofExchangeRecord
   proofFormats: ProofFormatPayload<[PF], 'createProposal'>
   attachmentId?: string
 }
 
-export interface FormatAcceptProposalOptions<PF extends ProofFormat> {
+export interface ProofFormatAcceptProposalOptions<PF extends ProofFormat> {
   proofRecord: ProofExchangeRecord
   proofFormats?: ProofFormatPayload<[PF], 'acceptProposal'>
   attachmentId?: string
@@ -75,7 +74,7 @@ export interface FormatCreateRequestOptions<PF extends ProofFormat> {
   attachmentId?: string
 }
 
-export interface FormatAcceptRequestOptions<PF extends ProofFormat> {
+export interface ProofFormatAcceptRequestOptions<PF extends ProofFormat> {
   proofRecord: ProofExchangeRecord
   proofFormats?: ProofFormatPayload<[PF], 'acceptRequest'>
   attachmentId?: string
@@ -84,7 +83,7 @@ export interface FormatAcceptRequestOptions<PF extends ProofFormat> {
   proposalAttachment?: Attachment
 }
 
-export interface FormatGetCredentialsForRequestOptions<PF extends ProofFormat> {
+export interface ProofFormatGetCredentialsForRequestOptions<PF extends ProofFormat> {
   proofRecord: ProofExchangeRecord
   proofFormats?: ProofFormatCredentialForRequestPayload<[PF], 'getCredentialsForRequest', 'input'>
 
@@ -92,10 +91,10 @@ export interface FormatGetCredentialsForRequestOptions<PF extends ProofFormat> {
   proposalAttachment?: Attachment
 }
 
-export type FormatGetCredentialsForRequestReturn<PF extends ProofFormat> =
+export type ProofFormatGetCredentialsForRequestReturn<PF extends ProofFormat> =
   PF['proofFormats']['getCredentialsForRequest']['output']
 
-export interface FormatSelectCredentialsForRequestOptions<PF extends ProofFormat> {
+export interface ProofFormatSelectCredentialsForRequestOptions<PF extends ProofFormat> {
   proofRecord: ProofExchangeRecord
   proofFormats?: ProofFormatCredentialForRequestPayload<[PF], 'selectCredentialsForRequest', 'input'>
 
@@ -103,22 +102,22 @@ export interface FormatSelectCredentialsForRequestOptions<PF extends ProofFormat
   proposalAttachment?: Attachment
 }
 
-export type FormatSelectCredentialsForRequestReturn<PF extends ProofFormat> =
+export type ProofFormatSelectCredentialsForRequestReturn<PF extends ProofFormat> =
   PF['proofFormats']['selectCredentialsForRequest']['output']
 
-export interface FormatAutoRespondProposalOptions {
+export interface ProofFormatAutoRespondProposalOptions {
   proofRecord: ProofExchangeRecord
   proposalAttachment: Attachment
   requestAttachment: Attachment
 }
 
-export interface FormatAutoRespondRequestOptions {
+export interface ProofFormatAutoRespondRequestOptions {
   proofRecord: ProofExchangeRecord
   requestAttachment: Attachment
   proposalAttachment: Attachment
 }
 
-export interface FormatAutoRespondPresentationOptions {
+export interface ProofFormatAutoRespondPresentationOptions {
   proofRecord: ProofExchangeRecord
   proposalAttachment?: Attachment
   requestAttachment: Attachment

@@ -1,14 +1,14 @@
 import type {
-  CreateProposalOptions,
-  CreateRequestOptions,
+  CreateProofProposalOptions,
+  CreateProofRequestOptions,
   DeleteProofOptions,
-  GetFormatDataReturn,
-  CreateProblemReportOptions,
+  GetProofFormatDataReturn,
+  CreateProofProblemReportOptions,
   ProofProtocolMsgReturnType,
-  AcceptProposalOptions,
-  NegotiateProposalOptions,
-  AcceptRequestOptions,
-  NegotiateRequestOptions,
+  AcceptProofProposalOptions,
+  NegotiateProofProposalOptions,
+  AcceptProofRequestOptions,
+  NegotiateProofRequestOptions,
   AcceptPresentationOptions,
   GetCredentialsForRequestOptions,
   GetCredentialsForRequestReturn,
@@ -32,31 +32,31 @@ export interface ProofProtocol<PFs extends ProofFormatService[] = ProofFormatSer
   // methods for proposal
   createProposal(
     agentContext: AgentContext,
-    options: CreateProposalOptions<PFs>
+    options: CreateProofProposalOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
   processProposal(messageContext: InboundMessageContext<AgentMessage>): Promise<ProofExchangeRecord>
   acceptProposal(
     agentContext: AgentContext,
-    options: AcceptProposalOptions<PFs>
+    options: AcceptProofProposalOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
   negotiateProposal(
     agentContext: AgentContext,
-    options: NegotiateProposalOptions<PFs>
+    options: NegotiateProofProposalOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
 
   // methods for request
   createRequest(
     agentContext: AgentContext,
-    options: CreateRequestOptions<PFs>
+    options: CreateProofRequestOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
   processRequest(messageContext: InboundMessageContext<AgentMessage>): Promise<ProofExchangeRecord>
   acceptRequest(
     agentContext: AgentContext,
-    options: AcceptRequestOptions<PFs>
+    options: AcceptProofRequestOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
   negotiateRequest(
     agentContext: AgentContext,
-    options: NegotiateRequestOptions<PFs>
+    options: NegotiateProofRequestOptions<PFs>
   ): Promise<ProofProtocolMsgReturnType<AgentMessage>>
 
   // retrieving credentials for request
@@ -82,7 +82,7 @@ export interface ProofProtocol<PFs extends ProofFormatService[] = ProofFormatSer
   // method for problem report
   createProblemReport(
     agentContext: AgentContext,
-    options: CreateProblemReportOptions
+    options: CreateProofProblemReportOptions
   ): Promise<ProofProtocolMsgReturnType<ProblemReportMessage>>
   processProblemReport(messageContext: InboundMessageContext<ProblemReportMessage>): Promise<ProofExchangeRecord>
 
@@ -92,7 +92,7 @@ export interface ProofProtocol<PFs extends ProofFormatService[] = ProofFormatSer
   getFormatData(
     agentContext: AgentContext,
     proofExchangeId: string
-  ): Promise<GetFormatDataReturn<ExtractProofFormats<PFs>>>
+  ): Promise<GetProofFormatDataReturn<ExtractProofFormats<PFs>>>
 
   // repository methods
   updateState(agentContext: AgentContext, proofRecord: ProofExchangeRecord, newState: ProofState): Promise<void>

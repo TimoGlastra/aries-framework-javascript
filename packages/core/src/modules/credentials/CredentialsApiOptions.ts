@@ -4,11 +4,11 @@ import type { CredentialProtocol } from './protocol/CredentialProtocol'
 import type {
   CredentialFormatsFromProtocols,
   DeleteCredentialOptions,
-  GetFormatDataReturn,
+  GetCredentialFormatDataReturn,
 } from './protocol/CredentialProtocolOptions'
 
 // re-export GetFormatDataReturn type from protocol, as it is also used in the api
-export type { GetFormatDataReturn, DeleteCredentialOptions }
+export type { GetCredentialFormatDataReturn, DeleteCredentialOptions }
 
 export type FindCredentialProposalMessageReturn<CPs extends CredentialProtocol[] = CredentialProtocol[]> = ReturnType<
   CPs[number]['findProposalMessage']

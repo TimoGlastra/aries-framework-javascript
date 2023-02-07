@@ -15,18 +15,18 @@ import type { CredentialFormatSpec } from '../../models/CredentialFormatSpec'
 import type { CredentialProtocol } from '../CredentialProtocol'
 import type {
   AcceptCredentialOptions,
-  AcceptOfferOptions,
-  AcceptProposalOptions,
-  AcceptRequestOptions,
-  CreateOfferOptions,
-  CreateProposalOptions,
-  CreateRequestOptions,
+  AcceptCredentialOfferOptions,
+  AcceptCredentialProposalOptions,
+  AcceptCredentialRequestOptions,
+  CreateCredentialOfferOptions,
+  CreateCredentialProposalOptions,
+  CreateCredentialRequestOptions,
   CredentialProtocolMsgReturnType,
-  FormatDataMessagePayload,
-  CreateProblemReportOptions,
-  GetFormatDataReturn,
-  NegotiateOfferOptions,
-  NegotiateProposalOptions,
+  CredentialFormatDataMessagePayload,
+  CreateCredentialProblemReportOptions,
+  GetCredentialFormatDataReturn,
+  NegotiateCredentialOfferOptions,
+  NegotiateCredentialProposalOptions,
 } from '../CredentialProtocolOptions'
 
 import { Protocol } from '../../../../agent/models/features/Protocol'
@@ -115,7 +115,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
    */
   public async createProposal(
     agentContext: AgentContext,
-    { connectionRecord, credentialFormats, comment, autoAcceptCredential }: CreateProposalOptions<CFs>
+    { connectionRecord, credentialFormats, comment, autoAcceptCredential }: CreateCredentialProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>> {
     agentContext.config.logger.debug('Get the Format Service and Create Proposal Message')
 
@@ -232,7 +232,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
 
   public async acceptProposal(
     agentContext: AgentContext,
-    { credentialRecord, credentialFormats, autoAcceptCredential, comment }: AcceptProposalOptions<CFs>
+    { credentialRecord, credentialFormats, autoAcceptCredential, comment }: AcceptCredentialProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<V2OfferCredentialMessage>> {
     // Assert
     credentialRecord.assertProtocolVersion('v2')
@@ -279,13 +279,13 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
    * Negotiate a credential proposal as issuer (by sending a credential offer message) to the connection
    * associated with the credential record.
    *
-   * @param options configuration for the offer see {@link NegotiateProposalOptions}
+   * @param options configuration for the offer see {@link NegotiateCredentialProposalOptions}
    * @returns Credential exchange record associated with the credential offer
    *
    */
   public async negotiateProposal(
     agentContext: AgentContext,
-    { credentialRecord, credentialFormats, autoAcceptCredential, comment }: NegotiateProposalOptions<CFs>
+    { credentialRecord, credentialFormats, autoAcceptCredential, comment }: NegotiateCredentialProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<V2OfferCredentialMessage>> {
     // Assert
     credentialRecord.assertProtocolVersion('v2')
@@ -326,7 +326,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
    */
   public async createOffer(
     agentContext: AgentContext,
-    { credentialFormats, autoAcceptCredential, comment, connectionRecord }: CreateOfferOptions<CFs>
+    { credentialFormats, autoAcceptCredential, comment, connectionRecord }: CreateCredentialOfferOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<V2OfferCredentialMessage>> {
     const credentialRepository = agentContext.dependencyManager.resolve(CredentialRepository)
 
@@ -443,7 +443,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
 
   public async acceptOffer(
     agentContext: AgentContext,
-    { credentialRecord, autoAcceptCredential, comment, credentialFormats }: AcceptOfferOptions<CFs>
+    { credentialRecord, autoAcceptCredential, comment, credentialFormats }: AcceptCredentialOfferOptions<CFs>
   ) {
     const didCommMessageRepository = agentContext.dependencyManager.resolve(DidCommMessageRepository)
 
@@ -496,7 +496,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
    */
   public async negotiateOffer(
     agentContext: AgentContext,
-    { credentialRecord, credentialFormats, autoAcceptCredential, comment }: NegotiateOfferOptions<CFs>
+    { credentialRecord, credentialFormats, autoAcceptCredential, comment }: NegotiateCredentialOfferOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<V2ProposeCredentialMessage>> {
     // Assert
     credentialRecord.assertProtocolVersion('v2')
@@ -533,7 +533,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
    */
   public async createRequest(
     agentContext: AgentContext,
-    { credentialFormats, autoAcceptCredential, comment, connectionRecord }: CreateRequestOptions<CFs>
+    { credentialFormats, autoAcceptCredential, comment, connectionRecord }: CreateCredentialRequestOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<V2RequestCredentialMessage>> {
     const credentialRepository = agentContext.dependencyManager.resolve(CredentialRepository)
 
@@ -656,7 +656,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
 
   public async acceptRequest(
     agentContext: AgentContext,
-    { credentialRecord, autoAcceptCredential, comment, credentialFormats }: AcceptRequestOptions<CFs>
+    { credentialRecord, autoAcceptCredential, comment, credentialFormats }: AcceptCredentialRequestOptions<CFs>
   ) {
     const didCommMessageRepository = agentContext.dependencyManager.resolve(DidCommMessageRepository)
 
@@ -841,7 +841,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
    */
   public async createProblemReport(
     agentContext: AgentContext,
-    { credentialRecord, description }: CreateProblemReportOptions
+    { credentialRecord, description }: CreateCredentialProblemReportOptions
   ): Promise<CredentialProtocolMsgReturnType<ProblemReportMessage>> {
     const message = new V2CredentialProblemReportMessage({
       description: {
@@ -1158,7 +1158,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
   public async getFormatData(
     agentContext: AgentContext,
     credentialExchangeId: string
-  ): Promise<GetFormatDataReturn<ExtractCredentialFormats<CFs>>> {
+  ): Promise<GetCredentialFormatDataReturn<ExtractCredentialFormats<CFs>>> {
     // TODO: we could looking at fetching all record using a single query and then filtering based on the type of the message.
     const [proposalMessage, offerMessage, requestMessage, credentialMessage] = await Promise.all([
       this.findProposalMessage(agentContext, credentialExchangeId),
@@ -1176,7 +1176,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
       credential: [credentialMessage?.formats, credentialMessage?.credentialAttachments],
     } as const
 
-    const formatData: GetFormatDataReturn = {
+    const formatData: GetCredentialFormatDataReturn = {
       proposalAttributes: proposalMessage?.credentialPreview?.attributes,
       offerAttributes: offerMessage?.credentialPreview?.attributes,
     }
@@ -1188,7 +1188,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
 
       // Find all format services associated with the message
       const formatServices = this.getFormatServicesFromMessage(formats)
-      const messageFormatData: FormatDataMessagePayload = {}
+      const messageFormatData: CredentialFormatDataMessagePayload = {}
 
       // Loop through all of the format services, for each we will extract the attachment data and assign this to the object
       // using the unique format key (e.g. indy)
@@ -1198,7 +1198,7 @@ export class V2CredentialProtocol<CFs extends CredentialFormatService[] = Creden
         messageFormatData[formatService.formatKey] = attachment.getDataAsJson()
       }
 
-      formatData[messageKey as Exclude<keyof GetFormatDataReturn, 'proposalAttributes' | 'offerAttributes'>] =
+      formatData[messageKey as Exclude<keyof GetCredentialFormatDataReturn, 'proposalAttributes' | 'offerAttributes'>] =
         messageFormatData
     }
 

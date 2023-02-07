@@ -1,17 +1,17 @@
 import type {
-  CreateProposalOptions,
+  CreateCredentialProposalOptions,
   CredentialProtocolMsgReturnType,
   DeleteCredentialOptions,
-  AcceptProposalOptions,
-  NegotiateProposalOptions,
-  CreateOfferOptions,
-  NegotiateOfferOptions,
-  CreateRequestOptions,
-  AcceptOfferOptions,
-  AcceptRequestOptions,
+  AcceptCredentialProposalOptions,
+  NegotiateCredentialProposalOptions,
+  CreateCredentialOfferOptions,
+  NegotiateCredentialOfferOptions,
+  CreateCredentialRequestOptions,
+  AcceptCredentialOfferOptions,
+  AcceptCredentialRequestOptions,
   AcceptCredentialOptions,
-  GetFormatDataReturn,
-  CreateProblemReportOptions,
+  GetCredentialFormatDataReturn,
+  CreateCredentialProblemReportOptions,
 } from './CredentialProtocolOptions'
 import type { AgentContext } from '../../../agent'
 import type { AgentMessage } from '../../../agent/AgentMessage'
@@ -30,42 +30,42 @@ export interface CredentialProtocol<CFs extends CredentialFormatService[] = Cred
   // methods for proposal
   createProposal(
     agentContext: AgentContext,
-    options: CreateProposalOptions<CFs>
+    options: CreateCredentialProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   processProposal(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
   acceptProposal(
     agentContext: AgentContext,
-    options: AcceptProposalOptions<CFs>
+    options: AcceptCredentialProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   negotiateProposal(
     agentContext: AgentContext,
-    options: NegotiateProposalOptions<CFs>
+    options: NegotiateCredentialProposalOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for offer
   createOffer(
     agentContext: AgentContext,
-    options: CreateOfferOptions<CFs>
+    options: CreateCredentialOfferOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   processOffer(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
   acceptOffer(
     agentContext: AgentContext,
-    options: AcceptOfferOptions<CFs>
+    options: AcceptCredentialOfferOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   negotiateOffer(
     agentContext: AgentContext,
-    options: NegotiateOfferOptions<CFs>
+    options: NegotiateCredentialOfferOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for request
   createRequest(
     agentContext: AgentContext,
-    options: CreateRequestOptions<CFs>
+    options: CreateCredentialRequestOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
   processRequest(messageContext: InboundMessageContext<AgentMessage>): Promise<CredentialExchangeRecord>
   acceptRequest(
     agentContext: AgentContext,
-    options: AcceptRequestOptions<CFs>
+    options: AcceptCredentialRequestOptions<CFs>
   ): Promise<CredentialProtocolMsgReturnType<AgentMessage>>
 
   // methods for issue
@@ -81,7 +81,7 @@ export interface CredentialProtocol<CFs extends CredentialFormatService[] = Cred
   // methods for problem-report
   createProblemReport(
     agentContext: AgentContext,
-    options: CreateProblemReportOptions
+    options: CreateCredentialProblemReportOptions
   ): Promise<CredentialProtocolMsgReturnType<ProblemReportMessage>>
   processProblemReport(messageContext: InboundMessageContext<ProblemReportMessage>): Promise<CredentialExchangeRecord>
 
@@ -92,7 +92,7 @@ export interface CredentialProtocol<CFs extends CredentialFormatService[] = Cred
   getFormatData(
     agentContext: AgentContext,
     credentialExchangeId: string
-  ): Promise<GetFormatDataReturn<ExtractCredentialFormats<CFs>>>
+  ): Promise<GetCredentialFormatDataReturn<ExtractCredentialFormats<CFs>>>
 
   // Repository methods
   updateState(

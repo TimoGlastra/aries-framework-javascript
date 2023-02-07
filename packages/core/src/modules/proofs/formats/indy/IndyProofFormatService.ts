@@ -8,19 +8,19 @@ import type { ProofAttributeInfo, ProofPredicateInfo } from './models'
 import type { AgentContext } from '../../../../agent'
 import type { ProofFormatService } from '../ProofFormatService'
 import type {
-  FormatCreateProposalOptions,
+  ProofFormatCreateProposalOptions,
   ProofFormatCreateReturn,
-  FormatAcceptProposalOptions,
-  FormatAcceptRequestOptions,
-  FormatAutoRespondProposalOptions,
-  FormatAutoRespondRequestOptions,
-  FormatGetCredentialsForRequestOptions,
-  FormatGetCredentialsForRequestReturn,
-  FormatSelectCredentialsForRequestOptions,
-  FormatSelectCredentialsForRequestReturn,
+  ProofFormatAcceptProposalOptions,
+  ProofFormatAcceptRequestOptions,
+  ProofFormatAutoRespondProposalOptions,
+  ProofFormatAutoRespondRequestOptions,
+  ProofFormatGetCredentialsForRequestOptions,
+  ProofFormatGetCredentialsForRequestReturn,
+  ProofFormatSelectCredentialsForRequestOptions,
+  ProofFormatSelectCredentialsForRequestReturn,
   ProofFormatProcessOptions,
   FormatCreateRequestOptions,
-  FormatProcessPresentationOptions,
+  ProofFormatProcessPresentationOptions,
 } from '../ProofFormatServiceOptions'
 import type { CredDef, IndyProof, IndyProofRequest, Schema } from 'indy-sdk'
 
@@ -51,7 +51,7 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
 
   public async createProposal(
     agentContext: AgentContext,
-    { attachmentId, proofFormats }: FormatCreateProposalOptions<IndyProofFormat>
+    { attachmentId, proofFormats }: ProofFormatCreateProposalOptions<IndyProofFormat>
   ): Promise<ProofFormatCreateReturn> {
     const format = new ProofFormatSpec({
       format: V2_INDY_PRESENTATION_PROPOSAL,
@@ -87,7 +87,7 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
 
   public async acceptProposal(
     agentContext: AgentContext,
-    { proposalAttachment, attachmentId }: FormatAcceptProposalOptions<IndyProofFormat>
+    { proposalAttachment, attachmentId }: ProofFormatAcceptProposalOptions<IndyProofFormat>
   ): Promise<ProofFormatCreateReturn> {
     const format = new ProofFormatSpec({
       format: V2_INDY_PRESENTATION_REQUEST,
@@ -151,7 +151,7 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
 
   public async acceptRequest(
     agentContext: AgentContext,
-    { proofFormats, requestAttachment, attachmentId }: FormatAcceptRequestOptions<IndyProofFormat>
+    { proofFormats, requestAttachment, attachmentId }: ProofFormatAcceptRequestOptions<IndyProofFormat>
   ): Promise<ProofFormatCreateReturn> {
     const format = new ProofFormatSpec({
       format: V2_INDY_PRESENTATION,
@@ -197,7 +197,7 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
 
   public async processPresentation(
     agentContext: AgentContext,
-    { requestAttachment, attachment }: FormatProcessPresentationOptions
+    { requestAttachment, attachment }: ProofFormatProcessPresentationOptions
   ): Promise<boolean> {
     const indyVerifierService = agentContext.dependencyManager.resolve(IndyVerifierService)
 
@@ -237,8 +237,8 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
 
   public async getCredentialsForRequest(
     agentContext: AgentContext,
-    { requestAttachment, proofFormats }: FormatGetCredentialsForRequestOptions<IndyProofFormat>
-  ): Promise<FormatGetCredentialsForRequestReturn<IndyProofFormat>> {
+    { requestAttachment, proofFormats }: ProofFormatGetCredentialsForRequestOptions<IndyProofFormat>
+  ): Promise<ProofFormatGetCredentialsForRequestReturn<IndyProofFormat>> {
     const proofRequestJson = requestAttachment.getDataAsJson()
     const proofRequest = JsonTransformer.fromJSON(proofRequestJson, ProofRequest)
 
@@ -254,8 +254,8 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
 
   public async selectCredentialsForRequest(
     agentContext: AgentContext,
-    { requestAttachment, proofFormats }: FormatSelectCredentialsForRequestOptions<IndyProofFormat>
-  ): Promise<FormatSelectCredentialsForRequestReturn<IndyProofFormat>> {
+    { requestAttachment, proofFormats }: ProofFormatSelectCredentialsForRequestOptions<IndyProofFormat>
+  ): Promise<ProofFormatSelectCredentialsForRequestReturn<IndyProofFormat>> {
     const proofRequestJson = requestAttachment.getDataAsJson()
     const proofRequest = JsonTransformer.fromJSON(proofRequestJson, ProofRequest)
 
@@ -271,7 +271,7 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
 
   public async shouldAutoRespondToProposal(
     agentContext: AgentContext,
-    { proposalAttachment, requestAttachment }: FormatAutoRespondProposalOptions
+    { proposalAttachment, requestAttachment }: ProofFormatAutoRespondProposalOptions
   ): Promise<boolean> {
     const proposalJson = proposalAttachment.getDataAsJson<IndyProofRequest>()
     const requestJson = requestAttachment.getDataAsJson<IndyProofRequest>()
@@ -287,7 +287,7 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
 
   public async shouldAutoRespondToRequest(
     agentContext: AgentContext,
-    { proposalAttachment, requestAttachment }: FormatAutoRespondRequestOptions
+    { proposalAttachment, requestAttachment }: ProofFormatAutoRespondRequestOptions
   ): Promise<boolean> {
     const proposalJson = proposalAttachment.getDataAsJson<IndyProofRequest>()
     const requestJson = requestAttachment.getDataAsJson<IndyProofRequest>()

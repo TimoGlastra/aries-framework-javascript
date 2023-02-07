@@ -3,12 +3,12 @@ import type { AutoAcceptProof } from './models'
 import type { ProofProtocol } from './protocol/ProofProtocol'
 import type {
   DeleteProofOptions,
-  GetFormatDataReturn,
+  GetProofFormatDataReturn,
   ProofFormatsFromProtocols,
 } from './protocol/ProofProtocolOptions'
 
 // re-export GetFormatDataReturn type from protocol, as it is also used in the api
-export type { GetFormatDataReturn, DeleteProofOptions }
+export type { GetProofFormatDataReturn, DeleteProofOptions }
 
 export type FindProofProposalMessageReturn<PPs extends ProofProtocol[]> = ReturnType<PPs[number]['findProposalMessage']>
 export type FindProofRequestMessageReturn<PPs extends ProofProtocol[]> = ReturnType<PPs[number]['findRequestMessage']>

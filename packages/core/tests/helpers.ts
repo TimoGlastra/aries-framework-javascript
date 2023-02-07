@@ -21,8 +21,12 @@ import type {
   JsonCredential,
   JsonLdCredentialDetailFormat,
 } from '../src/modules/credentials/formats/jsonld/JsonLdCredentialFormat'
+import type {
+  ProofAttributeInfo,
+  ProofPredicateInfo,
+  ProofPredicateInfoOptions,
+} from '../src/modules/proofs/formats/indy/models'
 import type { AutoAcceptProof } from '../src/modules/proofs/models/ProofAutoAcceptType'
-import type { ProofState } from '../src/modules/proofs/models/ProofState'
 import type { Awaited } from '../src/types'
 import type { CredDef, Schema } from 'indy-sdk'
 import type { Observable } from 'rxjs'
@@ -75,6 +79,7 @@ import { OutOfBandState } from '../src/modules/oob/domain/OutOfBandState'
 import { OutOfBandInvitation } from '../src/modules/oob/messages'
 import { OutOfBandRecord } from '../src/modules/oob/repository'
 import { PredicateType } from '../src/modules/proofs/formats/indy/models'
+import { ProofState } from '../src/modules/proofs/models/ProofState'
 import { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
 import { customDocumentLoader } from '../src/modules/vc/__tests__/documentLoader'
 import { KeyDerivationMethod } from '../src/types'
@@ -622,6 +627,78 @@ export function mockFunction<T extends (...args: any[]) => any>(fn: T): jest.Moc
 // eslint-disable-next-line @typescript-eslint/ban-types
 export function mockProperty<T extends {}, K extends keyof T>(object: T, property: K, value: T[K]) {
   Object.defineProperty(object, property, { get: () => value })
+}
+
+export async function presentProof({
+  verifierAgent,
+  verifierConnectionId,
+  holderAgent,
+  presentationTemplate: { attributes, predicates },
+}: {
+  verifierAgent: Agent
+  verifierConnectionId: string
+  holderAgent: Agent
+  presentationTemplate: {
+    attributes?: Record<string, ProofAttributeInfo>
+    predicates?: Record<string, ProofPredicateInfoOptions>
+  }
+}) {
+  const verifierReplay = new ReplaySubject<ProofStateChangedEvent>()
+  const holderReplay = new ReplaySubject<ProofStateChangedEvent>()
+
+  verifierAgent.events.observable<ProofStateChangedEvent>(ProofEventTypes.ProofStateChanged).subscribe(verifierReplay)
+  holderAgent.events.observable<ProofStateChangedEvent>(ProofEventTypes.ProofStateChanged).subscribe(holderReplay)
+
+  let holderProofExchangeRecordPromise = waitForProofExchangeRecordSubject(holderReplay, {
+    state: ProofState.RequestReceived,
+  })
+
+  let verifierRecord = await verifierAgent.proofs.requestProof({
+    connectionId: verifierConnectionId,
+    proofFormats: {
+      indy: {
+        name: 'test-proof-request',
+        requestedAttributes: attributes,
+        requestedPredicates: predicates,
+        version: '1.0',
+      },
+    },
+    protocolVersion: 'v2',
+  })
+
+  let holderRecord = await holderProofExchangeRecordPromise
+
+  const requestedCredentials = await holderAgent.proofs.selectCredentialsForRequest({
+    proofRecordId: holderRecord.id,
+  })
+
+  const verifierProofExchangeRecordPromise = waitForProofExchangeRecordSubject(verifierReplay, {
+    threadId: holderRecord.threadId,
+    state: ProofState.PresentationReceived,
+  })
+
+  await holderAgent.proofs.acceptRequest({
+    proofRecordId: holderRecord.id,
+    proofFormats: { indy: requestedCredentials.proofFormats.indy },
+  })
+
+  verifierRecord = await verifierProofExchangeRecordPromise
+
+  // assert presentation is valid
+  expect(verifierRecord.isVerified).toBe(true)
+
+  holderProofExchangeRecordPromise = waitForProofExchangeRecordSubject(holderReplay, {
+    threadId: holderRecord.threadId,
+    state: ProofState.Done,
+  })
+
+  verifierRecord = await verifierAgent.proofs.acceptPresentation({ proofRecordId: verifierRecord.id })
+  holderRecord = await holderProofExchangeRecordPromise
+
+  return {
+    verifierProof: verifierRecord,
+    holderProof: holderRecord,
+  }
 }
 
 // Helper type to get the type of the agents (with the custom modules) for the credential tests

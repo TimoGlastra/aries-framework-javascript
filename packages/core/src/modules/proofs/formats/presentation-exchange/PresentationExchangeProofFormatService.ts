@@ -8,17 +8,17 @@ import type { Query } from '../../../../storage/StorageService'
 import type { W3cCredentialRecord } from '../../../vc'
 import type { ProofFormatService } from '../ProofFormatService'
 import type {
-  FormatAcceptProposalOptions,
-  FormatAcceptRequestOptions,
-  FormatAutoRespondProposalOptions,
-  FormatAutoRespondRequestOptions,
-  FormatCreateProposalOptions,
+  ProofFormatAcceptProposalOptions,
+  ProofFormatAcceptRequestOptions,
+  ProofFormatAutoRespondProposalOptions,
+  ProofFormatAutoRespondRequestOptions,
+  ProofFormatCreateProposalOptions,
   FormatCreateRequestOptions,
-  FormatGetCredentialsForRequestOptions,
-  FormatGetCredentialsForRequestReturn,
-  FormatProcessPresentationOptions,
-  FormatSelectCredentialsForRequestOptions,
-  FormatSelectCredentialsForRequestReturn,
+  ProofFormatGetCredentialsForRequestOptions,
+  ProofFormatGetCredentialsForRequestReturn,
+  ProofFormatProcessPresentationOptions,
+  ProofFormatSelectCredentialsForRequestOptions,
+  ProofFormatSelectCredentialsForRequestReturn,
   ProofFormatCreateReturn,
   ProofFormatProcessOptions,
 } from '../ProofFormatServiceOptions'
@@ -47,7 +47,7 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
 
   public async createProposal(
     agentContext: AgentContext,
-    { attachmentId, proofFormats }: FormatCreateProposalOptions<PresentationExchangeProofFormat>
+    { attachmentId, proofFormats }: ProofFormatCreateProposalOptions<PresentationExchangeProofFormat>
   ): Promise<ProofFormatCreateReturn> {
     const format = new ProofFormatSpec({
       format: V2_PRESENTATION_EXCHANGE_PRESENTATION_PROPOSAL,
@@ -103,7 +103,11 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
 
   public async acceptProposal(
     agentContext: AgentContext,
-    { proposalAttachment, attachmentId, proofFormats }: FormatAcceptProposalOptions<PresentationExchangeProofFormat>
+    {
+      proposalAttachment,
+      attachmentId,
+      proofFormats,
+    }: ProofFormatAcceptProposalOptions<PresentationExchangeProofFormat>
   ): Promise<ProofFormatCreateReturn> {
     const format = new ProofFormatSpec({
       format: V2_PRESENTATION_EXCHANGE_PRESENTATION_REQUEST,
@@ -185,7 +189,7 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
 
   public async acceptRequest(
     agentContext: AgentContext,
-    { proofFormats, requestAttachment, attachmentId }: FormatAcceptRequestOptions<PresentationExchangeProofFormat>
+    { proofFormats, requestAttachment, attachmentId }: ProofFormatAcceptRequestOptions<PresentationExchangeProofFormat>
   ): Promise<ProofFormatCreateReturn> {
     const didResolverService = agentContext.dependencyManager.resolve(DidResolverService)
     const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
@@ -278,7 +282,7 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
 
   public async processPresentation(
     agentContext: AgentContext,
-    { requestAttachment, attachment }: FormatProcessPresentationOptions
+    { requestAttachment, attachment }: ProofFormatProcessPresentationOptions
   ): Promise<boolean> {
     const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
 
@@ -305,8 +309,8 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
 
   public async getCredentialsForRequest(
     agentContext: AgentContext,
-    { requestAttachment }: FormatGetCredentialsForRequestOptions<PresentationExchangeProofFormat>
-  ): Promise<FormatGetCredentialsForRequestReturn<PresentationExchangeProofFormat>> {
+    { requestAttachment }: ProofFormatGetCredentialsForRequestOptions<PresentationExchangeProofFormat>
+  ): Promise<ProofFormatGetCredentialsForRequestReturn<PresentationExchangeProofFormat>> {
     const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
 
     return this._getCredentialsForRequest(agentContext, requestJson)
@@ -314,8 +318,8 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
 
   public async selectCredentialsForRequest(
     agentContext: AgentContext,
-    { requestAttachment }: FormatSelectCredentialsForRequestOptions<PresentationExchangeProofFormat>
-  ): Promise<FormatSelectCredentialsForRequestReturn<PresentationExchangeProofFormat>> {
+    { requestAttachment }: ProofFormatSelectCredentialsForRequestOptions<PresentationExchangeProofFormat>
+  ): Promise<ProofFormatSelectCredentialsForRequestReturn<PresentationExchangeProofFormat>> {
     const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
 
     const credentialsForRequest = await this._getCredentialsForRequest(agentContext, requestJson)
@@ -336,7 +340,7 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
 
   public async shouldAutoRespondToProposal(
     agentContext: AgentContext,
-    { proposalAttachment, requestAttachment }: FormatAutoRespondProposalOptions
+    { proposalAttachment, requestAttachment }: ProofFormatAutoRespondProposalOptions
   ): Promise<boolean> {
     const proposalJson = proposalAttachment.getDataAsJson<PresentationExchangeProposalData>()
     const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
@@ -347,7 +351,7 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
 
   public async shouldAutoRespondToRequest(
     agentContext: AgentContext,
-    { proposalAttachment, requestAttachment }: FormatAutoRespondRequestOptions
+    { proposalAttachment, requestAttachment }: ProofFormatAutoRespondRequestOptions
   ): Promise<boolean> {
     const proposalJson = proposalAttachment.getDataAsJson<PresentationExchangeProposalData>()
     const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()

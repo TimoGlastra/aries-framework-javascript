@@ -1,5 +1,5 @@
 import type { CredentialStateChangedEvent } from '../../../CredentialEvents'
-import type { CreateOfferOptions, CreateProposalOptions } from '../../CredentialProtocolOptions'
+import type { CreateCredentialOfferOptions, CreateCredentialProposalOptions } from '../../CredentialProtocolOptions'
 
 import { Subject } from 'rxjs'
 
@@ -121,7 +121,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
   })
 
   describe('createProposal', () => {
-    const proposeOptions: CreateProposalOptions<[IndyCredentialFormatService]> = {
+    const proposeOptions: CreateCredentialProposalOptions<[IndyCredentialFormatService]> = {
       connectionRecord: connectionRecord,
       credentialFormats: {
         indy: {
@@ -234,7 +234,7 @@ describe('V1CredentialProtocolProposeOffer', () => {
   })
 
   describe('createOffer', () => {
-    const offerOptions: CreateOfferOptions<[IndyCredentialFormatService]> = {
+    const offerOptions: CreateCredentialOfferOptions<[IndyCredentialFormatService]> = {
       comment: 'some comment',
       connectionRecord,
       credentialFormats: {
