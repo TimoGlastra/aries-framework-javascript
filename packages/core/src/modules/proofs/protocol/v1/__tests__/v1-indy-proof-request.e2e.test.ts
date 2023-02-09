@@ -56,7 +56,6 @@ describe('Present Proof | V1ProofProtocol', () => {
     faberProofExchangeRecord = await faberProofExchangeRecordPromise
 
     const proposal = await faberAgent.proofs.findProposalMessage(faberProofExchangeRecord.id)
-
     expect(proposal).toMatchObject({
       type: 'https://didcomm.org/present-proof/1.0/propose-presentation',
       id: expect.any(String),

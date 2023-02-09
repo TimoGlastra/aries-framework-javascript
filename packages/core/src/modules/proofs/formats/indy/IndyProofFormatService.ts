@@ -41,6 +41,7 @@ import { PartialProof } from './models/PartialProof'
 import { ProofRequest } from './models/ProofRequest'
 import { RequestedCredentials } from './models/RequestedCredentials'
 import { areIndyProofRequestsEqual, assertNoDuplicateGroupsNamesInProofRequest, createRequestFromPreview } from './util'
+import { sortRequestedCredentials } from './util/sortRequestedCredentials'
 
 const V2_INDY_PRESENTATION_PROPOSAL = 'hlindy/proof-req@v2.0'
 const V2_INDY_PRESENTATION_REQUEST = 'hlindy/proof-req@v2.0'
@@ -321,22 +322,24 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
     for (const [referent, requestedAttribute] of proofRequest.requestedAttributes.entries()) {
       const credentials = await this.getCredentialsForProofRequestReferent(agentContext, proofRequestJson, referent)
 
-      credentialsForProofRequest.attributes[referent] = await Promise.all(
-        credentials.map(async (credential: IndyCredential) => {
-          const { revoked, deltaTimestamp } = await this.getRevocationStatusForRequestedItem(agentContext, {
-            proofRequest,
-            requestedItem: requestedAttribute,
-            credential,
-          })
+      credentialsForProofRequest.attributes[referent] = sortRequestedCredentials(
+        await Promise.all(
+          credentials.map(async (credential: IndyCredential) => {
+            const { revoked, deltaTimestamp } = await this.getRevocationStatusForRequestedItem(agentContext, {
+              proofRequest,
+              requestedItem: requestedAttribute,
+              credential,
+            })
 
-          return new RequestedAttribute({
-            credentialId: credential.credentialInfo.referent,
-            revealed: true,
-            credentialInfo: credential.credentialInfo,
-            timestamp: deltaTimestamp,
-            revoked,
+            return new RequestedAttribute({
+              credentialId: credential.credentialInfo.referent,
+              revealed: true,
+              credentialInfo: credential.credentialInfo,
+              timestamp: deltaTimestamp,
+              revoked,
+            })
           })
-        })
+        )
       )
 
       // We only attach revoked state if non-revocation is requested. So if revoked is true it means
@@ -351,21 +354,23 @@ export class IndyProofFormatService implements ProofFormatService<IndyProofForma
     for (const [referent, requestedPredicate] of proofRequest.requestedPredicates.entries()) {
       const credentials = await this.getCredentialsForProofRequestReferent(agentContext, proofRequestJson, referent)
 
-      credentialsForProofRequest.predicates[referent] = await Promise.all(
-        credentials.map(async (credential) => {
-          const { revoked, deltaTimestamp } = await this.getRevocationStatusForRequestedItem(agentContext, {
-            proofRequest,
-            requestedItem: requestedPredicate,
-            credential,
-          })
+      credentialsForProofRequest.predicates[referent] = sortRequestedCredentials(
+        await Promise.all(
+          credentials.map(async (credential) => {
+            const { revoked, deltaTimestamp } = await this.getRevocationStatusForRequestedItem(agentContext, {
+              proofRequest,
+              requestedItem: requestedPredicate,
+              credential,
+            })
 
-          return new RequestedPredicate({
-            credentialId: credential.credentialInfo.referent,
-            credentialInfo: credential.credentialInfo,
-            timestamp: deltaTimestamp,
-            revoked,
+            return new RequestedPredicate({
+              credentialId: credential.credentialInfo.referent,
+              credentialInfo: credential.credentialInfo,
+              timestamp: deltaTimestamp,
+              revoked,
+            })
           })
-        })
+        )
       )
 
       // We only attach revoked state if non-revocation is requested. So if revoked is true it means
