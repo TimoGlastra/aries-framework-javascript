@@ -1,16 +1,11 @@
-import type { Agent, ConnectionRecord } from '../src'
-import type { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
+import type { Agent } from '../../../../../agent/Agent'
+import type { ConnectionRecord } from '../../../../connections'
+import type { V1PresentationPreview } from '../../v1'
 
-import { AutoAcceptProof, ProofState } from '../src'
-import {
-  ProofAttributeInfo,
-  AttributeFilter,
-  ProofPredicateInfo,
-  PredicateType,
-} from '../src/modules/proofs/formats/indy/models'
-
-import { setupProofsTest, waitForProofExchangeRecord } from './helpers'
-import testLogger from './logger'
+import { setupProofsTest, waitForProofExchangeRecord } from '../../../../../../tests/helpers'
+import testLogger from '../../../../../../tests/logger'
+import { ProofAttributeInfo, AttributeFilter, ProofPredicateInfo, PredicateType } from '../../../formats/indy/models'
+import { AutoAcceptProof, ProofState } from '../../../models'
 
 describe('Auto accept present proof', () => {
   let faberAgent: Agent
@@ -41,7 +36,7 @@ describe('Auto accept present proof', () => {
 
       await aliceAgent.proofs.proposeProof({
         connectionId: aliceConnection.id,
-        protocolVersion: 'v1',
+        protocolVersion: 'v2',
         proofFormats: {
           indy: {
             name: 'abc',
@@ -86,7 +81,7 @@ describe('Auto accept present proof', () => {
       }
 
       await faberAgent.proofs.requestProof({
-        protocolVersion: 'v1',
+        protocolVersion: 'v2',
         connectionId: faberConnection.id,
         proofFormats: {
           indy: {
@@ -98,7 +93,8 @@ describe('Auto accept present proof', () => {
         },
       })
 
-      testLogger.test('Faber waits for presentation from Alice')
+      testLogger.test('Alice waits for presentation from Faber')
+      testLogger.test('Faber waits till it receives presentation ack')
       await Promise.all([
         waitForProofExchangeRecord(faberAgent, { state: ProofState.Done }),
         waitForProofExchangeRecord(aliceAgent, { state: ProofState.Done }),
@@ -106,7 +102,7 @@ describe('Auto accept present proof', () => {
     })
   })
 
-  describe('Auto accept on `contentApproved`', () => {
+  describe("Auto accept on 'contentApproved'", () => {
     beforeAll(async () => {
       testLogger.test('Initializing the agents')
       ;({ faberAgent, aliceAgent, credDefId, faberConnection, aliceConnection, presentationPreview } =
@@ -124,30 +120,30 @@ describe('Auto accept present proof', () => {
       await aliceAgent.wallet.delete()
     })
 
-    test('Alice starts with proof proposal to Faber, both with autoacceptproof on `contentApproved`', async () => {
+    test("Alice starts with proof proposal to Faber, both with autoAcceptProof on 'contentApproved'", async () => {
       testLogger.test('Alice sends presentation proposal to Faber')
 
-      const aliceProofExchangeRecord = await aliceAgent.proofs.proposeProof({
+      const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
+        state: ProofState.ProposalReceived,
+      })
+
+      await aliceAgent.proofs.proposeProof({
         connectionId: aliceConnection.id,
-        protocolVersion: 'v1',
+        protocolVersion: 'v2',
         proofFormats: {
           indy: {
-            name: 'abc',
-            version: '1.0',
             attributes: presentationPreview.attributes,
             predicates: presentationPreview.predicates,
+            name: 'abc',
+            version: '1.0',
           },
         },
       })
 
-      testLogger.test('Faber waits for presentation proposal from Alice')
-      const faberProofExchangeRecord = await waitForProofExchangeRecord(faberAgent, {
-        threadId: aliceProofExchangeRecord.threadId,
-        state: ProofState.ProposalReceived,
+      const faberProofExchangeRecord = await faberProofExchangeRecordPromise
+      await faberAgent.proofs.acceptProposal({
+        proofRecordId: faberProofExchangeRecord.id,
       })
-
-      testLogger.test('Faber accepts presentation proposal from Alice')
-      await faberAgent.proofs.acceptProposal({ proofRecordId: faberProofExchangeRecord.id })
 
       await Promise.all([
         waitForProofExchangeRecord(aliceAgent, { state: ProofState.Done }),
@@ -155,7 +151,7 @@ describe('Auto accept present proof', () => {
       ])
     })
 
-    test('Faber starts with proof requests to Alice, both with autoacceptproof on `contentApproved`', async () => {
+    test("Faber starts with proof requests to Alice, both with autoAcceptProof on 'contentApproved'", async () => {
       testLogger.test('Faber sends presentation request to Alice')
       const attributes = {
         name: new ProofAttributeInfo({
@@ -180,8 +176,12 @@ describe('Auto accept present proof', () => {
         }),
       }
 
+      const aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
+        state: ProofState.RequestReceived,
+      })
+
       await faberAgent.proofs.requestProof({
-        protocolVersion: 'v1',
+        protocolVersion: 'v2',
         connectionId: faberConnection.id,
         proofFormats: {
           indy: {
@@ -193,17 +193,14 @@ describe('Auto accept present proof', () => {
         },
       })
 
-      testLogger.test('Alice waits for request from Faber')
-      const { id: proofRecordId } = await waitForProofExchangeRecord(aliceAgent, {
-        state: ProofState.RequestReceived,
+      const aliceProofExchangeRecord = await aliceProofExchangeRecordPromise
+      await aliceAgent.proofs.acceptRequest({
+        proofRecordId: aliceProofExchangeRecord.id,
       })
 
-      const { proofFormats } = await aliceAgent.proofs.selectCredentialsForRequest({ proofRecordId })
-      await aliceAgent.proofs.acceptRequest({ proofRecordId, proofFormats })
-
       await Promise.all([
-        waitForProofExchangeRecord(aliceAgent, { state: ProofState.Done }),
         waitForProofExchangeRecord(faberAgent, { state: ProofState.Done }),
+        waitForProofExchangeRecord(aliceAgent, { state: ProofState.Done }),
       ])
     })
   })

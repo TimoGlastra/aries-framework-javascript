@@ -12,7 +12,6 @@ export interface PresentationExchangeAcceptProposalFormat {
     challenge?: string
     domain?: string
   }
-  // TODO: add other presentationDefinition properties that could be added to the request
 }
 
 export interface PresentationExchangeRequestProofFormat {

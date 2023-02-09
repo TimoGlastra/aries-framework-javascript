@@ -1,11 +1,12 @@
-import type { JsonLdProofsTestsAgent } from './helpers'
-import type { ConnectionRecord, ProofExchangeRecord } from '../src'
+import type { JsonLdProofsTestsAgent } from '../../../../../../tests/helpers'
+import type { ConnectionRecord } from '../../../../connections'
+import type { ProofExchangeRecord } from '../../../repository'
 
-import { AriesFrameworkError, ProofState } from '../src'
-import { TEST_INPUT_DESCRIPTORS_CITIZENSHIP } from '../src/modules/proofs/__tests__/fixtures'
-
-import { setupJsonLdProofsTest, waitForProofExchangeRecord } from './helpers'
-import testLogger from './logger'
+import { setupJsonLdProofsTest, waitForProofExchangeRecord } from '../../../../../../tests/helpers'
+import testLogger from '../../../../../../tests/logger'
+import { AriesFrameworkError } from '../../../../../error'
+import { TEST_INPUT_DESCRIPTORS_CITIZENSHIP } from '../../../__tests__/fixtures'
+import { ProofState } from '../../../models'
 
 describe('Present Proof', () => {
   let faberAgent: JsonLdProofsTestsAgent
@@ -64,7 +65,7 @@ describe('Present Proof', () => {
           format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
-      proposalsAttach: [
+      proposalAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -94,7 +95,6 @@ describe('Present Proof', () => {
     }
 
     let aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
       threadId: aliceProofExchangeRecord.threadId,
       state: ProofState.RequestReceived,
     })
@@ -118,7 +118,7 @@ describe('Present Proof', () => {
           format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
-      requestPresentationsAttach: [
+      requestAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -159,7 +159,6 @@ describe('Present Proof', () => {
     faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
       threadId: aliceProofExchangeRecord.threadId,
       state: ProofState.PresentationReceived,
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
     })
 
     aliceProofExchangeRecord = await aliceAgent.proofs.acceptRequest({
@@ -181,7 +180,7 @@ describe('Present Proof', () => {
           format: 'dif/presentation-exchange/submission@v1.0',
         },
       ],
-      presentationsAttach: [
+      presentationAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -275,7 +274,7 @@ describe('Present Proof', () => {
           format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
-      requestPresentationsAttach: [
+      requestAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -326,7 +325,6 @@ describe('Present Proof', () => {
     const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
       threadId: aliceProofExchangeRecord.threadId,
       state: ProofState.PresentationReceived,
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
     })
 
     aliceProofExchangeRecord = await aliceAgent.proofs.acceptRequest(acceptPresentationOptions)
@@ -345,7 +343,7 @@ describe('Present Proof', () => {
           format: 'dif/presentation-exchange/submission@v1.0',
         },
       ],
-      presentationsAttach: [
+      presentationAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -440,7 +438,7 @@ describe('Present Proof', () => {
           format: 'dif/presentation-exchange/definitions@v1.0',
         },
       ],
-      requestPresentationsAttach: [
+      requestAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -491,7 +489,6 @@ describe('Present Proof', () => {
     const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
       threadId: aliceProofExchangeRecord.threadId,
       state: ProofState.PresentationReceived,
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
     })
 
     aliceProofExchangeRecord = await aliceAgent.proofs.acceptRequest({
@@ -517,7 +514,7 @@ describe('Present Proof', () => {
           format: 'dif/presentation-exchange/submission@v1.0',
         },
       ],
-      presentationsAttach: [
+      presentationAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',

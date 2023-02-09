@@ -65,9 +65,6 @@ export class ProofsModule<ProofProtocols extends ProofProtocol[] = DefaultProofP
     // Repositories
     dependencyManager.registerSingleton(ProofRepository)
 
-    // Proof Formats
-    dependencyManager.registerSingleton(IndyProofFormatService)
-
     for (const proofProtocol of this.config.proofProtocols) {
       proofProtocol.register(dependencyManager, featureRegistry)
     }

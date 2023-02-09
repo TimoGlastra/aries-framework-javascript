@@ -1,53 +1,47 @@
-import type { SubjectMessage } from '../../../tests/transport/SubjectInboundTransport'
-import type { CredentialStateChangedEvent } from '../src/modules/credentials'
-import type { JsonCredential } from '../src/modules/credentials/formats/jsonld/JsonLdCredentialFormat'
-import type { ProofStateChangedEvent } from '../src/modules/proofs'
-import type { Wallet } from '../src/wallet/Wallet'
+import type { SubjectMessage } from '../../../../../../../../tests/transport/SubjectInboundTransport'
+import type { Wallet } from '../../../../../wallet'
+import type { JsonCredential, CredentialStateChangedEvent } from '../../../../credentials'
+import type { ProofStateChangedEvent } from '../../../ProofEvents'
 import type { PresentationDefinitionV1 } from '@sphereon/pex-models'
 
-import { ReplaySubject, Subject } from 'rxjs'
+import { Subject, ReplaySubject } from 'rxjs'
 
-import { SubjectInboundTransport } from '../../../tests/transport/SubjectInboundTransport'
-import { SubjectOutboundTransport } from '../../../tests/transport/SubjectOutboundTransport'
-import { Agent } from '../src/agent/Agent'
-import { InjectionSymbols } from '../src/constants'
-import { KeyType } from '../src/crypto/KeyType'
-import { HandshakeProtocol } from '../src/modules/connections/models/HandshakeProtocol'
+import { V1ProofProtocol } from '../..'
+import { SubjectInboundTransport } from '../../../../../../../../tests/transport/SubjectInboundTransport'
+import { SubjectOutboundTransport } from '../../../../../../../../tests/transport/SubjectOutboundTransport'
 import {
-  AutoAcceptCredential,
-  CredentialEventTypes,
-  CredentialsModule,
-  CredentialState,
-  IndyCredentialFormatService,
-  JsonLdCredentialFormatService,
-  V1CredentialProtocol,
-  V2CredentialProtocol,
-} from '../src/modules/credentials'
-import { DidKey } from '../src/modules/dids'
-import {
-  ProofsModule,
-  V1ProofProtocol,
-  AutoAcceptProof,
-  IndyProofFormatService,
-  PresentationExchangeProofFormatService,
-  ProofEventTypes,
-  ProofState,
-} from '../src/modules/proofs'
-import { TEST_INPUT_DESCRIPTORS_CITIZENSHIP } from '../src/modules/proofs/__tests__/fixtures'
-import { V2ProofProtocol } from '../src/modules/proofs/protocol/v2/V2ProofProtocol'
-import { MediatorPickupStrategy } from '../src/modules/routing/MediatorPickupStrategy'
-import { W3cVcModule } from '../src/modules/vc'
-import { customDocumentLoader } from '../src/modules/vc/__tests__/documentLoader'
-import { uuid } from '../src/utils/uuid'
-
-import {
+  setupJsonLdProofsTest,
+  waitForProofExchangeRecordSubject,
   getAgentOptions,
   makeConnection,
-  setupJsonLdProofsTest,
   waitForCredentialRecordSubject,
-  waitForProofExchangeRecordSubject,
-} from './helpers'
-import testLogger from './logger'
+} from '../../../../../../tests/helpers'
+import testLogger from '../../../../../../tests/logger'
+import { Agent } from '../../../../../agent/Agent'
+import { InjectionSymbols } from '../../../../../constants'
+import { KeyType } from '../../../../../crypto'
+import { uuid } from '../../../../../utils/uuid'
+import { HandshakeProtocol } from '../../../../connections'
+import {
+  IndyCredentialFormatService,
+  JsonLdCredentialFormatService,
+  CredentialsModule,
+  V1CredentialProtocol,
+  V2CredentialProtocol,
+  AutoAcceptCredential,
+  CredentialEventTypes,
+  CredentialState,
+} from '../../../../credentials'
+import { DidKey } from '../../../../dids'
+import { MediatorPickupStrategy } from '../../../../routing'
+import { W3cVcModule } from '../../../../vc'
+import { customDocumentLoader } from '../../../../vc/__tests__/documentLoader'
+import { ProofEventTypes } from '../../../ProofEvents'
+import { ProofsModule } from '../../../ProofsModule'
+import { TEST_INPUT_DESCRIPTORS_CITIZENSHIP } from '../../../__tests__/fixtures'
+import { IndyProofFormatService, PresentationExchangeProofFormatService } from '../../../formats'
+import { AutoAcceptProof, ProofState } from '../../../models'
+import { V2ProofProtocol } from '../V2ProofProtocol'
 
 describe('Present Proof', () => {
   let agents: Agent[]
@@ -115,7 +109,6 @@ describe('Present Proof', () => {
     const faberProofExchangeRecordPromise = waitForProofExchangeRecordSubject(faberReplay, {
       threadId: aliceProofExchangeRecord.threadId,
       state: ProofState.PresentationReceived,
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
     })
 
     await aliceAgent.proofs.acceptRequest(acceptPresentationOptions)
@@ -155,12 +148,10 @@ describe('Present Proof', () => {
 
     const aliceProofExchangeRecordPromise = waitForProofExchangeRecordSubject(aliceReplay, {
       state: ProofState.Done,
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
     })
 
     const faberProofExchangeRecordPromise = waitForProofExchangeRecordSubject(faberReplay, {
       state: ProofState.Done,
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
     })
 
     // eslint-disable-next-line prefer-const
@@ -274,7 +265,6 @@ describe('Present Proof', () => {
     const aliceOptions = getAgentOptions(`Connectionless proofs with mediator Alice-${unique}`, {
       autoAcceptProofs: AutoAcceptProof.Always,
       autoAcceptCredentials: AutoAcceptCredential.Always,
-      // logger: new TestLogger(LogLevel.test),
       mediatorConnectionsInvite: aliceMediationOutOfBandRecord.outOfBandInvitation.toUrl({
         domain: 'https://example.com',
       }),
@@ -391,12 +381,10 @@ describe('Present Proof', () => {
 
     const aliceProofExchangeRecordPromise = waitForProofExchangeRecordSubject(aliceReplay, {
       state: ProofState.Done,
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
     })
 
     const faberProofExchangeRecordPromise = waitForProofExchangeRecordSubject(faberReplay, {
       state: ProofState.Done,
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
     })
 
     // eslint-disable-next-line prefer-const

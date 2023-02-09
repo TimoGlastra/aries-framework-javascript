@@ -1,13 +1,17 @@
-import type { JsonLdProofsTestsAgent } from './helpers'
-import type { ConnectionRecord } from '../src'
+import type { JsonLdProofsTestsAgent } from '../../../../../../tests/helpers'
+import type { ConnectionRecord } from '../../../../connections'
 import type { PresentationDefinitionV1 } from '@sphereon/pex-models'
 import type { IVerifiablePresentation } from '@sphereon/ssi-types'
 
-import { V2PresentationMessage, AutoAcceptProof, ProofState } from '../src'
-import { DidCommMessageRepository } from '../src/storage/didcomm/DidCommMessageRepository'
-
-import { setupJsonLdProofsTest, setupJsonLdProofsTestMultipleCredentials, waitForProofExchangeRecord } from './helpers'
-import testLogger from './logger'
+import {
+  setupJsonLdProofsTest,
+  waitForProofExchangeRecord,
+  setupJsonLdProofsTestMultipleCredentials,
+} from '../../../../../../tests/helpers'
+import testLogger from '../../../../../../tests/logger'
+import { DidCommMessageRepository } from '../../../../../storage'
+import { AutoAcceptProof, ProofState } from '../../../models'
+import { V2PresentationMessage } from '../messages'
 
 const inputDescriptors = [
   {
@@ -104,7 +108,7 @@ describe('Auto accept present proof', () => {
     id: 'citizenship_input_1',
   }
 
-  describe('Auto accept on `always`', () => {
+  describe("Auto accept on 'always'", () => {
     afterAll(async () => {
       if (faberAgent) {
         await faberAgent.shutdown()
@@ -116,7 +120,7 @@ describe('Auto accept present proof', () => {
       }
     })
 
-    test('Alice starts with proof proposal to Faber, both with autoAcceptProof on `always`', async () => {
+    test("Alice starts with proof proposal to Faber, both with autoAcceptProof on 'always'", async () => {
       const { faberAgent, aliceAgent, aliceConnection } = await setupJsonLdProofsTest(
         'Faber Auto Accept Always Proofs',
         'Alice Auto Accept Always Proofs',
@@ -150,7 +154,7 @@ describe('Auto accept present proof', () => {
       await aliceProofExchangeRecordPromise
     })
 
-    test('Faber starts with proof requests to Alice, both with autoAcceptProof on `always`', async () => {
+    test("Faber starts with proof requests to Alice, both with autoAcceptProof on 'always'", async () => {
       const { faberAgent, aliceAgent, faberConnection } = await setupJsonLdProofsTest(
         'Faber Auto Accept Always Proofs',
         'Alice Auto Accept Always Proofs',
@@ -256,12 +260,10 @@ describe('Auto accept present proof', () => {
 
       const aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
         state: ProofState.Done,
-        timeoutMs: 200000, // CI tests are timing out without this. Q: how can we solve this?
       })
 
       const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
         state: ProofState.Done,
-        timeoutMs: 200000, // CI tests are timing out without this. Q: how can we solve this?
       })
 
       await aliceAgent.proofs.proposeProof({
@@ -312,12 +314,10 @@ describe('Auto accept present proof', () => {
 
       const aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
         state: ProofState.Done,
-        timeoutMs: 200000, // CI tests are timing out without this. Q: how can we solve this?
       })
 
       const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
         state: ProofState.Done,
-        timeoutMs: 200000, // CI tests are timing out without this. Q: how can we solve this?
       })
 
       await aliceAgent.proofs.proposeProof({
@@ -359,7 +359,7 @@ describe('Auto accept present proof', () => {
     })
   })
 
-  describe('Auto accept on `contentApproved`', () => {
+  describe("Auto accept on 'contentApproved'", () => {
     beforeAll(async () => {
       testLogger.test('Initializing the agents')
       ;({ faberAgent, aliceAgent, faberConnection, aliceConnection } = await setupJsonLdProofsTest(
@@ -376,7 +376,7 @@ describe('Auto accept present proof', () => {
       await aliceAgent.wallet.delete()
     })
 
-    test('Alice starts with proof proposal to Faber, both with autoacceptproof on `contentApproved`', async () => {
+    test("Alice starts with proof proposal to Faber, both with autoAcceptProof on 'contentApproved'", async () => {
       testLogger.test('Alice sends presentation proposal to Faber')
 
       const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
@@ -403,15 +403,11 @@ describe('Auto accept present proof', () => {
       await aliceProofExchangeRecordPromise
     })
 
-    test('Faber starts with proof requests to Alice, both with autoacceptproof on `contentApproved`', async () => {
+    test("Faber starts with proof requests to Alice, both with autoAcceptProof on 'contentApproved'", async () => {
       testLogger.test('Faber sends presentation request to Alice')
 
-      const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
-        state: ProofState.Done,
-      })
-
-      const aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
-        state: ProofState.Done,
+      let aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
+        state: ProofState.RequestReceived,
       })
 
       await faberAgent.proofs.requestProof({
@@ -421,7 +417,6 @@ describe('Auto accept present proof', () => {
           presentationExchange: {
             options: {
               challenge: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
-              domain: '',
             },
             presentationDefinition: {
               id: 'e950bfe5-d7ec-4303-ad61-6983fb976ac9',
@@ -429,6 +424,19 @@ describe('Auto accept present proof', () => {
             },
           },
         },
+      })
+
+      const aliceProofExchangeRecord = await aliceProofExchangeRecordPromise
+      await aliceAgent.proofs.acceptRequest({
+        proofRecordId: aliceProofExchangeRecord.id,
+      })
+
+      const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
+        state: ProofState.Done,
+      })
+
+      aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
+        state: ProofState.Done,
       })
 
       testLogger.test('Faber waits for presentation from Alice')

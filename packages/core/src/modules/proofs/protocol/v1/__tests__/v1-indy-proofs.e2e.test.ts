@@ -1,23 +1,14 @@
-import type { Agent, ConnectionRecord } from '../src'
-import type { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
+import type { Agent } from '../../../../../agent/Agent'
+import type { ConnectionRecord } from '../../../../connections'
+import type { V1PresentationPreview } from '../models'
 
-import { ProofExchangeRecord } from '../src'
-import { getGroupKeysFromIndyProofFormatData } from '../src/modules/proofs/formats/indy/__tests__/groupKeys'
-import {
-  ProofAttributeInfo,
-  AttributeFilter,
-  ProofPredicateInfo,
-  PredicateType,
-} from '../src/modules/proofs/formats/indy/models'
-import { ProofState } from '../src/modules/proofs/models/ProofState'
-import {
-  V1ProposePresentationMessage,
-  V1RequestPresentationMessage,
-  V1PresentationMessage,
-} from '../src/modules/proofs/protocol/v1/messages'
-
-import { setupProofsTest, waitForProofExchangeRecord } from './helpers'
-import testLogger from './logger'
+import { setupProofsTest, waitForProofExchangeRecord } from '../../../../../../tests/helpers'
+import testLogger from '../../../../../../tests/logger'
+import { getGroupKeysFromIndyProofFormatData } from '../../../formats/indy/__tests__/groupKeys'
+import { ProofAttributeInfo, AttributeFilter, ProofPredicateInfo, PredicateType } from '../../../formats/indy/models'
+import { ProofState } from '../../../models'
+import { ProofExchangeRecord } from '../../../repository'
+import { V1ProposePresentationMessage, V1RequestPresentationMessage, V1PresentationMessage } from '../messages'
 
 describe('Present Proof', () => {
   let faberAgent: Agent

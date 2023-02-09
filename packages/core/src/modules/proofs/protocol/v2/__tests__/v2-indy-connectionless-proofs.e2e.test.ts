@@ -1,34 +1,29 @@
-import type { SubjectMessage } from '../../../tests/transport/SubjectInboundTransport'
-import type { ProofStateChangedEvent } from '../src/modules/proofs'
+import type { SubjectMessage } from '../../../../../../../../tests/transport/SubjectInboundTransport'
+import type { ProofStateChangedEvent } from '../../../ProofEvents'
 
 import { Subject, ReplaySubject } from 'rxjs'
 
-import { SubjectInboundTransport } from '../../../tests/transport/SubjectInboundTransport'
-import { SubjectOutboundTransport } from '../../../tests/transport/SubjectOutboundTransport'
-import { V1CredentialPreview } from '../src'
-import { Agent } from '../src/agent/Agent'
-import { Attachment, AttachmentData } from '../src/decorators/attachment/Attachment'
-import { HandshakeProtocol } from '../src/modules/connections/models/HandshakeProtocol'
-import { ProofState, AutoAcceptProof, ProofEventTypes } from '../src/modules/proofs'
+import { SubjectInboundTransport } from '../../../../../../../../tests/transport/SubjectInboundTransport'
+import { SubjectOutboundTransport } from '../../../../../../../../tests/transport/SubjectOutboundTransport'
 import {
-  ProofAttributeInfo,
-  AttributeFilter,
-  ProofPredicateInfo,
-  PredicateType,
-} from '../src/modules/proofs/formats/indy/models'
-import { MediatorPickupStrategy } from '../src/modules/routing/MediatorPickupStrategy'
-import { LinkedAttachment } from '../src/utils/LinkedAttachment'
-import { uuid } from '../src/utils/uuid'
-
-import {
-  getAgentOptions,
-  issueCredential,
-  makeConnection,
-  prepareForIssuance,
   setupProofsTest,
   waitForProofExchangeRecordSubject,
-} from './helpers'
-import testLogger from './logger'
+  getAgentOptions,
+  prepareForIssuance,
+  makeConnection,
+  issueCredential,
+} from '../../../../../../tests/helpers'
+import testLogger from '../../../../../../tests/logger'
+import { Agent } from '../../../../../agent/Agent'
+import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
+import { LinkedAttachment } from '../../../../../utils/LinkedAttachment'
+import { uuid } from '../../../../../utils/uuid'
+import { HandshakeProtocol } from '../../../../connections'
+import { V1CredentialPreview } from '../../../../credentials'
+import { MediatorPickupStrategy } from '../../../../routing'
+import { ProofEventTypes } from '../../../ProofEvents'
+import { ProofAttributeInfo, AttributeFilter, ProofPredicateInfo, PredicateType } from '../../../formats/indy/models'
+import { AutoAcceptProof, ProofState } from '../../../models'
 
 describe('Present Proof', () => {
   let agents: Agent[]

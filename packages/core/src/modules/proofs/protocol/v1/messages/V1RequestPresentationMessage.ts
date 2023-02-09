@@ -10,7 +10,7 @@ import { IsValidMessageType, parseMessageType } from '../../../../../utils/messa
 export interface V1RequestPresentationMessageOptions {
   id?: string
   comment?: string
-  requestPresentationAttachments: Attachment[]
+  requestAttachments: Attachment[]
 }
 
 export const INDY_PROOF_REQUEST_ATTACHMENT_ID = 'libindy-request-presentation-0'
@@ -27,7 +27,7 @@ export class V1RequestPresentationMessage extends AgentMessage {
     if (options) {
       this.id = options.id ?? this.generateId()
       this.comment = options.comment
-      this.requestAttachments = options.requestPresentationAttachments
+      this.requestAttachments = options.requestAttachments
     }
   }
 

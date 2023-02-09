@@ -145,7 +145,6 @@ describe('Present Proof | V2 | DIF Presentation Exchange', () => {
     faberPresentationRecordPromise = waitForProofExchangeRecord(faberAgent, {
       threadId: aliceProofExchangeRecord.threadId,
       state: ProofState.PresentationReceived,
-      timeoutMs: 200000, // Temporary I have increased timeout as, verify presentation takes time to fetch the data from documentLoader
     })
 
     await aliceAgent.proofs.acceptRequest({

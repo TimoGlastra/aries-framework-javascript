@@ -127,7 +127,7 @@ describe('Present Proof', () => {
     expect(request).toMatchObject({
       type: 'https://didcomm.org/present-proof/1.0/request-presentation',
       id: expect.any(String),
-      requestPresentationAttachments: [
+      requestAttachments: [
         {
           id: 'libindy-request-presentation-0',
           mimeType: 'application/json',

@@ -29,6 +29,7 @@ import { Protocol } from '../../../../agent/models'
 import { Attachment } from '../../../../decorators/attachment/Attachment'
 import { AriesFrameworkError } from '../../../../error/AriesFrameworkError'
 import { DidCommMessageRepository, DidCommMessageRole } from '../../../../storage'
+import { JsonEncoder } from '../../../../utils'
 import { JsonTransformer } from '../../../../utils/JsonTransformer'
 import { MessageValidator } from '../../../../utils/MessageValidator'
 import { uuid } from '../../../../utils/uuid'
@@ -283,7 +284,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
 
     const requestPresentationMessage = new V1RequestPresentationMessage({
       comment,
-      requestPresentationAttachments: [attachment],
+      requestAttachments: [attachment],
     })
 
     requestPresentationMessage.setThread({
@@ -324,7 +325,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
 
     const requestPresentationMessage = new V1RequestPresentationMessage({
       comment,
-      requestPresentationAttachments: [attachment],
+      requestAttachments: [attachment],
     })
     requestPresentationMessage.setThread({
       threadId: proofRecord.threadId,
@@ -382,7 +383,7 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
     const message = new V1RequestPresentationMessage({
       id: proofRecord.threadId,
       comment,
-      requestPresentationAttachments: [attachment],
+      requestAttachments: [attachment],
     })
 
     message.setThread({
@@ -557,7 +558,6 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
     const requestAttachment = requestMessage.getRequestAttachmentById(INDY_PROOF_REQUEST_ATTACHMENT_ID)
     const indyProofRequest = requestMessage.indyProofRequest
 
-    // TODO: set state to abandoned
     if (!requestAttachment || !indyProofRequest) {
       throw new V1PresentationProblemReportError(
         `Missing indy attachment in request message for presentation with thread id ${proofRecord.threadId}`,
@@ -942,21 +942,19 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
     const proposalMessage = await this.findProposalMessage(agentContext, proofRecord.id)
     if (!proposalMessage) return false
 
-    const rfc0592Proposal = JsonTransformer.toJSON(
-      createRequestFromPreview({
-        name: 'Proof Request',
-        nonce: await agentContext.wallet.generateNonce(),
-        version: '1.0',
-        attributes: proposalMessage.presentationProposal.attributes,
-        predicates: proposalMessage.presentationProposal.predicates,
-      })
-    )
+    const rfc0592Proposal = createRequestFromPreview({
+      name: 'Proof Request',
+      nonce: await agentContext.wallet.generateNonce(),
+      version: '1.0',
+      attributes: proposalMessage.presentationProposal.attributes,
+      predicates: proposalMessage.presentationProposal.predicates,
+    }).toJSON()
 
     return this.indyProofFormat.shouldAutoRespondToRequest(agentContext, {
       proofRecord,
       proposalAttachment: new Attachment({
         data: {
-          json: rfc0592Proposal,
+          base64: JsonEncoder.toBase64(rfc0592Proposal),
         },
       }),
       requestAttachment,
@@ -990,17 +988,18 @@ export class V1ProofProtocol extends BaseProofProtocol implements ProofProtocol<
 
     // We are in the ContentApproved case. We need to make sure we've sent a proposal, and it matches the request
     const proposalMessage = await this.findProposalMessage(agentContext, proofRecord.id)
-    if (!proposalMessage) return false
 
-    const rfc0592Proposal = JsonTransformer.toJSON(
-      createRequestFromPreview({
-        name: 'Proof Request',
-        nonce: await agentContext.wallet.generateNonce(),
-        version: '1.0',
-        attributes: proposalMessage.presentationProposal.attributes,
-        predicates: proposalMessage.presentationProposal.predicates,
-      })
-    )
+    const rfc0592Proposal = proposalMessage
+      ? JsonTransformer.toJSON(
+          createRequestFromPreview({
+            name: 'Proof Request',
+            nonce: await agentContext.wallet.generateNonce(),
+            version: '1.0',
+            attributes: proposalMessage.presentationProposal.attributes,
+            predicates: proposalMessage.presentationProposal.predicates,
+          })
+        )
+      : undefined
 
     return this.indyProofFormat.shouldAutoRespondToPresentation(agentContext, {
       proofRecord,

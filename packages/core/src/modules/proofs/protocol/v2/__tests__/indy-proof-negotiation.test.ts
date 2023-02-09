@@ -79,10 +79,10 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: 'hlindy/proof-req@v2',
+          format: 'hlindy/proof-req@v2.0',
         },
       ],
-      proposalsAttach: [
+      proposalAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -162,26 +162,23 @@ describe('Present Proof', () => {
       }),
     }
 
-    const requestProofAsResponseOptions: NegotiateProofProposalOptions = {
-      proofRecordId: faberProofExchangeRecord.id,
-      proofFormats: {
-        indy: {
-          name: 'proof-request',
-          nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
-          version: '1.0',
-          requestedAttributes: attributes,
-          requestedPredicates: predicates,
-        },
-      },
-    }
-
     let aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
       threadId: faberProofExchangeRecord.threadId,
       state: ProofState.RequestReceived,
     })
 
     testLogger.test('Faber sends new proof request to Alice')
-    faberProofExchangeRecord = await faberAgent.proofs.negotiateProposal(requestProofAsResponseOptions)
+    faberProofExchangeRecord = await faberAgent.proofs.negotiateProposal({
+      proofRecordId: faberProofExchangeRecord.id,
+      proofFormats: {
+        indy: {
+          name: 'proof-request',
+          version: '1.0',
+          requestedAttributes: attributes,
+          requestedPredicates: predicates,
+        },
+      },
+    })
 
     testLogger.test('Alice waits for proof request from Faber')
     aliceProofExchangeRecord = await aliceProofExchangeRecordPromise
@@ -196,7 +193,7 @@ describe('Present Proof', () => {
     expect(request).toMatchObject({
       type: 'https://didcomm.org/present-proof/2.0/request-presentation',
       id: expect.any(String),
-      requestPresentationsAttach: [
+      requestAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -250,10 +247,10 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: 'hlindy/proof-req@v2',
+          format: 'hlindy/proof-req@v2.0',
         },
       ],
-      proposalsAttach: [
+      proposalAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -328,7 +325,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: 'hlindy/proof-req@v2',
+          format: 'hlindy/proof-req@v2.0',
         },
       ],
       requestAttachments: [
@@ -352,17 +349,17 @@ describe('Present Proof', () => {
       protocolVersion: 'v2',
     })
 
-    const presentationProposalMessage = await aliceAgent.proofs.findProposalMessage(aliceProofExchangeRecord.id)
+    const proposalMessage = await aliceAgent.proofs.findProposalMessage(aliceProofExchangeRecord.id)
 
-    expect(presentationProposalMessage).toMatchObject({
+    expect(proposalMessage).toMatchObject({
       type: 'https://didcomm.org/present-proof/2.0/propose-presentation',
       formats: [
         {
           attachmentId: expect.any(String),
-          format: 'hlindy/proof-req@v2',
+          format: 'hlindy/proof-req@v2.0',
         },
       ],
-      proposalsAttach: [
+      proposalAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -413,11 +410,10 @@ describe('Present Proof', () => {
       ProofRequest
     )
     const predicateKey = proofRequest.requestedPredicates?.keys().next().value
-    const predicate = Object.values(predicates)[0]
 
-    expect(proofRequest).toMatchObject({
+    expect(proofRequest.toJSON()).toMatchObject({
       name: 'proof-request',
-      nonce: '58d223e5-fc4d-4448-b74c-5eb11c6b558f',
+      nonce: expect.any(String),
       version: '1.0',
       requested_attributes: {
         '0': {
@@ -429,9 +425,17 @@ describe('Present Proof', () => {
           ],
         },
       },
-
       requested_predicates: {
-        [predicateKey]: predicate,
+        [predicateKey]: {
+          name: 'age',
+          p_type: '>=',
+          p_value: 50,
+          restrictions: [
+            {
+              cred_def_id: credDefId,
+            },
+          ],
+        },
       },
     })
   })

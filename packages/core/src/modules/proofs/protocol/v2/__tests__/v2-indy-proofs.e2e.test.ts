@@ -1,23 +1,14 @@
-import type { Agent, ConnectionRecord } from '../src'
-import type { AcceptProofProposalOptions } from '../src/modules/proofs/ProofsApiOptions'
-import type { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
+import type { Agent } from '../../../../../agent/Agent'
+import type { ConnectionRecord } from '../../../../connections'
+import type { V1PresentationPreview } from '../../v1'
 
-import { ProofExchangeRecord, ProofState } from '../src'
-import { getGroupKeysFromIndyProofFormatData } from '../src/modules/proofs/formats/indy/__tests__/groupKeys'
-import {
-  ProofAttributeInfo,
-  AttributeFilter,
-  ProofPredicateInfo,
-  PredicateType,
-} from '../src/modules/proofs/formats/indy/models'
-import {
-  V2PresentationMessage,
-  V2ProposePresentationMessage,
-  V2RequestPresentationMessage,
-} from '../src/modules/proofs/protocol/v2/messages'
-
-import { setupProofsTest, waitForProofExchangeRecord } from './helpers'
-import testLogger from './logger'
+import { setupProofsTest, waitForProofExchangeRecord } from '../../../../../../tests/helpers'
+import testLogger from '../../../../../../tests/logger'
+import { getGroupKeysFromIndyProofFormatData } from '../../../formats/indy/__tests__/groupKeys'
+import { ProofAttributeInfo, AttributeFilter, ProofPredicateInfo, PredicateType } from '../../../formats/indy/models'
+import { ProofState } from '../../../models'
+import { ProofExchangeRecord } from '../../../repository'
+import { V2ProposePresentationMessage, V2RequestPresentationMessage, V2PresentationMessage } from '../messages'
 
 describe('Present Proof', () => {
   let faberAgent: Agent
@@ -95,17 +86,15 @@ describe('Present Proof', () => {
       protocolVersion: 'v2',
     })
 
-    const acceptProposalOptions: AcceptProofProposalOptions = {
-      proofRecordId: faberProofExchangeRecord.id,
-    }
-
     let aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
       state: ProofState.RequestReceived,
     })
 
     // Faber accepts the presentation proposal from Alice
     testLogger.test('Faber accepts presentation proposal from Alice')
-    faberProofExchangeRecord = await faberAgent.proofs.acceptProposal(acceptProposalOptions)
+    faberProofExchangeRecord = await faberAgent.proofs.acceptProposal({
+      proofRecordId: faberProofExchangeRecord.id,
+    })
 
     // Alice waits for presentation request from Faber
     testLogger.test('Alice waits for presentation request from Faber')

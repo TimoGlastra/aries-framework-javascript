@@ -168,7 +168,7 @@ describe('Present Proof', () => {
     expect(request).toMatchObject({
       type: 'https://didcomm.org/present-proof/1.0/request-presentation',
       id: expect.any(String),
-      requestPresentationAttachments: [
+      requestAttachments: [
         {
           id: 'libindy-request-presentation-0',
           mimeType: 'application/json',
@@ -274,7 +274,7 @@ describe('Present Proof', () => {
     expect(request).toMatchObject({
       type: 'https://didcomm.org/present-proof/1.0/request-presentation',
       id: expect.any(String),
-      requestPresentationAttachments: [
+      requestAttachments: [
         {
           id: 'libindy-request-presentation-0',
           mimeType: 'application/json',
@@ -294,9 +294,8 @@ describe('Present Proof', () => {
       protocolVersion: 'v1',
     })
 
-    const presentationProposalMessage = await aliceAgent.proofs.findProposalMessage(aliceProofExchangeRecord.id)
-
-    expect(presentationProposalMessage).toMatchObject({
+    const proposalMessage = await aliceAgent.proofs.findProposalMessage(aliceProofExchangeRecord.id)
+    expect(proposalMessage).toMatchObject({
       type: 'https://didcomm.org/present-proof/1.0/propose-presentation',
       id: expect.any(String),
       comment: 'V1 propose proof test 2',
@@ -326,8 +325,6 @@ describe('Present Proof', () => {
     )) as V1RequestPresentationMessage
 
     const predicateKey = Object.keys(proofRequestMessage.indyProofRequest?.requested_predicates ?? {})[0]
-    const predicate = Object.values(predicates)[0]
-
     expect(proofRequestMessage.indyProofRequest).toMatchObject({
       name: 'Proof Request',
       version: '1.0',
@@ -342,7 +339,15 @@ describe('Present Proof', () => {
         },
       },
       requested_predicates: {
-        [predicateKey]: predicate,
+        [predicateKey]: {
+          p_type: '>=',
+          p_value: 50,
+          restrictions: [
+            {
+              cred_def_id: credDefId,
+            },
+          ],
+        },
       },
     })
   })

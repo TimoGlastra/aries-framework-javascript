@@ -70,7 +70,7 @@ const mockProofExchangeRecord = ({
 } = {}) => {
   const requestPresentationMessage = new V1RequestPresentationMessage({
     comment: 'some comment',
-    requestPresentationAttachments: [requestAttachment],
+    requestAttachments: [requestAttachment],
   })
 
   const proofRecord = new ProofExchangeRecord({
@@ -115,7 +115,7 @@ describe('V1ProofProtocol', () => {
     beforeEach(() => {
       presentationRequest = new V1RequestPresentationMessage({
         comment: 'abcd',
-        requestPresentationAttachments: [requestAttachment],
+        requestAttachments: [requestAttachment],
       })
       messageContext = new InboundMessageContext(presentationRequest, {
         connection,

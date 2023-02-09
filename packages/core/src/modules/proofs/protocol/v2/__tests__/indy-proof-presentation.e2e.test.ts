@@ -72,10 +72,10 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: 'hlindy/proof-req@v2',
+          format: 'hlindy/proof-req@v2.0',
         },
       ],
-      proposalsAttach: [
+      proposalAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',
@@ -124,7 +124,7 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: 'hlindy/proof-req@v2',
+          format: 'hlindy/proof-req@v2.0',
         },
       ],
       requestAttachments: [
@@ -181,10 +181,10 @@ describe('Present Proof', () => {
       formats: [
         {
           attachmentId: expect.any(String),
-          format: 'hlindy/proof@v2',
+          format: 'hlindy/proof@v2.0',
         },
       ],
-      presentationsAttach: [
+      presentationAttachments: [
         {
           id: expect.any(String),
           mimeType: 'application/json',

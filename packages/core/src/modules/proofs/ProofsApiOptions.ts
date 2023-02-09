@@ -60,7 +60,6 @@ export interface NegotiateProofProposalOptions<PPs extends ProofProtocol[] = Pro
   proofRecordId: string
   proofFormats: ProofFormatPayload<ProofFormatsFromProtocols<PPs>, 'createRequest'>
 
-  // TODO: where to send goalCode?
   goalCode?: string
 
   /** @default true */
@@ -74,7 +73,6 @@ export interface CreateProofRequestOptions<PPs extends ProofProtocol[] = ProofPr
   protocolVersion: ProofsProtocolVersionType<PPs>
   proofFormats: ProofFormatPayload<ProofFormatsFromProtocols<PPs>, 'createRequest'>
 
-  // TODO: where to send goalCode?
   goalCode?: string
   parentThreadId?: string
 
@@ -98,7 +96,6 @@ export interface AcceptProofRequestOptions<PPs extends ProofProtocol[] = ProofPr
   proofRecordId: string
   proofFormats?: ProofFormatPayload<ProofFormatsFromProtocols<PPs>, 'acceptRequest'>
 
-  // TODO: where to send goalCode?
   goalCode?: string
 
   /** @default true */
@@ -112,7 +109,6 @@ export interface NegotiateProofRequestOptions<PPs extends ProofProtocol[] = Proo
   proofRecordId: string
   proofFormats: ProofFormatPayload<ProofFormatsFromProtocols<PPs>, 'createProposal'>
 
-  // TODO: where to send goalCode?
   goalCode?: string
 }
 

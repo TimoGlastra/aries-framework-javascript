@@ -1,16 +1,11 @@
-import type { Agent, ConnectionRecord } from '../src'
-import type { V1PresentationPreview } from '../src/modules/proofs/protocol/v1/models/V1PresentationPreview'
+import type { Agent } from '../../../../../agent/Agent'
+import type { ConnectionRecord } from '../../../../connections'
+import type { V1PresentationPreview } from '../models'
 
-import { AutoAcceptProof, ProofState } from '../src'
-import {
-  ProofAttributeInfo,
-  AttributeFilter,
-  ProofPredicateInfo,
-  PredicateType,
-} from '../src/modules/proofs/formats/indy/models'
-
-import { setupProofsTest, waitForProofExchangeRecord } from './helpers'
-import testLogger from './logger'
+import { setupProofsTest, waitForProofExchangeRecord } from '../../../../../../tests/helpers'
+import testLogger from '../../../../../../tests/logger'
+import { ProofAttributeInfo, AttributeFilter, ProofPredicateInfo, PredicateType } from '../../../formats/indy/models'
+import { AutoAcceptProof, ProofState } from '../../../models'
 
 describe('Auto accept present proof', () => {
   let faberAgent: Agent
@@ -20,7 +15,7 @@ describe('Auto accept present proof', () => {
   let aliceConnection: ConnectionRecord
   let presentationPreview: V1PresentationPreview
 
-  describe('Auto accept on `always`', () => {
+  describe("Auto accept on 'always'", () => {
     beforeAll(async () => {
       ;({ faberAgent, aliceAgent, credDefId, faberConnection, aliceConnection, presentationPreview } =
         await setupProofsTest(
@@ -36,12 +31,12 @@ describe('Auto accept present proof', () => {
       await aliceAgent.wallet.delete()
     })
 
-    test('Alice starts with proof proposal to Faber, both with autoAcceptProof on `always`', async () => {
+    test("Alice starts with proof proposal to Faber, both with autoAcceptProof on 'always'", async () => {
       testLogger.test('Alice sends presentation proposal to Faber')
 
       await aliceAgent.proofs.proposeProof({
         connectionId: aliceConnection.id,
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         proofFormats: {
           indy: {
             name: 'abc',
@@ -60,7 +55,7 @@ describe('Auto accept present proof', () => {
       ])
     })
 
-    test('Faber starts with proof requests to Alice, both with autoAcceptProof on `always`', async () => {
+    test("Faber starts with proof requests to Alice, both with autoAcceptProof on 'always'", async () => {
       testLogger.test('Faber sends presentation request to Alice')
       const attributes = {
         name: new ProofAttributeInfo({
@@ -86,7 +81,7 @@ describe('Auto accept present proof', () => {
       }
 
       await faberAgent.proofs.requestProof({
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         connectionId: faberConnection.id,
         proofFormats: {
           indy: {
@@ -98,8 +93,7 @@ describe('Auto accept present proof', () => {
         },
       })
 
-      testLogger.test('Alice waits for presentation from Faber')
-      testLogger.test('Faber waits till it receives presentation ack')
+      testLogger.test('Faber waits for presentation from Alice')
       await Promise.all([
         waitForProofExchangeRecord(faberAgent, { state: ProofState.Done }),
         waitForProofExchangeRecord(aliceAgent, { state: ProofState.Done }),
@@ -128,27 +122,27 @@ describe('Auto accept present proof', () => {
     test("Alice starts with proof proposal to Faber, both with autoAcceptProof on 'contentApproved'", async () => {
       testLogger.test('Alice sends presentation proposal to Faber')
 
-      const faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {
-        state: ProofState.ProposalReceived,
-      })
-
-      await aliceAgent.proofs.proposeProof({
+      const aliceProofExchangeRecord = await aliceAgent.proofs.proposeProof({
         connectionId: aliceConnection.id,
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         proofFormats: {
           indy: {
-            attributes: presentationPreview.attributes,
-            predicates: presentationPreview.predicates,
             name: 'abc',
             version: '1.0',
+            attributes: presentationPreview.attributes,
+            predicates: presentationPreview.predicates,
           },
         },
       })
 
-      const faberProofExchangeRecord = await faberProofExchangeRecordPromise
-      await faberAgent.proofs.acceptProposal({
-        proofRecordId: faberProofExchangeRecord.id,
+      testLogger.test('Faber waits for presentation proposal from Alice')
+      const faberProofExchangeRecord = await waitForProofExchangeRecord(faberAgent, {
+        threadId: aliceProofExchangeRecord.threadId,
+        state: ProofState.ProposalReceived,
       })
+
+      testLogger.test('Faber accepts presentation proposal from Alice')
+      await faberAgent.proofs.acceptProposal({ proofRecordId: faberProofExchangeRecord.id })
 
       await Promise.all([
         waitForProofExchangeRecord(aliceAgent, { state: ProofState.Done }),
@@ -181,12 +175,8 @@ describe('Auto accept present proof', () => {
         }),
       }
 
-      const aliceProofExchangeRecordPromise = waitForProofExchangeRecord(aliceAgent, {
-        state: ProofState.RequestReceived,
-      })
-
       await faberAgent.proofs.requestProof({
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         connectionId: faberConnection.id,
         proofFormats: {
           indy: {
@@ -198,14 +188,17 @@ describe('Auto accept present proof', () => {
         },
       })
 
-      const aliceProofExchangeRecord = await aliceProofExchangeRecordPromise
-      await aliceAgent.proofs.acceptRequest({
-        proofRecordId: aliceProofExchangeRecord.id,
+      testLogger.test('Alice waits for request from Faber')
+      const { id: proofRecordId } = await waitForProofExchangeRecord(aliceAgent, {
+        state: ProofState.RequestReceived,
       })
 
+      const { proofFormats } = await aliceAgent.proofs.selectCredentialsForRequest({ proofRecordId })
+      await aliceAgent.proofs.acceptRequest({ proofRecordId, proofFormats })
+
       await Promise.all([
-        waitForProofExchangeRecord(faberAgent, { state: ProofState.Done }),
         waitForProofExchangeRecord(aliceAgent, { state: ProofState.Done }),
+        waitForProofExchangeRecord(faberAgent, { state: ProofState.Done }),
       ])
     })
   })

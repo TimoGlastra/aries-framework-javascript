@@ -206,10 +206,9 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
 
     let credentials = presentationExchangeFormat?.credentials
 
-    // User did not provide credentials, we need to select them ourselves
+    // User did not provide credentials, we need to select them ourselves based on the request
     if (!credentials) {
-      // TODO
-      credentials = []
+      credentials = await this._selectCredentialsForRequest(agentContext, requestJson)
     }
 
     // We use the subject id to resolve the DID document.
@@ -322,16 +321,7 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
   ): Promise<ProofFormatSelectCredentialsForRequestReturn<PresentationExchangeProofFormat>> {
     const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
 
-    const credentialsForRequest = await this._getCredentialsForRequest(agentContext, requestJson)
-
-    if (!credentialsForRequest.matches || !credentialsForRequest.verifiableCredential) {
-      throw new AriesFrameworkError('No matches found for presentation request')
-    }
-
-    const selectedCredentials: IVerifiableCredential[] = []
-    for (const match of credentialsForRequest.matches) {
-      selectedCredentials.push(...this.retrieveSelectedCredentials(match, credentialsForRequest.verifiableCredential))
-    }
+    const selectedCredentials = await this._selectCredentialsForRequest(agentContext, requestJson)
 
     return {
       credentials: selectedCredentials,
@@ -373,6 +363,60 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
       V2_PRESENTATION_EXCHANGE_PRESENTATION,
     ]
     return supportedFormats.includes(formatIdentifier)
+  }
+
+  private async _selectCredentialsForRequest(
+    agentContext: AgentContext,
+    presentationRequest: PresentationExchangeRequestData
+  ) {
+    const credentialsForRequest = await this._getCredentialsForRequest(agentContext, presentationRequest)
+
+    if (!credentialsForRequest.matches || !credentialsForRequest.verifiableCredential) {
+      throw new AriesFrameworkError('No matches found for presentation request')
+    }
+
+    const selectedCredentials: IVerifiableCredential[] = []
+    for (const match of credentialsForRequest.matches) {
+      selectedCredentials.push(...this.retrieveSelectedCredentials(match, credentialsForRequest.verifiableCredential))
+    }
+
+    return selectedCredentials
+  }
+
+  private async _getCredentialsForRequest(
+    agentContext: AgentContext,
+    presentationRequest: PresentationExchangeRequestData
+  ) {
+    const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
+
+    const presentationDefinition = presentationRequest.presentationDefinition
+
+    const query: Array<Query<W3cCredentialRecord>> = []
+    // The schema.uri can contain either an expanded type, or a context uri
+    for (const inputDescriptor of presentationDefinition.input_descriptors) {
+      for (const schema of inputDescriptor.schema) {
+        query.push({
+          $or: [{ expandedType: [schema.uri] }, { contexts: [schema.uri] }],
+        })
+      }
+    }
+
+    // query the wallet ourselves first to avoid the need to query the pex library for all
+    // credentials for every proof request
+    const credentials = await w3cCredentialService.findCredentialsByQuery(agentContext, {
+      $or: query,
+    })
+
+    const pexCredentials = credentials.map((c) => JsonTransformer.toJSON(c) as IVerifiableCredential)
+
+    const pex = new PEXv1()
+    const selectResults = pex.selectFrom(presentationDefinition, pexCredentials)
+
+    if (selectResults.areRequiredCredentialsPresent === Status.ERROR) {
+      throw new AriesFrameworkError(`No matching credentials found: ${selectResults.errors?.['0'].message}`)
+    }
+
+    return selectResults
   }
 
   private retrieveSelectedCredentials(
@@ -424,42 +468,6 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
       }
     }
     return selectedCredentials
-  }
-
-  private async _getCredentialsForRequest(
-    agentContext: AgentContext,
-    presentationRequest: PresentationExchangeRequestData
-  ) {
-    const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
-
-    const presentationDefinition = presentationRequest.presentationDefinition
-
-    const query: Array<Query<W3cCredentialRecord>> = []
-    // The schema.uri can contain either an expanded type, or a context uri
-    for (const inputDescriptor of presentationDefinition.input_descriptors) {
-      for (const schema of inputDescriptor.schema) {
-        query.push({
-          $or: [{ expandedType: [schema.uri] }, { contexts: [schema.uri] }],
-        })
-      }
-    }
-
-    // query the wallet ourselves first to avoid the need to query the pex library for all
-    // credentials for every proof request
-    const credentials = await w3cCredentialService.findCredentialsByQuery(agentContext, {
-      $or: query,
-    })
-
-    const pexCredentials = credentials.map((c) => JsonTransformer.toJSON(c) as IVerifiableCredential)
-
-    const pex = new PEXv1()
-    const selectResults = pex.selectFrom(presentationDefinition, pexCredentials)
-
-    if (selectResults.areRequiredCredentialsPresent === Status.ERROR) {
-      throw new AriesFrameworkError(`No matching credentials found: ${selectResults.errors?.['0'].message}`)
-    }
-
-    return selectResults
   }
 
   private signPresentationCallbackWithAgentContext = (agentContext: AgentContext) => {

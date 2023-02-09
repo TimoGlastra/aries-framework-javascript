@@ -21,22 +21,21 @@ export type ProofFormatPayload<PFs extends ProofFormat[], M extends keyof ProofF
   [ProofFormat in PFs[number] as ProofFormat['formatKey']]?: ProofFormat['proofFormats'][M]
 }
 
-// TODO: rename and update example
 /**
- * Get the payload for a specific method from a list of ProofFormat interfaces and a method
+ * Get the input or output for the getCredentialsForRequest and selectCredentialsForRequest method with specific format data
  *
  * @example
  * ```
  *
- * type CreateRequestProofFormats = ProofFormatPayload<[IndyProofFormat, PresentationExchangeProofFormat], 'createRequest'>
+ * type SelectedCredentialsForRequest = ProofFormatCredentialForRequestPayload<[IndyProofFormat, PresentationExchangeProofFormat], 'selectCredentialsForRequest', 'output'>
  *
  * // equal to
- * type CreateRequestProofFormats = {
+ * type SelectedCredentialsForRequest = {
  *  indy: {
- *   // ... params for indy create request ...
+ *   // ... return value for indy selected credentials ...
  *  },
  *  presentationExchange: {
- *  // ... params for pex create request ...
+ *  // ... return value for presentation exchange selected credentials ...
  *  }
  * }
  * ```
