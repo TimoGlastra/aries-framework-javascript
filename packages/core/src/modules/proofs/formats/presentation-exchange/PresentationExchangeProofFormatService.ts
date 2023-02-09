@@ -28,11 +28,11 @@ import type { IVerifiableCredential, IVerifiablePresentation } from '@sphereon/s
 import { PEXv1, Status } from '@sphereon/pex'
 import { Rules } from '@sphereon/pex-models'
 import { IProofPurpose } from '@sphereon/ssi-types'
-import { query } from 'jsonpath'
+import * as jp from 'jsonpath'
 
 import { Attachment, AttachmentData } from '../../../../decorators/attachment/Attachment'
 import { AriesFrameworkError } from '../../../../error'
-import { JsonTransformer } from '../../../../utils'
+import { deepEquality, JsonTransformer } from '../../../../utils'
 import { uuid } from '../../../../utils/uuid'
 import { DidResolverService } from '../../../dids'
 import { W3cCredentialService, W3cPresentation, W3cVerifiablePresentation } from '../../../vc'
@@ -335,8 +335,8 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
     const proposalJson = proposalAttachment.getDataAsJson<PresentationExchangeProposalData>()
     const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
 
-    // TODO
-    return false
+    // TODO: we should have a more smart comparison here
+    return deepEquality(proposalJson.input_descriptors, requestJson.presentationDefinition.input_descriptors)
   }
 
   public async shouldAutoRespondToRequest(
@@ -346,8 +346,8 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
     const proposalJson = proposalAttachment.getDataAsJson<PresentationExchangeProposalData>()
     const requestJson = requestAttachment.getDataAsJson<PresentationExchangeRequestData>()
 
-    // TODO
-    return false
+    // TODO: we should have a more smart comparison here
+    return deepEquality(proposalJson.input_descriptors, requestJson.presentationDefinition.input_descriptors)
   }
 
   public async shouldAutoRespondToPresentation(): Promise<boolean> {
@@ -435,17 +435,17 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
   private ruleAll(match: SubmissionRequirementMatch, credentials: IVerifiableCredential[]): IVerifiableCredential[] {
     const selectedCredentials: IVerifiableCredential[] = []
 
-    if (!match.count) throw new AriesFrameworkError(`PeX Library missing match count`)
-
-    for (let matchIndex = 0; matchIndex < match.count; matchIndex++) {
-      // extract [count] verifiable credentials for the given match (expressed as a jsonpath)
-      // from the the full list of credentials
-
-      // if we have nested credentials (from_nested is defined) use count as number of recursive calls
-      if (match.from_nested) {
-        selectedCredentials.push(...this.retrieveSelectedCredentials(match.from_nested[matchIndex], credentials))
-      } else {
-        selectedCredentials.push(...query({ verifiableCredential: credentials }, match.vc_path[matchIndex]))
+    // extract all verifiable credentials for the given match (expressed as a jsonpath)
+    // from the the full list of credentials
+    if (match.from_nested) {
+      // nested query: loop through all sub objects recursively adding to the results array
+      for (let nestedMatchIndex = 0; nestedMatchIndex < match.from_nested.length; nestedMatchIndex++) {
+        selectedCredentials.push(...this.retrieveSelectedCredentials(match.from_nested[nestedMatchIndex], credentials))
+      }
+    } else {
+      for (const path of match.vc_path) {
+        const result = jp.query(credentials, path)
+        selectedCredentials.push(...result)
       }
     }
 
@@ -455,18 +455,23 @@ export class PresentationExchangeProofFormatService implements ProofFormatServic
   private rulePick(match: SubmissionRequirementMatch, credentials: IVerifiableCredential[]): IVerifiableCredential[] {
     const selectedCredentials: IVerifiableCredential[] = []
 
-    // extract [count] verifiable credentials for the given match (expressed as a jsonpath)
-    // from the the full list of credentials
-    if (match.from_nested) {
-      // nested query: loop through all sub objects recursively adding to the results array
-      for (let i = 0; i < match.from_nested.length; i++) {
-        selectedCredentials.push(...this.retrieveSelectedCredentials(match.from_nested[i], credentials))
-      }
-    } else {
-      for (const path of match.vc_path) {
-        selectedCredentials.push(...query({ verifiableCredential: credentials }, path))
+    if (!match.count) {
+      throw new AriesFrameworkError(`PeX Library missing match count`)
+    }
+
+    for (let matchIndex = 0; matchIndex < match.count; matchIndex++) {
+      // extract [count] verifiable credentials for the given match (expressed as a jsonpath)
+      // from the the full list of credentials
+
+      // if we have nested credentials (from_nested is defined) use count as number
+      // of recursive calls
+      if (match.from_nested) {
+        selectedCredentials.push(...this.retrieveSelectedCredentials(match.from_nested[matchIndex], credentials))
+      } else {
+        selectedCredentials.push(...jp.query(credentials, match.vc_path[matchIndex]))
       }
     }
+
     return selectedCredentials
   }
 

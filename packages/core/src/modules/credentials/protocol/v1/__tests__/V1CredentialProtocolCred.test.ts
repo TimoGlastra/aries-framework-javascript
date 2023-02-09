@@ -728,7 +728,7 @@ describe('V1CredentialProtocol', () => {
         },
         description: {
           code: CredentialProblemReportReason.IssuanceAbandoned,
-          en: message,
+          en: 'Indy error',
         },
       })
     })

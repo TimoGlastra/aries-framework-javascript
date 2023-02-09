@@ -161,8 +161,6 @@ describe('Agent', () => {
       expect(container.resolve(ConnectionRepository)).toBeInstanceOf(ConnectionRepository)
       expect(container.resolve(TrustPingService)).toBeInstanceOf(TrustPingService)
 
-      expect(container.resolve(V1ProofProtocol)).toBeInstanceOf(V1ProofProtocol)
-      expect(container.resolve(V2ProofProtocol)).toBeInstanceOf(V2ProofProtocol)
       expect(container.resolve(ProofsApi)).toBeInstanceOf(ProofsApi)
       expect(container.resolve(ProofRepository)).toBeInstanceOf(ProofRepository)
 
@@ -204,8 +202,6 @@ describe('Agent', () => {
       expect(container.resolve(ConnectionRepository)).toBe(container.resolve(ConnectionRepository))
       expect(container.resolve(TrustPingService)).toBe(container.resolve(TrustPingService))
 
-      expect(container.resolve(V1ProofProtocol)).toBe(container.resolve(V1ProofProtocol))
-      expect(container.resolve(V2ProofProtocol)).toBe(container.resolve(V2ProofProtocol))
       expect(container.resolve(ProofsApi)).toBe(container.resolve(ProofsApi))
       expect(container.resolve(ProofRepository)).toBe(container.resolve(ProofRepository))
 
