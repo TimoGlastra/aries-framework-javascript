@@ -10,6 +10,8 @@ import type {
   CredentialStateChangedEvent,
   InitConfig,
   InjectionToken,
+  JsonCredential,
+  JsonLdCredentialDetailFormat,
   ProofStateChangedEvent,
   SchemaTemplate,
   Wallet,
@@ -17,15 +19,7 @@ import type {
 import type { AgentModulesInput, EmptyModuleMap } from '../src/agent/AgentModules'
 import type { TrustPingReceivedEvent, TrustPingResponseReceivedEvent } from '../src/modules/connections/TrustPingEvents'
 import type { IndyOfferCredentialFormat } from '../src/modules/credentials/formats/indy/IndyCredentialFormat'
-import type {
-  JsonCredential,
-  JsonLdCredentialDetailFormat,
-} from '../src/modules/credentials/formats/jsonld/JsonLdCredentialFormat'
-import type {
-  ProofAttributeInfo,
-  ProofPredicateInfo,
-  ProofPredicateInfoOptions,
-} from '../src/modules/proofs/formats/indy/models'
+import type { ProofAttributeInfo, ProofPredicateInfoOptions } from '../src/modules/proofs/formats/indy/models'
 import type { AutoAcceptProof } from '../src/modules/proofs/models/ProofAutoAcceptType'
 import type { Awaited, WalletConfig } from '../src/types'
 import type { CredDef, Schema } from 'indy-sdk'
@@ -66,7 +60,6 @@ import {
   DidExchangeState,
   HandshakeProtocol,
   InjectionSymbols,
-  LogLevel,
   ProofEventTypes,
 } from '../src'
 import { Key, KeyType } from '../src/crypto'
