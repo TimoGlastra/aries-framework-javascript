@@ -60,6 +60,42 @@ const inputDescriptors = [
   },
 ] satisfies PresentationDefinitionV1['input_descriptors']
 
+const inputDescriptorCitizenship = {
+  constraints: {
+    fields: [
+      {
+        path: ['$.credentialSubject.familyName'],
+        purpose: 'The claim must be from one of the specified issuers',
+        id: '1f44d55f-f161-4938-a659-f8026467f126',
+      },
+      {
+        path: ['$.credentialSubject.givenName'],
+        purpose: 'The claim must be from one of the specified issuers',
+      },
+    ],
+  },
+  schema: [
+    {
+      uri: 'https://www.w3.org/2018/credentials/v1',
+    },
+    {
+      uri: 'https://www.w3.org/2018/credentials#VerifiableCredential',
+    },
+    {
+      uri: 'https://w3id.org/citizenship#PermanentResident',
+    },
+    {
+      uri: 'https://w3id.org/citizenship/v1',
+    },
+    {
+      uri: 'https://w3id.org/security/bbs/v1',
+    },
+  ],
+  name: "EU Driver's License 1",
+  group: ['A'],
+  id: 'citizenship_input_1',
+}
+
 describe('Auto accept present proof', () => {
   let faberAgent: JsonLdProofsTestsAgent
   let aliceAgent: JsonLdProofsTestsAgent
@@ -71,42 +107,6 @@ describe('Auto accept present proof', () => {
   // to be retrieved
 
   // query is based on matching the schema uri in the credential with that of the input descriptor g
-
-  const inputDescriptorCitizenship = {
-    constraints: {
-      fields: [
-        {
-          path: ['$.credentialSubject.familyName'],
-          purpose: 'The claim must be from one of the specified issuers',
-          id: '1f44d55f-f161-4938-a659-f8026467f126',
-        },
-        {
-          path: ['$.credentialSubject.givenName'],
-          purpose: 'The claim must be from one of the specified issuers',
-        },
-      ],
-    },
-    schema: [
-      {
-        uri: 'https://www.w3.org/2018/credentials/v1',
-      },
-      {
-        uri: 'https://www.w3.org/2018/credentials#VerifiableCredential',
-      },
-      {
-        uri: 'https://w3id.org/citizenship#PermanentResident',
-      },
-      {
-        uri: 'https://w3id.org/citizenship/v1',
-      },
-      {
-        uri: 'https://w3id.org/security/bbs/v1',
-      },
-    ],
-    name: "EU Driver's License 1",
-    group: ['A'],
-    id: 'citizenship_input_1',
-  }
 
   describe("Auto accept on 'always'", () => {
     afterAll(async () => {
