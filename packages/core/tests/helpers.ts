@@ -14,6 +14,8 @@ import type {
   Wallet,
   Agent,
   CredentialState,
+  ConnectionStateChangedEvent,
+  Buffer,
 } from '../src'
 import type { AgentModulesInput, EmptyModuleMap } from '../src/agent/AgentModules'
 import type { TrustPingReceivedEvent, TrustPingResponseReceivedEvent } from '../src/modules/connections/TrustPingEvents'
@@ -28,6 +30,9 @@ import { catchError, filter, map, take, timeout } from 'rxjs/operators'
 
 import { agentDependencies, IndySdkPostgresWalletScheme } from '../../node/src'
 import {
+  ConnectionsModule,
+  ConnectionEventTypes,
+  TypedArrayEncoder,
   AgentConfig,
   AgentContext,
   BasicMessageEventTypes,
@@ -67,7 +72,7 @@ export { agentDependencies }
 export function getAgentOptions<AgentModules extends AgentModulesInput | EmptyModuleMap>(
   name: string,
   extraConfig: Partial<InitConfig> = {},
-  modules?: AgentModules
+  inputModules?: AgentModules
 ): { config: InitConfig; modules: AgentModules; dependencies: AgentDependencies } {
   const random = uuid().slice(0, 4)
   const config: InitConfig = {
@@ -77,27 +82,37 @@ export function getAgentOptions<AgentModules extends AgentModulesInput | EmptyMo
       key: 'DZ9hPqFWTPxemcGea72C1X1nusqk5wFNLq6QPjwXGqAa', // generated using indy.generateWalletKey
       keyDerivationMethod: KeyDerivationMethod.Raw,
     },
-    publicDidSeed,
-    autoAcceptConnections: true,
     // TODO: determine the log level based on an environment variable. This will make it
     // possible to run e.g. failed github actions in debug mode for extra logs
     logger: TestLogger.fromLogger(testLogger, name),
     ...extraConfig,
   }
 
-  return { config, modules: (modules ?? {}) as AgentModules, dependencies: agentDependencies } as const
+  const m = (inputModules ?? {}) as AgentModulesInput
+  const modules = {
+    ...m,
+    // Make sure connections module is always defined so we can set autoAcceptConnections
+    connections:
+      m.connections ??
+      new ConnectionsModule({
+        autoAcceptConnections: true,
+      }),
+  }
+
+  return { config, modules: modules as AgentModules, dependencies: agentDependencies } as const
 }
 
 export function getPostgresAgentOptions<AgentModules extends AgentModulesInput | EmptyModuleMap>(
   name: string,
   extraConfig: Partial<InitConfig> = {},
-  modules?: AgentModules
+  inputModules?: AgentModules
 ) {
+  const random = uuid().slice(0, 4)
   const config: InitConfig = {
-    label: `Agent: ${name}`,
+    label: `Agent: ${name} - ${random}`,
     walletConfig: {
       // NOTE: IndySDK Postgres database per wallet doesn't support special characters/spaces in the wallet name
-      id: `PostGresWallet${name}`,
+      id: `PostgresWallet${name}${random}`,
       key: `Key${name}`,
       storage: {
         type: 'postgres_storage',
@@ -113,14 +128,36 @@ export function getPostgresAgentOptions<AgentModules extends AgentModulesInput |
         },
       },
     },
-    publicDidSeed,
-    autoAcceptConnections: true,
     autoUpdateStorageOnStartup: false,
     logger: TestLogger.fromLogger(testLogger, name),
     ...extraConfig,
   }
 
-  return { config, dependencies: agentDependencies, modules: (modules ?? {}) as AgentModules } as const
+  const m = (inputModules ?? {}) as AgentModulesInput
+  const modules = {
+    ...m,
+    // Make sure connections module is always defined so we can set autoAcceptConnections
+    connections: m.connections ?? new ConnectionsModule({}),
+  }
+
+  modules.connections.config.autoAcceptConnections = true
+
+  return { config, dependencies: agentDependencies, modules: modules as AgentModules } as const
+}
+
+export async function importExistingIndyDidFromPrivateKey(agent: Agent, privateKey: Buffer) {
+  const key = await agent.wallet.createKey({
+    keyType: KeyType.Ed25519,
+    privateKey,
+  })
+
+  // did is first 16 bytes of public key encoded as base58
+  const unqualifiedIndyDid = TypedArrayEncoder.toBase58(key.publicKey.slice(0, 16))
+
+  // import the did in the wallet so it can be used
+  await agent.dids.import({ did: `did:indy:pool:localtest:${unqualifiedIndyDid}` })
+
+  return unqualifiedIndyDid
 }
 
 export function getAgentConfig(
@@ -176,6 +213,8 @@ const isProofStateChangedEvent = (e: BaseEvent): e is ProofStateChangedEvent =>
   e.type === ProofEventTypes.ProofStateChanged
 const isCredentialStateChangedEvent = (e: BaseEvent): e is CredentialStateChangedEvent =>
   e.type === CredentialEventTypes.CredentialStateChanged
+const isConnectionStateChangedEvent = (e: BaseEvent): e is ConnectionStateChangedEvent =>
+  e.type === ConnectionEventTypes.ConnectionStateChanged
 const isTrustPingReceivedEvent = (e: BaseEvent): e is TrustPingReceivedEvent =>
   e.type === TrustPingEventTypes.TrustPingReceivedEvent
 const isTrustPingResponseReceivedEvent = (e: BaseEvent): e is TrustPingResponseReceivedEvent =>
@@ -352,6 +391,54 @@ export async function waitForCredentialRecord(
 ) {
   const observable = agent.events.observable<CredentialStateChangedEvent>(CredentialEventTypes.CredentialStateChanged)
   return waitForCredentialRecordSubject(observable, options)
+}
+
+export function waitForConnectionRecordSubject(
+  subject: ReplaySubject<BaseEvent> | Observable<BaseEvent>,
+  {
+    threadId,
+    state,
+    previousState,
+    timeoutMs = 15000, // sign and store credential in W3c credential protocols take several seconds
+  }: {
+    threadId?: string
+    state?: DidExchangeState
+    previousState?: DidExchangeState | null
+    timeoutMs?: number
+  }
+) {
+  const observable = subject instanceof ReplaySubject ? subject.asObservable() : subject
+
+  return firstValueFrom(
+    observable.pipe(
+      filter(isConnectionStateChangedEvent),
+      filter((e) => previousState === undefined || e.payload.previousState === previousState),
+      filter((e) => threadId === undefined || e.payload.connectionRecord.threadId === threadId),
+      filter((e) => state === undefined || e.payload.connectionRecord.state === state),
+      timeout(timeoutMs),
+      catchError(() => {
+        throw new Error(`ConnectionStateChanged event not emitted within specified timeout: {
+  previousState: ${previousState},
+  threadId: ${threadId},
+  state: ${state}
+}`)
+      }),
+      map((e) => e.payload.connectionRecord)
+    )
+  )
+}
+
+export async function waitForConnectionRecord(
+  agent: Agent,
+  options: {
+    threadId?: string
+    state?: DidExchangeState
+    previousState?: DidExchangeState | null
+    timeoutMs?: number
+  }
+) {
+  const observable = agent.events.observable<ConnectionStateChangedEvent>(ConnectionEventTypes.ConnectionStateChanged)
+  return waitForConnectionRecordSubject(observable, options)
 }
 
 export async function waitForBasicMessage(agent: Agent, { content }: { content?: string }): Promise<BasicMessage> {

@@ -9,7 +9,7 @@ import {
 } from '@aries-framework/core'
 import { Scan } from '@hyperledger/aries-askar-shared'
 
-import { askarErrors, isAskarError } from '../utils/askarError'
+import { AskarErrorCode, isAskarError } from '../utils/askarError'
 import { assertAskarWallet } from '../utils/assertAskarWallet'
 
 import { askarQueryFromSearchQuery, recordToInstance, transformFromRecordTagValues } from './utils'
@@ -29,7 +29,7 @@ export class AskarStorageService<T extends BaseRecord> implements StorageService
     try {
       await session.insert({ category: record.type, name: record.id, value, tags })
     } catch (error) {
-      if (isAskarError(error) && error.code === askarErrors.Duplicate) {
+      if (isAskarError(error, AskarErrorCode.Duplicate)) {
         throw new RecordDuplicateError(`Record with id ${record.id} already exists`, { recordType: record.type })
       }
 
@@ -50,7 +50,7 @@ export class AskarStorageService<T extends BaseRecord> implements StorageService
     try {
       await session.replace({ category: record.type, name: record.id, value, tags })
     } catch (error) {
-      if (isAskarError(error) && error.code === askarErrors.NotFound) {
+      if (isAskarError(error, AskarErrorCode.NotFound)) {
         throw new RecordNotFoundError(`record with id ${record.id} not found.`, {
           recordType: record.type,
           cause: error,
@@ -69,7 +69,7 @@ export class AskarStorageService<T extends BaseRecord> implements StorageService
     try {
       await session.remove({ category: record.type, name: record.id })
     } catch (error) {
-      if (isAskarError(error) && error.code === askarErrors.NotFound) {
+      if (isAskarError(error, AskarErrorCode.NotFound)) {
         throw new RecordNotFoundError(`record with id ${record.id} not found.`, {
           recordType: record.type,
           cause: error,
@@ -91,7 +91,7 @@ export class AskarStorageService<T extends BaseRecord> implements StorageService
     try {
       await session.remove({ category: recordClass.type, name: id })
     } catch (error) {
-      if (isAskarError(error) && error.code === askarErrors.NotFound) {
+      if (isAskarError(error, AskarErrorCode.NotFound)) {
         throw new RecordNotFoundError(`record with id ${id} not found.`, {
           recordType: recordClass.type,
           cause: error,
@@ -115,17 +115,7 @@ export class AskarStorageService<T extends BaseRecord> implements StorageService
       }
       return recordToInstance(record, recordClass)
     } catch (error) {
-      if (
-        isAskarError(error) &&
-        (error.code === askarErrors.NotFound ||
-          // FIXME: this is current output from askar wrapper but does not describe specifically a not found scenario
-          error.message === 'Received null pointer. The native library could not find the value.')
-      ) {
-        throw new RecordNotFoundError(`record with id ${id} not found.`, {
-          recordType: recordClass.type,
-          cause: error,
-        })
-      }
+      if (error instanceof RecordNotFoundError) throw error
       throw new WalletError(`Error getting record`, { cause: error })
     }
   }
@@ -169,12 +159,6 @@ export class AskarStorageService<T extends BaseRecord> implements StorageService
       }
       return instances
     } catch (error) {
-      if (
-        isAskarError(error) && // FIXME: this is current output from askar wrapper but does not describe specifically a 0 length scenario
-        error.message === 'Received null pointer. The native library could not find the value.'
-      ) {
-        return instances
-      }
       throw new WalletError(`Error executing query`, { cause: error })
     }
   }

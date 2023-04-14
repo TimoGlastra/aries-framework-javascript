@@ -3,15 +3,17 @@ import type {
   AnonCredsRevocationStatusList,
   AnonCredsRevocationRegistryDefinition,
   AnonCredsSchema,
+  AnonCredsCredentialRequestMetadata,
+  AnonCredsLinkSecretBlindingData,
 } from '@aries-framework/anoncreds'
-import type { CredDef, RevocReg, RevocRegDef, RevocRegDelta, Schema } from 'indy-sdk'
+import type { CredDef, CredReqMetadata, RevocReg, RevocRegDef, RevocRegDelta, Schema } from 'indy-sdk'
 
-import { didFromCredentialDefinitionId, didFromRevocationRegistryDefinitionId, didFromSchemaId } from './identifiers'
+import { parseCredentialDefinitionId, parseSchemaId } from './identifiers'
 
 export function anonCredsSchemaFromIndySdk(schema: Schema): AnonCredsSchema {
-  const issuerId = didFromSchemaId(schema.id)
+  const { did } = parseSchemaId(schema.id)
   return {
-    issuerId,
+    issuerId: did,
     name: schema.name,
     version: schema.version,
     attrNames: schema.attrNames,
@@ -30,10 +32,10 @@ export function indySdkSchemaFromAnonCreds(schemaId: string, schema: AnonCredsSc
 }
 
 export function anonCredsCredentialDefinitionFromIndySdk(credentialDefinition: CredDef): AnonCredsCredentialDefinition {
-  const issuerId = didFromCredentialDefinitionId(credentialDefinition.id)
+  const { did } = parseCredentialDefinitionId(credentialDefinition.id)
 
   return {
-    issuerId,
+    issuerId: did,
     schemaId: credentialDefinition.schemaId,
     tag: credentialDefinition.tag,
     type: 'CL',
@@ -52,25 +54,6 @@ export function indySdkCredentialDefinitionFromAnonCreds(
     type: credentialDefinition.type,
     value: credentialDefinition.value,
     ver: '1.0',
-  }
-}
-
-export function anonCredsRevocationRegistryDefinitionFromIndySdk(
-  revocationRegistryDefinition: RevocRegDef
-): AnonCredsRevocationRegistryDefinition {
-  const issuerId = didFromRevocationRegistryDefinitionId(revocationRegistryDefinition.id)
-
-  return {
-    issuerId,
-    credDefId: revocationRegistryDefinition.credDefId,
-    value: {
-      maxCredNum: revocationRegistryDefinition.value.maxCredNum,
-      publicKeys: revocationRegistryDefinition.value.publicKeys,
-      tailsHash: revocationRegistryDefinition.value.tailsHash,
-      tailsLocation: revocationRegistryDefinition.value.tailsLocation,
-    },
-    tag: revocationRegistryDefinition.tag,
-    revocDefType: 'CL_ACCUM',
   }
 }
 
@@ -120,7 +103,7 @@ export function anonCredsRevocationStatusListFromIndySdk(
   return {
     issuerId: revocationRegistryDefinition.issuerId,
     currentAccumulator: delta.value.accum,
-    revRegId: revocationRegistryDefinitionId,
+    revRegDefId: revocationRegistryDefinitionId,
     revocationList,
     timestamp,
   }
@@ -149,9 +132,30 @@ export function indySdkRevocationDeltaFromAnonCreds(
       accum: revocationStatusList.currentAccumulator,
       issued: [],
       revoked: revokedIndices,
-      // NOTE: I don't think this is used?
-      prevAccum: '',
+      // NOTE: this must be a valid accumulator but it's not actually used. So we set it to the
+      // currentAccumulator as that should always be a valid accumulator.
+      prevAccum: revocationStatusList.currentAccumulator,
     },
     ver: '1.0',
+  }
+}
+
+export function anonCredsCredentialRequestMetadataFromIndySdk(
+  credentialRequestMetadata: CredReqMetadata
+): AnonCredsCredentialRequestMetadata {
+  return {
+    link_secret_blinding_data: credentialRequestMetadata.master_secret_blinding_data as AnonCredsLinkSecretBlindingData,
+    link_secret_name: credentialRequestMetadata.master_secret_name as string,
+    nonce: credentialRequestMetadata.nonce as string,
+  }
+}
+
+export function indySdkCredentialRequestMetadataFromAnonCreds(
+  credentialRequestMetadata: AnonCredsCredentialRequestMetadata
+): CredReqMetadata {
+  return {
+    master_secret_blinding_data: credentialRequestMetadata.link_secret_blinding_data,
+    master_secret_name: credentialRequestMetadata.link_secret_name,
+    nonce: credentialRequestMetadata.nonce,
   }
 }

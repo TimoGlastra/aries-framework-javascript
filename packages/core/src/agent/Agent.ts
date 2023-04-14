@@ -45,7 +45,7 @@ export class Agent<AgentModules extends AgentModulesInput = any> extends BaseAge
 
   public constructor(options: AgentOptions<AgentModules>, dependencyManager = new DependencyManager()) {
     const agentConfig = new AgentConfig(options.config, options.dependencies)
-    const modulesWithDefaultModules = extendModulesWithDefaultModules(agentConfig, options.modules)
+    const modulesWithDefaultModules = extendModulesWithDefaultModules(options.modules)
 
     // Register internal dependencies
     dependencyManager.registerSingleton(MessageHandlerRegistry)
@@ -136,12 +136,20 @@ export class Agent<AgentModules extends AgentModulesInput = any> extends BaseAge
     this.messageReceiver.registerInboundTransport(inboundTransport)
   }
 
+  public async unregisterInboundTransport(inboundTransport: InboundTransport) {
+    await this.messageReceiver.unregisterInboundTransport(inboundTransport)
+  }
+
   public get inboundTransports() {
     return this.messageReceiver.inboundTransports
   }
 
   public registerOutboundTransport(outboundTransport: OutboundTransport) {
     this.messageSender.registerOutboundTransport(outboundTransport)
+  }
+
+  public async unregisterOutboundTransport(outboundTransport: OutboundTransport) {
+    await this.messageSender.unregisterOutboundTransport(outboundTransport)
   }
 
   public get outboundTransports() {

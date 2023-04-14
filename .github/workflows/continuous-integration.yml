@@ -26,7 +26,7 @@ jobs:
   # validation scripts. To still be able to run the CI we can manually trigger it by adding the 'ci-test'
   # label to the pull request
   ci-trigger:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest-m
     outputs:
       triggered: ${{ steps.check.outputs.triggered }}
     steps:
@@ -45,7 +45,7 @@ jobs:
           echo "::set-output name=triggered::${SHOULD_RUN}"
 
   validate:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest-m
     name: Validate
     steps:
       - name: Checkout aries-framework-javascript
@@ -79,12 +79,12 @@ jobs:
         run: yarn build
 
   integration-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest-m
     name: Integration Tests
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 17.x, 18.x]
+        node-version: [16.x, 18.x]
 
     steps:
       - name: Checkout aries-framework-javascript
@@ -111,6 +111,11 @@ jobs:
         uses: ./.github/actions/setup-node
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Add ref-napi resolution in Node18
+        run: node ./scripts/add-ref-napi-resolution.js
+        if: matrix.node-version == '18.x'
+
       - name: Install dependencies
         run: yarn install
 
@@ -121,7 +126,7 @@ jobs:
         if: always()
 
   version-stable:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest-m
     name: Release stable
     needs: [integration-test, validate]
     if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'

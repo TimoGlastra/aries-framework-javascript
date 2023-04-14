@@ -1,3 +1,5 @@
+import type { AnonCredsCredentialRequest } from '../../models'
+
 import {
   CredentialState,
   CredentialExchangeRecord,
@@ -20,7 +22,13 @@ import {
   IndySdkWallet,
 } from '../../../../indy-sdk/src'
 import { IndySdkRevocationService } from '../../../../indy-sdk/src/anoncreds/services/IndySdkRevocationService'
-import { indyDidFromPublicKeyBase58 } from '../../../../indy-sdk/src/utils/did'
+import {
+  getLegacyCredentialDefinitionId,
+  getLegacySchemaId,
+  parseCredentialDefinitionId,
+  parseSchemaId,
+} from '../../../../indy-sdk/src/anoncreds/utils/identifiers'
+import { legacyIndyDidFromPublicKeyBase58 } from '../../../../indy-sdk/src/utils/did'
 import { InMemoryAnonCredsRegistry } from '../../../tests/InMemoryAnonCredsRegistry'
 import { AnonCredsModuleConfig } from '../../AnonCredsModuleConfig'
 import { AnonCredsLinkSecretRecord, AnonCredsLinkSecretRepository } from '../../repository'
@@ -77,7 +85,8 @@ describe('Legacy indy format services', () => {
   test('issuance and verification flow starting from proposal without negotiation and without revocation', async () => {
     // This is just so we don't have to register an actual indy did (as we don't have the indy did registrar configured)
     const key = await wallet.createKey({ keyType: KeyType.Ed25519 })
-    const indyDid = indyDidFromPublicKeyBase58(key.publicKeyBase58)
+    const unqualifiedIndyDid = legacyIndyDidFromPublicKeyBase58(key.publicKeyBase58)
+    const indyDid = `did:indy:pool1:${unqualifiedIndyDid}`
 
     // Create link secret
     await anonCredsHolderService.createLinkSecret(agentContext, {
@@ -153,6 +162,12 @@ describe('Legacy indy format services', () => {
       }),
     ]
 
+    const cd = parseCredentialDefinitionId(credentialDefinitionState.credentialDefinitionId)
+    const legacyCredentialDefinitionId = getLegacyCredentialDefinitionId(cd.namespaceIdentifier, cd.schemaSeqNo, cd.tag)
+
+    const s = parseSchemaId(schemaState.schemaId)
+    const legacySchemaId = getLegacySchemaId(s.namespaceIdentifier, s.schemaName, s.schemaVersion)
+
     // Holder creates proposal
     holderCredentialRecord.credentialAttributes = credentialAttributes
     const { attachment: proposalAttachment } = await indyCredentialFormatService.createProposal(agentContext, {
@@ -160,7 +175,7 @@ describe('Legacy indy format services', () => {
       credentialFormats: {
         indy: {
           attributes: credentialAttributes,
-          credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
+          credentialDefinitionId: legacyCredentialDefinitionId,
         },
       },
     })
@@ -186,6 +201,9 @@ describe('Legacy indy format services', () => {
       credentialRecord: holderCredentialRecord,
       offerAttachment,
     })
+
+    // Make sure the request contains a prover_did field
+    expect((requestAttachment.getDataAsJson() as AnonCredsCredentialRequest).prover_did).toBeDefined()
 
     // Issuer processes and accepts request
     await indyCredentialFormatService.processRequest(agentContext, {
@@ -220,28 +238,29 @@ describe('Legacy indy format services', () => {
         age: '25',
         name: 'John',
       },
-      schemaId: schemaState.schemaId,
-      credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
+      schemaId: legacySchemaId,
+      credentialDefinitionId: legacyCredentialDefinitionId,
       revocationRegistryId: null,
       credentialRevocationId: null,
+      methodName: 'indy',
     })
 
     expect(holderCredentialRecord.metadata.data).toEqual({
-      '_anonCreds/anonCredsCredential': {
-        schemaId: schemaState.schemaId,
-        credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
+      '_anoncreds/credential': {
+        schemaId: legacySchemaId,
+        credentialDefinitionId: legacyCredentialDefinitionId,
       },
-      '_anonCreds/anonCredsCredentialRequest': {
-        master_secret_blinding_data: expect.any(Object),
-        master_secret_name: expect.any(String),
+      '_anoncreds/credentialRequest': {
+        link_secret_blinding_data: expect.any(Object),
+        link_secret_name: expect.any(String),
         nonce: expect.any(String),
       },
     })
 
     expect(issuerCredentialRecord.metadata.data).toEqual({
-      '_anonCreds/anonCredsCredential': {
-        schemaId: schemaState.schemaId,
-        credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
+      '_anoncreds/credential': {
+        schemaId: legacySchemaId,
+        credentialDefinitionId: legacyCredentialDefinitionId,
       },
     })
 
@@ -262,14 +281,14 @@ describe('Legacy indy format services', () => {
           attributes: [
             {
               name: 'name',
-              credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
+              credentialDefinitionId: legacyCredentialDefinitionId,
               value: 'John',
               referent: '1',
             },
           ],
           predicates: [
             {
-              credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
+              credentialDefinitionId: legacyCredentialDefinitionId,
               name: 'age',
               predicate: '>=',
               threshold: 18,

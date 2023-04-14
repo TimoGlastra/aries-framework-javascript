@@ -1,3 +1,4 @@
+import type { AnonCredsCredentialRequest } from '@aries-framework/anoncreds'
 import type { Wallet } from '@aries-framework/core'
 
 import {
@@ -29,6 +30,7 @@ import {
 import { Subject } from 'rxjs'
 
 import { InMemoryStorageService } from '../../../tests/InMemoryStorageService'
+import { describeRunInNodeVersion } from '../../../tests/runInVersion'
 import { AnonCredsRegistryService } from '../../anoncreds/src/services/registry/AnonCredsRegistryService'
 import { InMemoryAnonCredsRegistry } from '../../anoncreds/tests/InMemoryAnonCredsRegistry'
 import { agentDependencies, getAgentConfig, getAgentContext } from '../../core/tests/helpers'
@@ -36,7 +38,7 @@ import { AnonCredsRsHolderService } from '../src/services/AnonCredsRsHolderServi
 import { AnonCredsRsIssuerService } from '../src/services/AnonCredsRsIssuerService'
 import { AnonCredsRsVerifierService } from '../src/services/AnonCredsRsVerifierService'
 
-const registry = new InMemoryAnonCredsRegistry()
+const registry = new InMemoryAnonCredsRegistry({ useLegacyIdentifiers: true })
 const anonCredsModuleConfig = new AnonCredsModuleConfig({
   registries: [registry],
 })
@@ -68,9 +70,10 @@ const legacyIndyCredentialFormatService = new LegacyIndyCredentialFormatService(
 const legacyIndyProofFormatService = new LegacyIndyProofFormatService()
 
 // This is just so we don't have to register an actually indy did (as we don't have the indy did registrar configured)
-const indyDid = 'TL1EaPFCZ8Si5aUrqScBDt'
+const indyDid = 'LjgpST2rjsoxYegQDRm7EL'
 
-describe('Legacy indy format services using anoncreds-rs', () => {
+// FIXME: Re-include in tests when NodeJS wrapper performance is improved
+describeRunInNodeVersion([18], 'Legacy indy format services using anoncreds-rs', () => {
   test('issuance and verification flow starting from proposal without negotiation and without revocation', async () => {
     const schema = await anonCredsIssuerService.createSchema(agentContext, {
       attrNames: ['name', 'age'],
@@ -125,6 +128,7 @@ describe('Legacy indy format services using anoncreds-rs', () => {
       new AnonCredsSchemaRecord({
         schema: schemaState.schema,
         schemaId: schemaState.schemaId,
+        methodName: 'inMemory',
       })
     )
 
@@ -133,6 +137,7 @@ describe('Legacy indy format services using anoncreds-rs', () => {
       new AnonCredsCredentialDefinitionRecord({
         credentialDefinition: credentialDefinitionState.credentialDefinition,
         credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
+        methodName: 'inMemory',
       })
     )
 
@@ -225,6 +230,9 @@ describe('Legacy indy format services using anoncreds-rs', () => {
       },
     })
 
+    // Make sure the request contains a prover_did field
+    expect((requestAttachment.getDataAsJson() as AnonCredsCredentialRequest).prover_did).toBeDefined()
+
     // Issuer processes and accepts request
     await legacyIndyCredentialFormatService.processRequest(agentContext, {
       credentialRecord: issuerCredentialRecord,
@@ -262,22 +270,23 @@ describe('Legacy indy format services using anoncreds-rs', () => {
       credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
       revocationRegistryId: null,
       credentialRevocationId: undefined, // FIXME: should be null?
+      methodName: 'inMemory',
     })
 
     expect(holderCredentialRecord.metadata.data).toEqual({
-      '_anonCreds/anonCredsCredential': {
+      '_anoncreds/credential': {
         schemaId: schemaState.schemaId,
         credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
       },
-      '_anonCreds/anonCredsCredentialRequest': {
-        master_secret_blinding_data: expect.any(Object),
-        master_secret_name: expect.any(String),
+      '_anoncreds/credentialRequest': {
+        link_secret_blinding_data: expect.any(Object),
+        link_secret_name: expect.any(String),
         nonce: expect.any(String),
       },
     })
 
     expect(issuerCredentialRecord.metadata.data).toEqual({
-      '_anonCreds/anonCredsCredential': {
+      '_anoncreds/credential': {
         schemaId: schemaState.schemaId,
         credentialDefinitionId: credentialDefinitionState.credentialDefinitionId,
       },

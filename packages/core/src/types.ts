@@ -1,7 +1,4 @@
 import type { Logger } from './logger'
-import type { AutoAcceptCredential } from './modules/credentials/models/CredentialAutoAcceptType'
-import type { AutoAcceptProof } from './modules/proofs'
-import type { MediatorPickupStrategy } from './modules/routing'
 
 export enum KeyDerivationMethod {
   /** default value in indy-sdk. Will be used when no value is provided */
@@ -52,94 +49,13 @@ export enum DidCommMimeType {
 export interface InitConfig {
   endpoints?: string[]
   label: string
-  publicDidSeed?: string
   walletConfig?: WalletConfig
   logger?: Logger
   didCommMimeType?: DidCommMimeType
   useDidKeyInProtocols?: boolean
-  useLegacyDidSovPrefix?: boolean
+  useDidSovPrefixWhereAllowed?: boolean
   connectionImageUrl?: string
   autoUpdateStorageOnStartup?: boolean
-
-  /**
-   * @deprecated configure `autoAcceptConnections` on the `ConnectionsModule` class
-   * @note This setting will be ignored if the `ConnectionsModule` is manually configured as
-   * a module
-   */
-  autoAcceptConnections?: boolean
-
-  /**
-   * @deprecated configure `autoAcceptProofs` on the `ProofModule` class
-   * @note This setting will be ignored if the `ProofsModule` is manually configured as
-   * a module
-   */
-  autoAcceptProofs?: AutoAcceptProof
-
-  /**
-   * @deprecated configure `autoAcceptCredentials` on the `CredentialsModule` class
-   * @note This setting will be ignored if the `CredentialsModule` is manually configured as
-   * a module
-   */
-  autoAcceptCredentials?: AutoAcceptCredential
-
-  /**
-   * @deprecated configure `autoAcceptMediationRequests` on the `RecipientModule` class
-   * @note This setting will be ignored if the `RecipientModule` is manually configured as
-   * a module
-   */
-  autoAcceptMediationRequests?: boolean
-
-  /**
-   * @deprecated configure `mediatorConnectionsInvite` on the `RecipientModule` class
-   * @note This setting will be ignored if the `RecipientModule` is manually configured as
-   * a module
-   */
-  mediatorConnectionsInvite?: string
-
-  /**
-   * @deprecated you can use `RecipientApi.setDefaultMediator` to set the default mediator.
-   */
-  defaultMediatorId?: string
-
-  /**
-   * @deprecated you can set the `default` tag to `false` (or remove it completely) to clear the default mediator.
-   */
-  clearDefaultMediator?: boolean
-
-  /**
-   * @deprecated configure `mediatorPollingInterval` on the `RecipientModule` class
-   * @note This setting will be ignored if the `RecipientModule` is manually configured as
-   * a module
-   */
-  mediatorPollingInterval?: number
-
-  /**
-   * @deprecated configure `mediatorPickupStrategy` on the `RecipientModule` class
-   * @note This setting will be ignored if the `RecipientModule` is manually configured as
-   * a module
-   */
-  mediatorPickupStrategy?: MediatorPickupStrategy
-
-  /**
-   * @deprecated configure `maximumMessagePickup` on the `RecipientModule` class
-   * @note This setting will be ignored if the `RecipientModule` is manually configured as
-   * a module
-   */
-  maximumMessagePickup?: number
-
-  /**
-   * @deprecated configure `baseMediatorReconnectionIntervalMs` on the `RecipientModule` class
-   * @note This setting will be ignored if the `RecipientModule` is manually configured as
-   * a module
-   */
-  baseMediatorReconnectionIntervalMs?: number
-
-  /**
-   * @deprecated configure `maximumMediatorReconnectionIntervalMs` on the `RecipientModule` class
-   * @note This setting will be ignored if the `RecipientModule` is manually configured as
-   * a module
-   */
-  maximumMediatorReconnectionIntervalMs?: number
 }
 
 export type ProtocolVersion = `${number}.${number}`

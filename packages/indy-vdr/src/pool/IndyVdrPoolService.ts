@@ -36,8 +36,15 @@ export class IndyVdrPoolService {
    * If the did is a qualified indy did, the pool will be determined based on the namespace.
    * If it is a legacy unqualified indy did, the pool will be determined based on the algorithm as described in this document:
    * https://docs.google.com/document/d/109C_eMsuZnTnYe2OAd02jAts1vC4axwEKIq7_4dnNVA/edit
+   *
+   * This method will optionally return a nym response when the did has been resolved to determine the ledger
+   * either now or in the past. The nymResponse can be used to prevent multiple ledger quries fetching the same
+   * did
    */
-  public async getPoolForDid(agentContext: AgentContext, did: string): Promise<IndyVdrPool> {
+  public async getPoolForDid(
+    agentContext: AgentContext,
+    did: string
+  ): Promise<{ pool: IndyVdrPool; nymResponse?: CachedDidResponse['nymResponse'] }> {
     // Check if the did starts with did:indy
     const match = did.match(DID_INDY_REGEX)
 
@@ -46,7 +53,7 @@ export class IndyVdrPoolService {
 
       const pool = this.getPoolForNamespace(namespace)
 
-      if (pool) return pool
+      if (pool) return { pool }
 
       throw new IndyVdrError(`Pool for indy namespace '${namespace}' not found`)
     } else {
@@ -54,24 +61,28 @@ export class IndyVdrPoolService {
     }
   }
 
-  private async getPoolForLegacyDid(agentContext: AgentContext, did: string): Promise<IndyVdrPool> {
+  private async getPoolForLegacyDid(
+    agentContext: AgentContext,
+    did: string
+  ): Promise<{ pool: IndyVdrPool; nymResponse?: CachedDidResponse['nymResponse'] }> {
     const pools = this.pools
 
     if (pools.length === 0) {
       throw new IndyVdrNotConfiguredError(
-        "No indy ledgers configured. Provide at least one pool configuration in the 'indyLedgers' agent configuration"
+        'No indy ledgers configured. Provide at least one pool configuration in IndyVdrModuleConfigOptions.networks'
       )
     }
 
-    const didCache = agentContext.dependencyManager.resolve(CacheModuleConfig).cache
+    const cache = agentContext.dependencyManager.resolve(CacheModuleConfig).cache
+    const cacheKey = `IndyVdrPoolService:${did}`
 
-    const cachedNymResponse = await didCache.get<CachedDidResponse>(agentContext, `IndyVdrPoolService:${did}`)
+    const cachedNymResponse = await cache.get<CachedDidResponse>(agentContext, cacheKey)
     const pool = this.pools.find((pool) => pool.indyNamespace === cachedNymResponse?.indyNamespace)
 
     // If we have the nym response with associated pool in the cache, we'll use that
     if (cachedNymResponse && pool) {
       this.logger.trace(`Found ledger id '${pool.indyNamespace}' for did '${did}' in cache`)
-      return pool
+      return { pool, nymResponse: cachedNymResponse.nymResponse }
     }
 
     const { successful, rejected } = await this.getSettledDidResponsesFromPools(did, pools)
@@ -94,7 +105,7 @@ export class IndyVdrPoolService {
 
     // If there are self certified DIDs we always prefer it over non self certified DIDs
     // We take the first self certifying DID as we take the order in the
-    // indyLedgers config as the order of preference of ledgers
+    // IndyVdrModuleConfigOptions.networks config as the order of preference of ledgers
     let value = successful.find((response) =>
       isSelfCertifiedDid(response.value.did.nymResponse.did, response.value.did.nymResponse.verkey)
     )?.value
@@ -107,19 +118,19 @@ export class IndyVdrPoolService {
       const nonProduction = successful.filter((s) => !s.value.pool.config.isProduction)
       const productionOrNonProduction = production.length >= 1 ? production : nonProduction
 
-      // We take the first value as we take the order in the indyLedgers config as
-      // the order of preference of ledgers
+      // We take the first value as we take the order in the IndyVdrModuleConfigOptions.networks
+      // config as the order of preference of ledgers
       value = productionOrNonProduction[0].value
     }
 
-    await didCache.set(agentContext, did, {
+    await cache.set(agentContext, cacheKey, {
       nymResponse: {
         did: value.did.nymResponse.did,
         verkey: value.did.nymResponse.verkey,
       },
       indyNamespace: value.did.indyNamespace,
     })
-    return value.pool
+    return { pool: value.pool, nymResponse: value.did.nymResponse }
   }
 
   private async getSettledDidResponsesFromPools(did: string, pools: IndyVdrPool[]) {
@@ -143,7 +154,7 @@ export class IndyVdrPoolService {
   public getPoolForNamespace(indyNamespace: string) {
     if (this.pools.length === 0) {
       throw new IndyVdrNotConfiguredError(
-        "No indy ledgers configured. Provide at least one pool configuration in the 'indyLedgers' agent configuration"
+        'No indy ledgers configured. Provide at least one pool configuration in IndyVdrModuleConfigOptions.networks'
       )
     }
 
@@ -159,7 +170,7 @@ export class IndyVdrPoolService {
   private async getDidFromPool(did: string, pool: IndyVdrPool): Promise<PublicDidRequest> {
     try {
       this.logger.trace(`Get public did '${did}' from ledger '${pool.indyNamespace}'`)
-      const request = await new GetNymRequest({ dest: did })
+      const request = new GetNymRequest({ dest: did })
 
       this.logger.trace(`Submitting get did request for did '${did}' to ledger '${pool.indyNamespace}'`)
       const response = await pool.submitReadRequest(request)

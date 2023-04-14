@@ -2,21 +2,22 @@ import type {
   EncryptedMessage,
   WalletConfig,
   WalletCreateKeyOptions,
-  DidInfo,
   WalletSignOptions,
   UnpackedMessageContext,
   WalletVerifyOptions,
   Wallet,
   WalletConfigRekey,
   KeyPair,
-  KeyDerivationMethod,
+  WalletExportImportConfig,
 } from '@aries-framework/core'
-import type { Session } from '@hyperledger/aries-askar-shared'
+import type { KeyEntryObject, Session } from '@hyperledger/aries-askar-shared'
 
 import {
+  WalletExportPathExistsError,
+  WalletKeyExistsError,
+  isValidSeed,
+  isValidPrivateKey,
   JsonTransformer,
-  RecordNotFoundError,
-  RecordDuplicateError,
   WalletInvalidKeyError,
   WalletDuplicateError,
   JsonEncoder,
@@ -31,8 +32,10 @@ import {
   TypedArrayEncoder,
   FileSystem,
   WalletNotFoundError,
+  KeyDerivationMethod,
 } from '@aries-framework/core'
 import {
+  KdfMethod,
   StoreKeyMethod,
   KeyAlgs,
   CryptoBox,
@@ -48,7 +51,7 @@ const isError = (error: unknown): error is Error => error instanceof Error
 import { inject, injectable } from 'tsyringe'
 
 import {
-  askarErrors,
+  AskarErrorCode,
   isAskarError,
   keyDerivationMethodToStoreKeyMethod,
   keyTypeSupportedByAskar,
@@ -68,7 +71,6 @@ export class AskarWallet implements Wallet {
   private fileSystem: FileSystem
 
   private signingKeyProviderRegistry: SigningProviderRegistry
-  private publicDidInfo: DidInfo | undefined
 
   public constructor(
     @inject(InjectionSymbols.Logger) logger: Logger,
@@ -86,10 +88,6 @@ export class AskarWallet implements Wallet {
 
   public get isInitialized() {
     return this._store !== undefined
-  }
-
-  public get publicDid() {
-    return this.publicDidInfo
   }
 
   public get store() {
@@ -136,6 +134,14 @@ export class AskarWallet implements Wallet {
     this.logger.debug(`Creating wallet '${walletConfig.id}`)
 
     const askarWalletConfig = await this.getAskarWalletConfig(walletConfig)
+
+    // Check if database exists
+    const { path: filePath } = uriFromWalletConfig(walletConfig, this.fileSystem.dataPath)
+    if (filePath && (await this.fileSystem.exists(filePath))) {
+      throw new WalletDuplicateError(`Wallet '${walletConfig.id}' already exists.`, {
+        walletType: 'AskarWallet',
+      })
+    }
     try {
       this._store = await Store.provision({
         recreate: false,
@@ -149,7 +155,10 @@ export class AskarWallet implements Wallet {
     } catch (error) {
       // FIXME: Askar should throw a Duplicate error code, but is currently returning Encryption
       // And if we provide the very same wallet key, it will open it without any error
-      if (isAskarError(error) && (error.code === askarErrors.Encryption || error.code === askarErrors.Duplicate)) {
+      if (
+        isAskarError(error) &&
+        (error.code === AskarErrorCode.Encryption || error.code === AskarErrorCode.Duplicate)
+      ) {
         const errorMessage = `Wallet '${walletConfig.id}' already exists`
         this.logger.debug(errorMessage)
 
@@ -225,14 +234,14 @@ export class AskarWallet implements Wallet {
       if (rekey) {
         await this._store.rekey({
           passKey: rekey,
-          keyMethod: keyDerivationMethodToStoreKeyMethod(rekeyDerivation) ?? StoreKeyMethod.Raw,
+          keyMethod: keyDerivationMethodToStoreKeyMethod(rekeyDerivation ?? KeyDerivationMethod.Argon2IMod),
         })
       }
       this._session = await this._store.openSession()
 
       this.walletConfig = walletConfig
     } catch (error) {
-      if (isAskarError(error) && error.code === askarErrors.NotFound) {
+      if (isAskarError(error) && error.code === AskarErrorCode.NotFound) {
         const errorMessage = `Wallet '${walletConfig.id}' not found`
         this.logger.debug(errorMessage)
 
@@ -240,7 +249,7 @@ export class AskarWallet implements Wallet {
           walletType: 'AskarWallet',
           cause: error,
         })
-      } else if (isAskarError(error) && error.code === askarErrors.Encryption) {
+      } else if (isAskarError(error) && error.code === AskarErrorCode.Encryption) {
         const errorMessage = `Incorrect key for wallet '${walletConfig.id}'`
         this.logger.debug(errorMessage)
         throw new WalletInvalidKeyError(errorMessage, {
@@ -248,10 +257,7 @@ export class AskarWallet implements Wallet {
           cause: error,
         })
       }
-      throw new WalletError(
-        `Error opening wallet ${walletConfig.id}. ERROR CODE ${error.code} MESSAGE ${error.message}`,
-        { cause: error }
-      )
+      throw new WalletError(`Error opening wallet ${walletConfig.id}: ${error.message}`, { cause: error })
     }
 
     this.logger.debug(`Wallet '${walletConfig.id}' opened with handle '${this._store.handle.handle}'`)
@@ -269,7 +275,6 @@ export class AskarWallet implements Wallet {
     }
 
     this.logger.info(`Deleting wallet '${this.walletConfig.id}'`)
-
     if (this._store) {
       await this.close()
     }
@@ -288,14 +293,98 @@ export class AskarWallet implements Wallet {
     }
   }
 
-  public async export() {
-    // TODO
-    throw new WalletError('AskarWallet Export not yet implemented')
+  public async export(exportConfig: WalletExportImportConfig) {
+    if (!this.walletConfig) {
+      throw new WalletError(
+        'Can not export wallet that does not have wallet config set. Make sure to open it before exporting'
+      )
+    }
+
+    const { path: destinationPath, key: exportKey } = exportConfig
+
+    const { path: sourcePath } = uriFromWalletConfig(this.walletConfig, this.fileSystem.dataPath)
+    if (!sourcePath) {
+      throw new WalletError('Export is only supported for SQLite backend')
+    }
+
+    try {
+      // This method ensures that destination directory is created
+      const exportedWalletConfig = await this.getAskarWalletConfig({
+        ...this.walletConfig,
+        storage: { type: 'sqlite', path: destinationPath },
+      })
+
+      // Close this wallet before copying
+      await this.close()
+
+      // Export path already exists
+      if (await this.fileSystem.exists(destinationPath)) {
+        throw new WalletExportPathExistsError(
+          `Unable to create export, wallet export at path '${exportConfig.path}' already exists`
+        )
+      }
+
+      // Copy wallet to the destination path
+      await this.fileSystem.copyFile(sourcePath, destinationPath)
+
+      // Open exported wallet and rotate its key to the one requested
+      const exportedWalletStore = await Store.open({
+        uri: exportedWalletConfig.uri,
+        keyMethod: exportedWalletConfig.keyMethod,
+        passKey: exportedWalletConfig.passKey,
+      })
+      await exportedWalletStore.rekey({ keyMethod: exportedWalletConfig.keyMethod, passKey: exportKey })
+
+      await exportedWalletStore.close()
+
+      await this._open(this.walletConfig)
+    } catch (error) {
+      if (error instanceof WalletExportPathExistsError) throw error
+
+      const errorMessage = `Error exporting wallet '${this.walletConfig.id}': ${error.message}`
+      this.logger.error(errorMessage, {
+        error,
+        errorMessage: error.message,
+      })
+
+      throw new WalletError(errorMessage, { cause: error })
+    }
   }
 
-  public async import() {
-    // TODO
-    throw new WalletError('AskarWallet Import not yet implemented')
+  public async import(walletConfig: WalletConfig, importConfig: WalletExportImportConfig) {
+    const { path: sourcePath, key: importKey } = importConfig
+    const { path: destinationPath } = uriFromWalletConfig(walletConfig, this.fileSystem.dataPath)
+
+    if (!destinationPath) {
+      throw new WalletError('Import is only supported for SQLite backend')
+    }
+
+    try {
+      // This method ensures that destination directory is created
+      const importWalletConfig = await this.getAskarWalletConfig(walletConfig)
+
+      // Copy wallet to the destination path
+      await this.fileSystem.copyFile(sourcePath, destinationPath)
+
+      // Open imported wallet and rotate its key to the one requested
+      const importedWalletStore = await Store.open({
+        uri: importWalletConfig.uri,
+        keyMethod: importWalletConfig.keyMethod,
+        passKey: importKey,
+      })
+
+      await importedWalletStore.rekey({ keyMethod: importWalletConfig.keyMethod, passKey: importWalletConfig.passKey })
+
+      await importedWalletStore.close()
+    } catch (error) {
+      const errorMessage = `Error importing wallet '${walletConfig.id}': ${error.message}`
+      this.logger.error(errorMessage, {
+        error,
+        errorMessage: error.message,
+      })
+
+      throw new WalletError(errorMessage, { cause: error })
+    }
   }
 
   /**
@@ -312,7 +401,6 @@ export class AskarWallet implements Wallet {
       await this.store.close()
       this._session = undefined
       this._store = undefined
-      this.publicDidInfo = undefined
     } catch (error) {
       const errorMessage = `Error closing wallet': ${error.message}`
       this.logger.error(errorMessage, {
@@ -324,42 +412,51 @@ export class AskarWallet implements Wallet {
     }
   }
 
-  public async initPublicDid() {
-    // Not implemented, as it does not work with legacy Ledger module
-  }
-
   /**
    * Create a key with an optional seed and keyType.
    * The keypair is also automatically stored in the wallet afterwards
-   *
-   * @param privateKey Buffer Optional privateKey for creating a key
-   * @param seed string Optional seed for creating a key
-   * @param keyType KeyType the type of key that should be created
-   *
-   * @returns a Key instance with a publicKeyBase58
-   *
-   * @throws {WalletError} When an unsupported keytype is requested
-   * @throws {WalletError} When the key could not be created
    */
   public async createKey({ seed, privateKey, keyType }: WalletCreateKeyOptions): Promise<Key> {
     try {
       if (seed && privateKey) {
-        throw new AriesFrameworkError('Only one of seed and privateKey can be set')
+        throw new WalletError('Only one of seed and privateKey can be set')
+      }
+
+      if (seed && !isValidSeed(seed, keyType)) {
+        throw new WalletError('Invalid seed provided')
+      }
+
+      if (privateKey && !isValidPrivateKey(privateKey, keyType)) {
+        throw new WalletError('Invalid private key provided')
       }
 
       if (keyTypeSupportedByAskar(keyType)) {
         const algorithm = keyAlgFromString(keyType)
 
         // Create key
-        const key = privateKey
-          ? AskarKey.fromSecretBytes({ secretKey: privateKey, algorithm })
-          : seed
-          ? AskarKey.fromSeed({ seed, algorithm })
-          : AskarKey.generate(algorithm)
+        let key: AskarKey | undefined
+        try {
+          const key = privateKey
+            ? AskarKey.fromSecretBytes({ secretKey: privateKey, algorithm })
+            : seed
+            ? AskarKey.fromSeed({ seed, algorithm })
+            : AskarKey.generate(algorithm)
 
-        // Store key
-        await this.session.insertKey({ key, name: TypedArrayEncoder.toBase58(key.publicBytes) })
-        return Key.fromPublicKey(key.publicBytes, keyType)
+          const keyPublicBytes = key.publicBytes
+          // Store key
+          await this.session.insertKey({ key, name: TypedArrayEncoder.toBase58(keyPublicBytes) })
+          key.handle.free()
+          return Key.fromPublicKey(keyPublicBytes, keyType)
+        } catch (error) {
+          key?.handle.free()
+          // Handle case where key already exists
+          if (isAskarError(error, AskarErrorCode.Duplicate)) {
+            throw new WalletKeyExistsError('Key already exists')
+          }
+
+          // Otherwise re-throw error
+          throw error
+        }
       } else {
         // Check if there is a signing key provider for the specified key type.
         if (this.signingKeyProviderRegistry.hasProviderForKeyType(keyType)) {
@@ -372,6 +469,9 @@ export class AskarWallet implements Wallet {
         throw new WalletError(`Unsupported key type: '${keyType}'`)
       }
     } catch (error) {
+      // If already instance of `WalletError`, re-throw
+      if (error instanceof WalletError) throw error
+
       if (!isError(error)) {
         throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
       }
@@ -388,18 +488,21 @@ export class AskarWallet implements Wallet {
    * @returns A signature for the data
    */
   public async sign({ data, key }: WalletSignOptions): Promise<Buffer> {
+    let keyEntry: KeyEntryObject | null | undefined
     try {
       if (keyTypeSupportedByAskar(key.keyType)) {
         if (!TypedArrayEncoder.isTypedArray(data)) {
           throw new WalletError(`Currently not supporting signing of multiple messages`)
         }
-        const keyEntry = await this.session.fetchKey({ name: key.publicKeyBase58 })
+        keyEntry = await this.session.fetchKey({ name: key.publicKeyBase58 })
 
         if (!keyEntry) {
           throw new WalletError('Key entry not found')
         }
 
         const signed = keyEntry.key.signMessage({ message: data as Buffer })
+
+        keyEntry.key.handle.free()
 
         return Buffer.from(signed)
       } else {
@@ -419,6 +522,7 @@ export class AskarWallet implements Wallet {
         throw new WalletError(`Unsupported keyType: ${key.keyType}`)
       }
     } catch (error) {
+      keyEntry?.key.handle.free()
       if (!isError(error)) {
         throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
       }
@@ -439,6 +543,7 @@ export class AskarWallet implements Wallet {
    * @throws {WalletError} When an unsupported keytype is used
    */
   public async verify({ data, key, signature }: WalletVerifyOptions): Promise<boolean> {
+    let askarKey: AskarKey | undefined
     try {
       if (keyTypeSupportedByAskar(key.keyType)) {
         if (!TypedArrayEncoder.isTypedArray(data)) {
@@ -449,7 +554,9 @@ export class AskarWallet implements Wallet {
           algorithm: keyAlgFromString(key.keyType),
           publicKey: key.publicKey,
         })
-        return askarKey.verifySignature({ message: data as Buffer, signature })
+        const verified = askarKey.verifySignature({ message: data as Buffer, signature })
+        askarKey.handle.free()
+        return verified
       } else {
         // Check if there is a signing key provider for the specified key type.
         if (this.signingKeyProviderRegistry.hasProviderForKeyType(key.keyType)) {
@@ -466,6 +573,7 @@ export class AskarWallet implements Wallet {
         throw new WalletError(`Unsupported keyType: ${key.keyType}`)
       }
     } catch (error) {
+      askarKey?.handle.free()
       if (!isError(error)) {
         throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
       }
@@ -488,79 +596,92 @@ export class AskarWallet implements Wallet {
     recipientKeys: string[],
     senderVerkey?: string // in base58
   ): Promise<EncryptedMessage> {
-    const cek = AskarKey.generate(KeyAlgs.Chacha20C20P)
+    let cek: AskarKey | undefined
+    let senderKey: KeyEntryObject | null | undefined
+    let senderExchangeKey: AskarKey | undefined
 
-    const senderKey = senderVerkey ? await this.session.fetchKey({ name: senderVerkey }) : undefined
+    try {
+      cek = AskarKey.generate(KeyAlgs.Chacha20C20P)
+      senderKey = senderVerkey ? await this.session.fetchKey({ name: senderVerkey }) : undefined
+      senderExchangeKey = senderKey ? senderKey.key.convertkey({ algorithm: KeyAlgs.X25519 }) : undefined
 
-    const senderExchangeKey = senderKey ? senderKey.key.convertkey({ algorithm: KeyAlgs.X25519 }) : undefined
+      const recipients: JweRecipient[] = []
 
-    const recipients: JweRecipient[] = []
+      for (const recipientKey of recipientKeys) {
+        let targetExchangeKey: AskarKey | undefined
+        try {
+          targetExchangeKey = AskarKey.fromPublicBytes({
+            publicKey: Key.fromPublicKeyBase58(recipientKey, KeyType.Ed25519).publicKey,
+            algorithm: KeyAlgs.Ed25519,
+          }).convertkey({ algorithm: KeyAlgs.X25519 })
 
-    for (const recipientKey of recipientKeys) {
-      const targetExchangeKey = AskarKey.fromPublicBytes({
-        publicKey: Key.fromPublicKeyBase58(recipientKey, KeyType.Ed25519).publicKey,
-        algorithm: KeyAlgs.Ed25519,
-      }).convertkey({ algorithm: KeyAlgs.X25519 })
+          if (senderVerkey && senderExchangeKey) {
+            const encryptedSender = CryptoBox.seal({
+              recipientKey: targetExchangeKey,
+              message: Buffer.from(senderVerkey),
+            })
+            const nonce = CryptoBox.randomNonce()
+            const encryptedCek = CryptoBox.cryptoBox({
+              recipientKey: targetExchangeKey,
+              senderKey: senderExchangeKey,
+              message: cek.secretBytes,
+              nonce,
+            })
 
-      if (senderVerkey && senderExchangeKey) {
-        const encryptedSender = CryptoBox.seal({
-          recipientKey: targetExchangeKey,
-          message: Buffer.from(senderVerkey),
-        })
-        const nonce = CryptoBox.randomNonce()
-        const encryptedCek = CryptoBox.cryptoBox({
-          recipientKey: targetExchangeKey,
-          senderKey: senderExchangeKey,
-          message: cek.secretBytes,
-          nonce,
-        })
-
-        recipients.push(
-          new JweRecipient({
-            encryptedKey: encryptedCek,
-            header: {
-              kid: recipientKey,
-              sender: TypedArrayEncoder.toBase64URL(encryptedSender),
-              iv: TypedArrayEncoder.toBase64URL(nonce),
-            },
-          })
-        )
-      } else {
-        const encryptedCek = CryptoBox.seal({
-          recipientKey: targetExchangeKey,
-          message: cek.secretBytes,
-        })
-        recipients.push(
-          new JweRecipient({
-            encryptedKey: encryptedCek,
-            header: {
-              kid: recipientKey,
-            },
-          })
-        )
+            recipients.push(
+              new JweRecipient({
+                encryptedKey: encryptedCek,
+                header: {
+                  kid: recipientKey,
+                  sender: TypedArrayEncoder.toBase64URL(encryptedSender),
+                  iv: TypedArrayEncoder.toBase64URL(nonce),
+                },
+              })
+            )
+          } else {
+            const encryptedCek = CryptoBox.seal({
+              recipientKey: targetExchangeKey,
+              message: cek.secretBytes,
+            })
+            recipients.push(
+              new JweRecipient({
+                encryptedKey: encryptedCek,
+                header: {
+                  kid: recipientKey,
+                },
+              })
+            )
+          }
+        } finally {
+          targetExchangeKey?.handle.free()
+        }
       }
+
+      const protectedJson = {
+        enc: 'xchacha20poly1305_ietf',
+        typ: 'JWM/1.0',
+        alg: senderVerkey ? 'Authcrypt' : 'Anoncrypt',
+        recipients: recipients.map((item) => JsonTransformer.toJSON(item)),
+      }
+
+      const { ciphertext, tag, nonce } = cek.aeadEncrypt({
+        message: Buffer.from(JSON.stringify(payload)),
+        aad: Buffer.from(JsonEncoder.toBase64URL(protectedJson)),
+      }).parts
+
+      const envelope = new JweEnvelope({
+        ciphertext: TypedArrayEncoder.toBase64URL(ciphertext),
+        iv: TypedArrayEncoder.toBase64URL(nonce),
+        protected: JsonEncoder.toBase64URL(protectedJson),
+        tag: TypedArrayEncoder.toBase64URL(tag),
+      }).toJson()
+
+      return envelope as EncryptedMessage
+    } finally {
+      cek?.handle.free()
+      senderKey?.key.handle.free()
+      senderExchangeKey?.handle.free()
     }
-
-    const protectedJson = {
-      enc: 'xchacha20poly1305_ietf',
-      typ: 'JWM/1.0',
-      alg: senderVerkey ? 'Authcrypt' : 'Anoncrypt',
-      recipients: recipients.map((item) => JsonTransformer.toJSON(item)),
-    }
-
-    const { ciphertext, tag, nonce } = cek.aeadEncrypt({
-      message: Buffer.from(JSON.stringify(payload)),
-      aad: Buffer.from(JsonEncoder.toBase64URL(protectedJson)),
-    }).parts
-
-    const envelope = new JweEnvelope({
-      ciphertext: TypedArrayEncoder.toBase64URL(ciphertext),
-      iv: TypedArrayEncoder.toBase64URL(nonce),
-      protected: JsonEncoder.toBase64URL(protectedJson),
-      tag: TypedArrayEncoder.toBase64URL(tag),
-    }).toJson()
-
-    return envelope as EncryptedMessage
   }
 
   /**
@@ -573,9 +694,7 @@ export class AskarWallet implements Wallet {
     const protectedJson = JsonEncoder.fromBase64(messagePackage.protected)
 
     const alg = protectedJson.alg
-    const isAuthcrypt = alg === 'Authcrypt'
-
-    if (!isAuthcrypt && alg != 'Anoncrypt') {
+    if (!['Anoncrypt', 'Authcrypt'].includes(alg)) {
       throw new WalletError(`Unsupported pack algorithm: ${alg}`)
     }
 
@@ -604,60 +723,69 @@ export class AskarWallet implements Wallet {
     let payloadKey, senderKey, recipientKey
 
     for (const recipient of recipients) {
-      let recipientKeyEntry
+      let recipientKeyEntry: KeyEntryObject | null | undefined
+      let sender_x: AskarKey | undefined
+      let recip_x: AskarKey | undefined
+
       try {
         recipientKeyEntry = await this.session.fetchKey({ name: recipient.kid })
-      } catch (error) {
-        // TODO: Currently Askar wrapper throws error when key is not found
-        // In this case we don't need to throw any error because we should
-        // try with other recipient keys
-        continue
-      }
-      if (recipientKeyEntry) {
-        const recip_x = recipientKeyEntry.key.convertkey({ algorithm: KeyAlgs.X25519 })
-        recipientKey = recipient.kid
+        if (recipientKeyEntry) {
+          const recip_x = recipientKeyEntry.key.convertkey({ algorithm: KeyAlgs.X25519 })
+          recipientKey = recipient.kid
 
-        if (recipient.sender && recipient.iv) {
-          senderKey = TypedArrayEncoder.toUtf8String(
-            CryptoBox.sealOpen({
+          if (recipient.sender && recipient.iv) {
+            senderKey = TypedArrayEncoder.toUtf8String(
+              CryptoBox.sealOpen({
+                recipientKey: recip_x,
+                ciphertext: recipient.sender,
+              })
+            )
+            const sender_x = AskarKey.fromPublicBytes({
+              algorithm: KeyAlgs.Ed25519,
+              publicKey: TypedArrayEncoder.fromBase58(senderKey),
+            }).convertkey({ algorithm: KeyAlgs.X25519 })
+
+            payloadKey = CryptoBox.open({
               recipientKey: recip_x,
-              ciphertext: recipient.sender,
+              senderKey: sender_x,
+              message: recipient.encrypted_key,
+              nonce: recipient.iv,
             })
-          )
-          const sender_x = AskarKey.fromPublicBytes({
-            algorithm: KeyAlgs.Ed25519,
-            publicKey: TypedArrayEncoder.fromBase58(senderKey),
-          }).convertkey({ algorithm: KeyAlgs.X25519 })
-
-          payloadKey = CryptoBox.open({
-            recipientKey: recip_x,
-            senderKey: sender_x,
-            message: recipient.encrypted_key,
-            nonce: recipient.iv,
-          })
+          } else {
+            payloadKey = CryptoBox.sealOpen({ ciphertext: recipient.encrypted_key, recipientKey: recip_x })
+          }
+          break
         }
-        break
+      } finally {
+        recipientKeyEntry?.key.handle.free()
+        sender_x?.handle.free()
+        recip_x?.handle.free()
       }
     }
     if (!payloadKey) {
       throw new WalletError('No corresponding recipient key found')
     }
 
-    if (!senderKey && isAuthcrypt) {
+    if (!senderKey && alg === 'Authcrypt') {
       throw new WalletError('Sender public key not provided for Authcrypt')
     }
 
-    const cek = AskarKey.fromSecretBytes({ algorithm: KeyAlgs.Chacha20C20P, secretKey: payloadKey })
-    const message = cek.aeadDecrypt({
-      ciphertext: TypedArrayEncoder.fromBase64(messagePackage.ciphertext as any),
-      nonce: TypedArrayEncoder.fromBase64(messagePackage.iv as any),
-      tag: TypedArrayEncoder.fromBase64(messagePackage.tag as any),
-      aad: TypedArrayEncoder.fromString(messagePackage.protected),
-    })
-    return {
-      plaintextMessage: JsonEncoder.fromBuffer(message),
-      senderKey,
-      recipientKey,
+    let cek: AskarKey | undefined
+    try {
+      cek = AskarKey.fromSecretBytes({ algorithm: KeyAlgs.Chacha20C20P, secretKey: payloadKey })
+      const message = cek.aeadDecrypt({
+        ciphertext: TypedArrayEncoder.fromBase64(messagePackage.ciphertext as any),
+        nonce: TypedArrayEncoder.fromBase64(messagePackage.iv as any),
+        tag: TypedArrayEncoder.fromBase64(messagePackage.tag as any),
+        aad: TypedArrayEncoder.fromString(messagePackage.protected),
+      })
+      return {
+        plaintextMessage: JsonEncoder.fromBuffer(message),
+        senderKey,
+        recipientKey,
+      }
+    } finally {
+      cek?.handle.free()
     }
   }
 
@@ -694,7 +822,9 @@ export class AskarWallet implements Wallet {
       uri,
       profile: walletConfig.id,
       // FIXME: Default derivation method should be set somewhere in either agent config or some constants
-      keyMethod: keyDerivationMethodToStoreKeyMethod(walletConfig.keyDerivationMethod) ?? StoreKeyMethod.None,
+      keyMethod: keyDerivationMethodToStoreKeyMethod(
+        walletConfig.keyDerivationMethod ?? KeyDerivationMethod.Argon2IMod
+      ),
       passKey: walletConfig.key,
     }
   }
@@ -709,17 +839,6 @@ export class AskarWallet implements Wallet {
         throw new WalletError(`No content found for record with public key: ${publicKeyBase58}`)
       }
     } catch (error) {
-      if (
-        isAskarError(error) &&
-        (error.code === askarErrors.NotFound ||
-          // FIXME: this is current output from askar wrapper but does not describe specifically a not found scenario
-          error.message === 'Received null pointer. The native library could not find the value.')
-      ) {
-        throw new RecordNotFoundError(`KeyPairRecord not found for public key: ${publicKeyBase58}.`, {
-          recordType: 'KeyPairRecord',
-          cause: error,
-        })
-      }
       throw new WalletError('Error retrieving KeyPair record', { cause: error })
     }
   }
@@ -735,8 +854,8 @@ export class AskarWallet implements Wallet {
         },
       })
     } catch (error) {
-      if (isAskarError(error) && error.code === askarErrors.Duplicate) {
-        throw new RecordDuplicateError(`Record already exists`, { recordType: 'KeyPairRecord' })
+      if (isAskarError(error, AskarErrorCode.Duplicate)) {
+        throw new WalletKeyExistsError('Key already exists')
       }
       throw new WalletError('Error saving KeyPair record', { cause: error })
     }

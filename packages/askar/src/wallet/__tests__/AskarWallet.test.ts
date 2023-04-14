@@ -8,6 +8,8 @@ import type {
 } from '@aries-framework/core'
 
 import {
+  WalletKeyExistsError,
+  Key,
   WalletError,
   WalletDuplicateError,
   WalletNotFoundError,
@@ -20,6 +22,7 @@ import {
 } from '@aries-framework/core'
 import { Store } from '@hyperledger/aries-askar-shared'
 
+import { describeRunInNodeVersion } from '../../../../../tests/runInVersion'
 import { encodeToBase58 } from '../../../../core/src/utils/base58'
 import { agentDependencies } from '../../../../core/tests/helpers'
 import testLogger from '../../../../core/tests/logger'
@@ -33,10 +36,10 @@ const walletConfig: WalletConfig = {
   keyDerivationMethod: KeyDerivationMethod.Raw,
 }
 
-describe('AskarWallet basic operations', () => {
+describeRunInNodeVersion([18], 'AskarWallet basic operations', () => {
   let askarWallet: AskarWallet
 
-  const seed = TypedArrayEncoder.fromString('sample-seed')
+  const seed = TypedArrayEncoder.fromString('sample-seed-min-of-32-bytes-long')
   const privateKey = TypedArrayEncoder.fromString('2103de41b4ae37e8e28586d84a342b67')
   const message = TypedArrayEncoder.fromString('sample-message')
 
@@ -95,6 +98,14 @@ describe('AskarWallet basic operations', () => {
     await expect(askarWallet.createKey({ seed, keyType: KeyType.X25519 })).resolves.toMatchObject({
       keyType: KeyType.X25519,
     })
+  })
+
+  test('throws WalletKeyExistsError when a key already exists', async () => {
+    const privateKey = TypedArrayEncoder.fromString('2103de41b4ae37e8e28586d84a342b68')
+    await expect(askarWallet.createKey({ privateKey, keyType: KeyType.Ed25519 })).resolves.toEqual(expect.any(Key))
+    await expect(askarWallet.createKey({ privateKey, keyType: KeyType.Ed25519 })).rejects.toThrowError(
+      WalletKeyExistsError
+    )
   })
 
   describe.skip('Currently, all KeyTypes are supported by Askar natively', () => {
@@ -201,7 +212,7 @@ describe.skip('Currently, all KeyTypes are supported by Askar natively', () => {
   })
 })
 
-describe('AskarWallet management', () => {
+describeRunInNodeVersion([18], 'AskarWallet management', () => {
   let askarWallet: AskarWallet
 
   afterEach(async () => {
@@ -256,7 +267,13 @@ describe('AskarWallet management', () => {
     await askarWallet.close()
 
     const newKey = Store.generateRawKey()
-    await askarWallet.rotateKey({ ...walletConfig, id: 'AskarWallet Key Rotation', key: initialKey, rekey: newKey })
+    await askarWallet.rotateKey({
+      ...walletConfig,
+      id: 'AskarWallet Key Rotation',
+      key: initialKey,
+      rekey: newKey,
+      rekeyDerivationMethod: KeyDerivationMethod.Raw,
+    })
 
     await askarWallet.close()
 

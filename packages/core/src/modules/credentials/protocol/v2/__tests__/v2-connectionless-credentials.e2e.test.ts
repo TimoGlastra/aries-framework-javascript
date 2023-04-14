@@ -73,7 +73,6 @@ describe('V2 Connectionless Credentials', () => {
     })
 
     const { credentialDefinition } = await prepareForAnonCredsIssuance(faberAgent, {
-      issuerId: faberAgent.publicDid?.did as string,
       attributeNames: ['name', 'age'],
     })
     credentialDefinitionId = credentialDefinition.credentialDefinitionId
@@ -166,7 +165,7 @@ describe('V2 Connectionless Credentials', () => {
       createdAt: expect.any(Date),
       metadata: {
         data: {
-          '_anonCreds/anonCredsCredential': {
+          '_anoncreds/credential': {
             credentialDefinitionId,
           },
         },
@@ -187,7 +186,7 @@ describe('V2 Connectionless Credentials', () => {
       createdAt: expect.any(Date),
       metadata: {
         data: {
-          '_anonCreds/anonCredsCredential': {
+          '_anoncreds/credential': {
             credentialDefinitionId,
           },
         },
@@ -247,7 +246,7 @@ describe('V2 Connectionless Credentials', () => {
       createdAt: expect.any(Date),
       metadata: {
         data: {
-          '_anonCreds/anonCredsCredential': {
+          '_anoncreds/credential': {
             credentialDefinitionId: credentialDefinitionId,
           },
         },
