@@ -18,7 +18,9 @@ import type { Socket } from 'net'
 import express from 'express'
 import { Server } from 'ws'
 
+import { indySdk } from '../packages/core/tests'
 import { TestLogger } from '../packages/core/tests/logger'
+import { IndySdkModule } from '../packages/indy-sdk/src'
 
 import {
   ConnectionsModule,
@@ -58,6 +60,9 @@ const agent = new Agent({
   config: agentConfig,
   dependencies: agentDependencies,
   modules: {
+    indySdk: new IndySdkModule({
+      indySdk,
+    }),
     mediator: new MediatorModule({
       autoAcceptMediationRequests: true,
     }),

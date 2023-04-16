@@ -56,8 +56,6 @@ import {
   V1CredentialProblemReportMessage,
 } from './messages'
 
-type IndyCredentialFormatServiceLike = CredentialFormatService<IndyCredentialFormat>
-
 export interface V1CredentialProtocolConfig {
   indyCredentialFormat: LegacyIndyCredentialFormatService
 }
