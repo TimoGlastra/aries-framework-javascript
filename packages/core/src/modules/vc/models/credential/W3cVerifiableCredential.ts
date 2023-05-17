@@ -1,52 +1,36 @@
-import type { W3cCredentialOptions } from './W3cCredential'
-import type { LinkedDataProofOptions } from '../LinkedDataProof'
+import type { SingleOrArray } from '../../../../utils'
+import type { ClaimFormat } from '../../W3cCredentialServiceOptions'
 
-import { instanceToPlain, plainToInstance, Transform, TransformationType } from 'class-transformer'
+import { Transform, TransformationType } from 'class-transformer'
 
-import { IsInstanceOrArrayOfInstances, SingleOrArray } from '../../../../utils'
-import { orArrayToArray } from '../../jsonldUtil'
-import { LinkedDataProof, LinkedDataProofTransformer } from '../LinkedDataProof'
+import { JsonTransformer } from '../../../../utils'
+import { W3cJsonLdVerifiableCredential } from '../../data-integrity/models/W3cJsonLdVerifiableCredential'
+import { W3cJwtVerifiableCredential } from '../../jwt-vc/W3cJwtVerifiableCredential'
 
-import { W3cCredential } from './W3cCredential'
+const getCredential = (v: unknown) =>
+  typeof v === 'string'
+    ? W3cJwtVerifiableCredential.fromSerializedJwt(v)
+    : JsonTransformer.fromJSON(v, W3cJsonLdVerifiableCredential)
 
-export interface W3cVerifiableCredentialOptions extends W3cCredentialOptions {
-  proof: SingleOrArray<LinkedDataProofOptions>
-}
+const getEncoded = (v: unknown) =>
+  v instanceof W3cJwtVerifiableCredential ? v.serializedJwt : JsonTransformer.toJSON(v)
 
-export class W3cVerifiableCredential extends W3cCredential {
-  public constructor(options: W3cVerifiableCredentialOptions) {
-    super(options)
-    if (options) {
-      this.proof = Array.isArray(options.proof)
-        ? options.proof.map((proof) => new LinkedDataProof(proof))
-        : new LinkedDataProof(options.proof)
+export function W3cVerifiableCredentialTransformer() {
+  return Transform(({ value, type }: { value: SingleOrArray<unknown>; type: TransformationType }) => {
+    if (type === TransformationType.PLAIN_TO_CLASS) {
+      return Array.isArray(value) ? value.map(getCredential) : getCredential(value)
+    } else if (type === TransformationType.CLASS_TO_PLAIN) {
+      if (Array.isArray(value)) return value.map(getEncoded)
+      return getEncoded(value)
     }
-  }
-
-  @LinkedDataProofTransformer()
-  @IsInstanceOrArrayOfInstances({ classType: LinkedDataProof })
-  public proof!: SingleOrArray<LinkedDataProof>
-
-  public get proofTypes(): Array<string> {
-    const proofArray = orArrayToArray<LinkedDataProof>(this.proof)
-    return proofArray?.map((x) => x.type) ?? []
-  }
+    // PLAIN_TO_PLAIN
+    return value
+  })
 }
 
-// Custom transformers
-
-export function VerifiableCredentialTransformer() {
-  return Transform(
-    ({ value, type }: { value: SingleOrArray<W3cVerifiableCredentialOptions>; type: TransformationType }) => {
-      if (type === TransformationType.PLAIN_TO_CLASS) {
-        if (Array.isArray(value)) return value.map((v) => plainToInstance(W3cVerifiableCredential, v))
-        return plainToInstance(W3cVerifiableCredential, value)
-      } else if (type === TransformationType.CLASS_TO_PLAIN) {
-        if (Array.isArray(value)) return value.map((v) => instanceToPlain(v))
-        return instanceToPlain(value)
-      }
-      // PLAIN_TO_PLAIN
-      return value
-    }
-  )
-}
+export type W3cVerifiableCredential<Format extends Extract<ClaimFormat, 'jwt_vc' | 'ldp_vc'> | unknown = unknown> =
+  Format extends 'jwt_vc'
+    ? W3cJsonLdVerifiableCredential
+    : Format extends 'ldp_vc'
+    ? W3cJwtVerifiableCredential
+    : W3cJsonLdVerifiableCredential | W3cJwtVerifiableCredential

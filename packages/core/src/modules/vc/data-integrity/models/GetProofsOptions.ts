@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-import type { JsonObject } from '../../../types'
+import type { JsonObject } from '../../../../types'
 import type { DocumentLoader } from '../jsonldUtil'
 
 /**

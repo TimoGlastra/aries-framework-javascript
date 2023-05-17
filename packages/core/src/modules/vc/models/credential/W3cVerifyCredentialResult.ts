@@ -1,8 +1,8 @@
-import type { W3cVerifiableCredential } from './W3cVerifiableCredential'
 import type { JsonObject } from '../../../../types'
+import type { W3cJsonLdVerifiableCredential } from '../../data-integrity/models/W3cJsonLdVerifiableCredential'
 
 export interface VerifyCredentialResult {
-  credential: W3cVerifiableCredential
+  credential: W3cJsonLdVerifiableCredential
   verified: boolean
   error?: Error
 }

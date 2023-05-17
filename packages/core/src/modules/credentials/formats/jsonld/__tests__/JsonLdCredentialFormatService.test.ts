@@ -13,7 +13,7 @@ import { DidResolverService } from '../../../../dids/services/DidResolverService
 import { W3cCredentialRecord, W3cCredentialService } from '../../../../vc'
 import { Ed25519Signature2018Fixtures } from '../../../../vc/__tests__/fixtures'
 import { CREDENTIALS_CONTEXT_V1_URL } from '../../../../vc/constants'
-import { W3cVerifiableCredential } from '../../../../vc/models'
+import { W3cJsonLdVerifiableCredential } from '../../../../vc/models'
 import { CredentialState } from '../../../models'
 import { V2CredentialPreview } from '../../../protocol/v2/messages'
 import { CredentialExchangeRecord } from '../../../repository/CredentialExchangeRecord'
@@ -67,7 +67,7 @@ const vcJson = {
   },
 }
 
-const vc = JsonTransformer.fromJSON(vcJson, W3cVerifiableCredential)
+const vc = JsonTransformer.fromJSON(vcJson, W3cJsonLdVerifiableCredential)
 
 const credentialPreview = V2CredentialPreview.fromRecord({
   name: 'John',

@@ -1,4 +1,4 @@
-import type { JsonObject } from '../../../types'
+import type { JsonObject } from '../../../../types'
 import type { Proof, DocumentLoader } from '../jsonldUtil'
 
 import { suites, purposes } from '../libraries/jsonld-signatures'

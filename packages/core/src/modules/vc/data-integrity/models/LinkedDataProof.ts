@@ -1,4 +1,4 @@
-import type { SingleOrArray } from '../../../utils/type'
+import type { SingleOrArray } from '../../../../utils/type'
 
 import { Transform, TransformationType, plainToInstance, instanceToPlain } from 'class-transformer'
 import { IsOptional, IsString } from 'class-validator'

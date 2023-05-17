@@ -1,9 +1,9 @@
 import type { DocumentLoader } from './jsonld'
-import type { AgentContext } from '../../../agent/context/AgentContext'
+import type { AgentContext } from '../../../../agent/context/AgentContext'
 
-import { AriesFrameworkError } from '../../../error/AriesFrameworkError'
-import { isDid } from '../../../utils'
-import { DidResolverService } from '../../dids'
+import { AriesFrameworkError } from '../../../../error/AriesFrameworkError'
+import { isDid } from '../../../../utils'
+import { DidResolverService } from '../../../dids'
 
 import jsonld from './jsonld'
 import { getNativeDocumentLoader } from './nativeDocumentLoader'

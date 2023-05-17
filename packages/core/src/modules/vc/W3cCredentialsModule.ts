@@ -7,12 +7,12 @@ import {
   VERIFICATION_METHOD_TYPE_ED25519_VERIFICATION_KEY_2020,
 } from '../dids/domain/key-type/ed25519'
 
-import { SignatureSuiteRegistry, SignatureSuiteToken } from './SignatureSuiteRegistry'
 import { W3cCredentialService } from './W3cCredentialService'
 import { W3cCredentialsApi } from './W3cCredentialsApi'
 import { W3cCredentialsModuleConfig } from './W3cCredentialsModuleConfig'
+import { SignatureSuiteRegistry, SignatureSuiteToken } from './data-integrity/SignatureSuiteRegistry'
+import { Ed25519Signature2018 } from './data-integrity/signature-suites'
 import { W3cCredentialRepository } from './repository/W3cCredentialRepository'
-import { Ed25519Signature2018 } from './signature-suites'
 
 /**
  * @public

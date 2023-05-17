@@ -4,7 +4,7 @@ import { Agent } from '../../../agent/Agent'
 import { JsonTransformer } from '../../../utils'
 import { W3cCredentialService } from '../W3cCredentialService'
 import { W3cCredentialsModule } from '../W3cCredentialsModule'
-import { W3cVerifiableCredential } from '../models'
+import { W3cJsonLdVerifiableCredential } from '../models'
 import { W3cCredentialRepository } from '../repository'
 
 import { customDocumentLoader } from './documentLoader'
@@ -28,7 +28,7 @@ let w3cCredentialService: W3cCredentialService
 
 const testCredential = JsonTransformer.fromJSON(
   Ed25519Signature2018Fixtures.TEST_LD_DOCUMENT_SIGNED,
-  W3cVerifiableCredential
+  W3cJsonLdVerifiableCredential
 )
 
 describe('W3cCredentialsApi', () => {

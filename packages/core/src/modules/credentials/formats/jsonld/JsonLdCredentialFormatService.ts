@@ -31,7 +31,7 @@ import { JsonTransformer } from '../../../../utils/JsonTransformer'
 import { findVerificationMethodByKeyType } from '../../../dids/domain/DidDocument'
 import { DidResolverService } from '../../../dids/services/DidResolverService'
 import { W3cCredentialService } from '../../../vc'
-import { W3cCredential, W3cVerifiableCredential } from '../../../vc/models'
+import { W3cCredential, W3cJsonLdVerifiableCredential } from '../../../vc/models'
 import { CredentialFormatSpec } from '../../models/CredentialFormatSpec'
 
 import { JsonLdCredentialDetail } from './JsonLdCredentialDetail'
@@ -308,8 +308,8 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
   ): Promise<void> {
     const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
 
-    const credentialAsJson = attachment.getDataAsJson<W3cVerifiableCredential>()
-    const credential = JsonTransformer.fromJSON(credentialAsJson, W3cVerifiableCredential)
+    const credentialAsJson = attachment.getDataAsJson<W3cJsonLdVerifiableCredential>()
+    const credential = JsonTransformer.fromJSON(credentialAsJson, W3cJsonLdVerifiableCredential)
     const requestAsJson = requestAttachment.getDataAsJson<JsonLdFormatDataCredentialDetail>()
 
     // Verify the credential request matches the credential
@@ -332,7 +332,7 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
   }
 
   private verifyReceivedCredentialMatchesRequest(
-    credential: W3cVerifiableCredential,
+    credential: W3cJsonLdVerifiableCredential,
     request: JsonLdFormatDataCredentialDetail
   ): void {
     const jsonCredential = JsonTransformer.toJSON(credential)
@@ -417,7 +417,7 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
     { requestAttachment, credentialAttachment }: CredentialFormatAutoRespondCredentialOptions
   ) {
     const credentialJson = credentialAttachment.getDataAsJson<JsonLdFormatDataVerifiableCredential>()
-    const w3cCredential = JsonTransformer.fromJSON(credentialJson, W3cVerifiableCredential)
+    const w3cCredential = JsonTransformer.fromJSON(credentialJson, W3cJsonLdVerifiableCredential)
     const request = requestAttachment.getDataAsJson<JsonLdFormatDataCredentialDetail>()
 
     try {

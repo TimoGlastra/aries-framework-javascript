@@ -4,8 +4,8 @@
 import type { DocumentLoader, Proof, VerificationMethod } from '../jsonldUtil'
 import type { LdKeyPair } from '../models/LdKeyPair'
 
-import { AriesFrameworkError } from '../../../error'
-import { TypedArrayEncoder, JsonEncoder } from '../../../utils'
+import { AriesFrameworkError } from '../../../../error'
+import { TypedArrayEncoder, JsonEncoder } from '../../../../utils'
 import { suites } from '../libraries/jsonld-signatures'
 
 const LinkedDataSignature = suites.LinkedDataSignature

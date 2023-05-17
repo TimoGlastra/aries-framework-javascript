@@ -1,11 +1,14 @@
 import type { Constructor } from './mixins'
+import type { SingleOrArray } from './type'
 import type { ValidationOptions } from 'class-validator'
 
 import { isString, ValidateBy, isInstance, buildMessage } from 'class-validator'
 
+import { asArray } from './array'
+
 export interface IsInstanceOrArrayOfInstancesValidationOptions extends ValidationOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  classType: new (...args: any[]) => any
+  classType: SingleOrArray<new (...args: any[]) => any>
 }
 
 /**
@@ -34,23 +37,22 @@ export function IsStringOrInstance(targetType: Constructor, validationOptions?: 
 export function IsInstanceOrArrayOfInstances(
   validationOptions: IsInstanceOrArrayOfInstancesValidationOptions
 ): PropertyDecorator {
+  const classTypes = asArray(validationOptions.classType)
+
   return ValidateBy(
     {
       name: 'isInstanceOrArrayOfInstances',
       validator: {
-        validate: (value): boolean => {
-          if (Array.isArray(value)) {
-            value.forEach((item) => {
-              if (!isInstance(item, validationOptions.classType)) {
-                return false
-              }
-            })
-            return true
-          }
-          return isInstance(value, validationOptions.classType)
+        validate: (values) => {
+          return (
+            asArray(values)
+              // all values MUST be instance of one of the class types
+              .every((value) => classTypes.some((classType) => isInstance(value, classType)))
+          )
         },
         defaultMessage: buildMessage(
-          (eachPrefix) => eachPrefix + `$property must be a string or instance of ${validationOptions.classType.name}`,
+          (eachPrefix) =>
+            eachPrefix + `$property must be a instance of one of ${classTypes.map((c) => c.name).join(', ')}`,
           validationOptions
         ),
       },

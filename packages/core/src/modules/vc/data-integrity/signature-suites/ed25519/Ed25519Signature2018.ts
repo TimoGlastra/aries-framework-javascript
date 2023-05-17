@@ -1,8 +1,8 @@
 import type { DocumentLoader, JsonLdDoc, Proof, VerificationMethod } from '../../jsonldUtil'
 import type { JwsLinkedDataSignatureOptions } from '../JwsLinkedDataSignature'
 
-import { MultiBaseEncoder, TypedArrayEncoder } from '../../../../utils'
-import { CREDENTIALS_CONTEXT_V1_URL, SECURITY_CONTEXT_URL } from '../../constants'
+import { MultiBaseEncoder, TypedArrayEncoder } from '../../../../../utils'
+import { CREDENTIALS_CONTEXT_V1_URL, SECURITY_CONTEXT_URL } from '../../../constants'
 import { _includesContext } from '../../jsonldUtil'
 import jsonld from '../../libraries/jsonld'
 import { JwsLinkedDataSignature } from '../JwsLinkedDataSignature'

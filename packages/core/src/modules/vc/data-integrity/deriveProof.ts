@@ -11,14 +11,20 @@
  * limitations under the License.
  */
 
-import type { JsonObject } from '../../types'
+import type { JsonObject } from '../../../types'
 
-import { JsonTransformer } from '../../utils'
+import { JsonTransformer } from '../../../utils'
+import { SECURITY_PROOF_URL } from '../constants'
 
-import { SECURITY_PROOF_URL } from './constants'
 import { getProofs, getTypeInfo } from './jsonldUtil'
 import jsonld from './libraries/jsonld'
-import { W3cVerifiableCredential } from './models'
+import { W3cJsonLdVerifiableCredential } from './models/W3cJsonLdVerifiableCredential'
+
+export interface W3cJsonLdDeriveProofOptions {
+  credential: W3cJsonLdVerifiableCredential
+  revealDocument: JsonObject
+  verificationMethod: string
+}
 
 /**
  * Derives a proof from a document featuring a supported linked data proof
@@ -33,7 +39,7 @@ export const deriveProof = async (
   proofDocument: JsonObject,
   revealDocument: JsonObject,
   { suite, skipProofCompaction, documentLoader, expansionMap, nonce }: any
-): Promise<W3cVerifiableCredential> => {
+): Promise<W3cJsonLdVerifiableCredential> => {
   if (!suite) {
     throw new TypeError('"options.suite" is required.')
   }
@@ -126,5 +132,5 @@ export const deriveProof = async (
     jsonld.addValue(derivedProof.document, 'proof', derivedProof.proof)
   }
 
-  return JsonTransformer.fromJSON(derivedProof.document, W3cVerifiableCredential)
+  return JsonTransformer.fromJSON(derivedProof.document, W3cJsonLdVerifiableCredential)
 }

@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-import type { JsonObject, JsonArray } from '../../../types'
+import type { JsonObject, JsonArray } from '../../../../types'
 
 /**
  * Result for getting proofs from a JSON-LD document

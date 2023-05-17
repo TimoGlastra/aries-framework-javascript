@@ -1,9 +1,13 @@
-import type { GetProofsOptions, GetProofsResult, GetTypeOptions } from './models'
-import type { JsonObject, JsonValue } from '../../types'
-import type { SingleOrArray } from '../../utils/type'
+import type { GetProofsOptions } from './models/GetProofsOptions'
+import type { GetProofsResult } from './models/GetProofsResult'
+import type { GetTypeOptions } from './models/GetTypeOptions'
+import type { JsonObject, JsonValue } from '../../../types'
 
-import { SECURITY_CONTEXT_URL } from './constants'
+import { AriesFrameworkError } from '../../../error'
+import { SECURITY_CONTEXT_URL } from '../constants'
+
 import jsonld from './libraries/jsonld'
+import { W3cJsonLdVerifiableCredential } from './models/W3cJsonLdVerifiableCredential'
 
 export type JsonLdDoc = Record<string, unknown>
 export interface VerificationMethod extends JsonObject {
@@ -24,16 +28,18 @@ export interface DocumentLoaderResult {
 
 export type DocumentLoader = (url: string) => Promise<DocumentLoaderResult>
 
-export const orArrayToArray = <T>(val?: SingleOrArray<T>): Array<T> => {
-  if (!val) return []
-  if (Array.isArray(val)) return val
-  return [val]
-}
-
 export const _includesContext = (options: { document: JsonLdDoc; contextUrl: string }) => {
   const context = options.document['@context']
 
   return context === options.contextUrl || (Array.isArray(context) && context.includes(options.contextUrl))
+}
+
+export function assertOnlyW3cJsonLdVerifiableCredentials(
+  credentials: unknown[]
+): asserts credentials is W3cJsonLdVerifiableCredential[] {
+  if (credentials.some((c) => !(c instanceof W3cJsonLdVerifiableCredential))) {
+    throw new AriesFrameworkError('JSON-LD VPs can only contain JSON-LD VCs')
+  }
 }
 
 /*
@@ -96,21 +102,6 @@ export const getProofs = async (options: GetProofsOptions): Promise<GetProofsRes
     proofs,
     document,
   }
-}
-
-/**
- * Formats an input date to w3c standard date format
- * @param date {number|string} Optional if not defined current date is returned
- *
- * @returns {string} date in a standard format as a string
- */
-export const w3cDate = (date?: number | string): string => {
-  let result = new Date()
-  if (typeof date === 'number' || typeof date === 'string') {
-    result = new Date(date)
-  }
-  const str = result.toISOString()
-  return str.substr(0, str.length - 5) + 'Z'
 }
 
 /**

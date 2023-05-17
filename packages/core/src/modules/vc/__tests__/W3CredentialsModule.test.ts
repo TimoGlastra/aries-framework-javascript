@@ -1,6 +1,6 @@
 import { KeyType } from '../../../crypto'
 import { DependencyManager } from '../../../plugins/DependencyManager'
-import { SignatureSuiteRegistry, SignatureSuiteToken } from '../SignatureSuiteRegistry'
+import { SignatureSuiteRegistry, SignatureSuiteToken } from '../data-integrity/SignatureSuiteRegistry'
 import { W3cCredentialService } from '../W3cCredentialService'
 import { W3cCredentialsApi } from '../W3cCredentialsApi'
 import { W3cCredentialsModule } from '../W3cCredentialsModule'

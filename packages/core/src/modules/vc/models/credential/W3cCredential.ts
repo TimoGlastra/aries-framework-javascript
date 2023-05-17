@@ -6,6 +6,7 @@ import type { ValidationOptions } from 'class-validator'
 import { Expose, Type } from 'class-transformer'
 import { buildMessage, IsOptional, IsString, ValidateBy } from 'class-validator'
 
+import { asArray } from '../../../../utils'
 import { SingleOrArray } from '../../../../utils/type'
 import { IsInstanceOrArrayOfInstances, IsUri } from '../../../../utils/validators'
 import { CREDENTIALS_CONTEXT_V1_URL, VERIFIABLE_CREDENTIAL_TYPE } from '../../constants'
@@ -92,15 +93,7 @@ export class W3cCredential {
   }
 
   public get contexts(): Array<string | JsonObject> {
-    if (Array.isArray(this.context)) {
-      return this.context.filter((x) => typeof x === 'string')
-    }
-
-    if (typeof this.context === 'string') {
-      return [this.context]
-    }
-
-    return [this.context.id as string]
+    return asArray(this.context)
   }
 }
 

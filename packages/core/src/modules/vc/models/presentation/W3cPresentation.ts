@@ -1,5 +1,5 @@
 import type { JsonObject } from '../../../../types'
-import type { W3cVerifiableCredentialOptions } from '../credential/W3cVerifiableCredential'
+import type { W3cJsonLdVerifiableCredentialOptions } from '../../data-integrity/models/W3cJsonLdVerifiableCredential'
 import type { ValidationOptions } from 'class-validator'
 
 import { Expose } from 'class-transformer'
@@ -8,13 +8,15 @@ import { buildMessage, IsOptional, IsString, ValidateBy } from 'class-validator'
 import { SingleOrArray } from '../../../../utils/type'
 import { IsUri, IsInstanceOrArrayOfInstances } from '../../../../utils/validators'
 import { VERIFIABLE_PRESENTATION_TYPE } from '../../constants'
+import { W3cJsonLdVerifiableCredential } from '../../data-integrity/models/W3cJsonLdVerifiableCredential'
+import { W3cJwtVerifiableCredential } from '../../jwt-vc/W3cJwtVerifiableCredential'
 import { IsJsonLdContext } from '../../validators'
-import { VerifiableCredentialTransformer, W3cVerifiableCredential } from '../credential/W3cVerifiableCredential'
+import { W3cVerifiableCredentialTransformer } from '../credential/W3cVerifiableCredential'
 
 export interface W3cPresentationOptions {
   id?: string
   context: Array<string> | JsonObject
-  verifiableCredential: SingleOrArray<W3cVerifiableCredentialOptions>
+  verifiableCredential: SingleOrArray<W3cJsonLdVerifiableCredentialOptions>
   type: Array<string>
   holder?: string
 }
@@ -26,8 +28,8 @@ export class W3cPresentation {
       this.context = options.context
       this.type = options.type
       this.verifiableCredential = Array.isArray(options.verifiableCredential)
-        ? options.verifiableCredential.map((vc) => new W3cVerifiableCredential(vc))
-        : new W3cVerifiableCredential(options.verifiableCredential)
+        ? options.verifiableCredential.map((vc) => new W3cJsonLdVerifiableCredential(vc))
+        : new W3cJsonLdVerifiableCredential(options.verifiableCredential)
       this.holder = options.holder
     }
   }
@@ -48,9 +50,9 @@ export class W3cPresentation {
   @IsUri()
   public holder?: string
 
-  @VerifiableCredentialTransformer()
-  @IsInstanceOrArrayOfInstances({ classType: W3cVerifiableCredential })
-  public verifiableCredential!: SingleOrArray<W3cVerifiableCredential>
+  @W3cVerifiableCredentialTransformer()
+  @IsInstanceOrArrayOfInstances({ classType: [W3cJsonLdVerifiableCredential, W3cJwtVerifiableCredential] })
+  public verifiableCredential!: SingleOrArray<W3cJsonLdVerifiableCredential | W3cJwtVerifiableCredential>
 }
 
 // Custom validators

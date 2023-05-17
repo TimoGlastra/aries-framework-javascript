@@ -1,0 +1,6 @@
+export * from './CredentialSchema'
+export * from './CredentialSubject'
+export * from './Issuer'
+export * from './W3cCredential'
+export * from './W3cVerifiableCredential'
+export * from './W3cVerifyCredentialResult'

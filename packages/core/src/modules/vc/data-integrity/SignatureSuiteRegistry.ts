@@ -1,7 +1,7 @@
-import type { KeyType } from '../../crypto'
+import type { KeyType } from '../../../crypto'
 
-import { AriesFrameworkError } from '../../error'
-import { injectable, injectAll } from '../../plugins'
+import { AriesFrameworkError } from '../../../error'
+import { injectable, injectAll } from '../../../plugins'
 
 import { suites } from './libraries/jsonld-signatures'
 

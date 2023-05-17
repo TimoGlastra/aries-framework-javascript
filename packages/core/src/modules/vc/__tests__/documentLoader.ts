@@ -1,9 +1,9 @@
 import type { AgentContext } from '../../../agent/context/AgentContext'
 import type { JsonObject } from '../../../types'
-import type { DocumentLoaderResult } from '../libraries/jsonld'
+import type { DocumentLoaderResult } from '../data-integrity/libraries/jsonld'
 
 import { isDid } from '../../../utils'
-import jsonld from '../libraries/jsonld'
+import jsonld from '../data-integrity/libraries/jsonld'
 
 import {
   BBS_V1,
