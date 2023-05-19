@@ -31,15 +31,10 @@ export class W3cJwtVerifiableCredential {
    * and thus is not suitable for sharing. If you need a JWT, use the `serializedJwt` property.
    *
    * All properties and getters from the `W3cCredential` interface are implemented as getters
-   * on the `W3cJwtVerifiableCredential` class itself, so you can also use this call directly
+   * on the `W3cJwtVerifiableCredential` class itself, so you can also use this directly
    * instead of accessing the inner `credential` property.
    */
   public get credential(): W3cCredential {
-    // TODO: we may want to make this a W3cVerifiableCredential and add a `proof` property
-    // with type `JwtProof2020`. This is done by veramo so you have a consistent model to work
-    // with credentials, and don't need to deal with the JWT wrapper. However, this is not in line
-    // with the spec, so we need to make sure it's clear that this is a convenience method, and
-    // only user for internal processing. The credential will **never** be shared in this way.
     return this._credential
   }
 

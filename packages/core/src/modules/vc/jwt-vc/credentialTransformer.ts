@@ -1,6 +1,5 @@
 import type { JwtPayloadOptions } from '../../../crypto/jose/jwt'
-import type { JsonObject } from '../../../types'
-import type { SingleOrArray } from '../../../utils'
+import type { W3cJsonCredential } from '../models/credential/W3cJsonCredential'
 
 import { isObject } from 'class-validator'
 
@@ -10,20 +9,8 @@ import { JsonTransformer, isJsonObject } from '../../../utils'
 import { W3cCredential } from '../models/credential/W3cCredential'
 import { w3cDate } from '../util'
 
-// TODO: move, rename
-export interface JsonCredential {
-  '@context': Array<string> | JsonObject
-  id?: string
-  type: Array<string>
-  issuer: string | { id?: string }
-  issuanceDate: string
-  expirationDate?: string
-  credentialSubject: SingleOrArray<JsonObject>
-  [key: string]: unknown
-}
-
 export function getJwtPayloadFromCredential(credential: W3cCredential) {
-  const vc = JsonTransformer.toJSON(credential) as Partial<JsonCredential>
+  const vc = JsonTransformer.toJSON(credential) as Partial<W3cJsonCredential>
 
   const payloadOptions: JwtPayloadOptions = {
     additionalClaims: {
@@ -79,10 +66,6 @@ export function getJwtPayloadFromCredential(credential: W3cCredential) {
 }
 
 export function getCredentialFromJwtPayload(jwtPayload: JwtPayload) {
-  // TODO: do we want to validate here? NO because then you can't create a VC instance anymore if the cred is expired
-  // FIXME: we need to make sure that hte JWT payload matches the vc payload according to the VC data model.
-  jwtPayload.validate()
-
   if (!('vc' in jwtPayload.additionalClaims) || !isJsonObject(jwtPayload.additionalClaims.vc)) {
     throw new AriesFrameworkError("JWT does not contain a valid 'vc' claim")
   }
@@ -107,24 +90,55 @@ export function getCredentialFromJwtPayload(jwtPayload: JwtPayload) {
   if (!isJsonObject(credentialSubject)) {
     throw new AriesFrameworkError('JWT VC does not have a valid credential subject')
   }
+  const subjectWithId = { ...credentialSubject, id: jwtPayload.sub }
+
+  // Validate vc.id and jti
+  if (jwtVc.id && jwtPayload.jti !== jwtVc.id) {
+    throw new AriesFrameworkError('JWT jti and vc.id do not match')
+  }
+
+  // Validate vc.issuer and iss
+  if (
+    (typeof jwtVc.issuer === 'string' && jwtPayload.iss !== jwtVc.issuer) ||
+    (isJsonObject(jwtVc.issuer) && jwtVc.issuer.id && jwtPayload.iss !== jwtVc.issuer.id)
+  ) {
+    throw new AriesFrameworkError('JWT iss and vc.issuer(.id) do not match')
+  }
+
+  // Validate vc.issuanceDate and nbf
+  const issuanceDate = w3cDate(jwtPayload.nbf * 1000)
+  if (jwtVc.issuanceDate && issuanceDate !== jwtVc.issuanceDate) {
+    throw new AriesFrameworkError('JWT nbf and vc.issuanceDate do not match')
+  }
+
+  // Validate vc.expirationDate and exp
+  const expirationDate = jwtPayload.exp ? w3cDate(jwtPayload.exp * 1000) : undefined
+  if (jwtVc.expirationDate && (!expirationDate || expirationDate !== jwtVc.expirationDate)) {
+    throw new AriesFrameworkError('JWT exp and vc.expirationDate do not match')
+  }
+
+  // Validate vc.credentialSubject.id and sub
+  if (
+    (isJsonObject(jwtVc.credentialSubject) &&
+      jwtVc.credentialSubject.id &&
+      jwtPayload.sub !== jwtVc.credentialSubject.id) ||
+    (Array.isArray(jwtVc.credentialSubject) &&
+      isJsonObject(jwtVc.credentialSubject[0]) &&
+      jwtVc.credentialSubject[0].id &&
+      jwtPayload.sub !== jwtVc.credentialSubject[0].id)
+  ) {
+    throw new AriesFrameworkError('JWT sub and vc.credentialSubject.id do not match')
+  }
 
   // Create a verifiable credential structure that is compatible with the VC data model
+
   const dataModelVc = {
     ...jwtVc,
-    issuanceDate: w3cDate(jwtPayload.nbf * 1000),
-    expirationDate: jwtPayload.exp ? w3cDate(jwtPayload.exp * 1000) : undefined,
+    issuanceDate,
+    expirationDate,
     issuer: typeof jwtVc.issuer === 'object' ? { ...jwtVc.issuer, id: jwtPayload.iss } : jwtPayload.iss,
     id: jwtPayload.jti,
-    // TODO: simplify. Does it matter if the credential uses an array and we use an object? We won't use
-    // this structure for integrity anyway
-    credentialSubject: Array.isArray(jwtVc.credentialSubject)
-      ? [
-          {
-            ...credentialSubject,
-            id: jwtPayload.sub,
-          },
-        ]
-      : jwtVc.credentialSubject,
+    credentialSubject: Array.isArray(jwtVc.credentialSubject) ? [subjectWithId] : subjectWithId,
   }
 
   const vcInstance = JsonTransformer.fromJSON(dataModelVc, W3cCredential)

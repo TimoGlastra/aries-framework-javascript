@@ -7,8 +7,8 @@ import { W3cCredentialsModule } from '../W3cCredentialsModule'
 import { W3cJsonLdVerifiableCredential } from '../models'
 import { W3cCredentialRepository } from '../repository'
 
-import { customDocumentLoader } from './documentLoader'
-import { Ed25519Signature2018Fixtures } from './fixtures'
+import { customDocumentLoader } from '../data-integrity/__tests__/documentLoader'
+import { Ed25519Signature2018Fixtures } from '../data-integrity/__tests__/fixtures'
 
 const modules = {
   indySdk: new IndySdkModule({

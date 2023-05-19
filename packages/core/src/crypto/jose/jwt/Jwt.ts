@@ -8,6 +8,7 @@ import { JwtPayload } from './JwtPayload'
 // TODO: JWT Header typing
 interface JwtHeader {
   alg: string
+  kid?: string
   [key: string]: unknown
 }
 
@@ -39,18 +40,22 @@ export class Jwt {
     this.signature = options.signature
   }
 
-  public static fromSerializedJwt(jwt: string) {
-    if (typeof jwt !== 'string' || !Jwt.format.test(jwt)) {
-      throw new AriesFrameworkError(`Invalid JWT. '${jwt}' does not match JWT regex`)
+  public static fromSerializedJwt(serializedJwt: string) {
+    if (typeof serializedJwt !== 'string' || !Jwt.format.test(serializedJwt)) {
+      throw new AriesFrameworkError(`Invalid JWT. '${serializedJwt}' does not match JWT regex`)
     }
 
-    const [header, payload, signature] = jwt.split('.')
+    const [header, payload, signature] = serializedJwt.split('.')
 
-    return new Jwt({
-      header: JsonEncoder.fromBase64(header),
-      payload: JwtPayload.fromJson(JsonEncoder.fromBase64(payload)),
-      signature: TypedArrayEncoder.fromBase64(signature),
-      serializedJwt: jwt,
-    })
+    try {
+      return new Jwt({
+        header: JsonEncoder.fromBase64(header),
+        payload: JwtPayload.fromJson(JsonEncoder.fromBase64(payload)),
+        signature: TypedArrayEncoder.fromBase64(signature),
+        serializedJwt,
+      })
+    } catch (error) {
+      throw new AriesFrameworkError(`Invalid JWT. ${error.message}`)
+    }
   }
 }

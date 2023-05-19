@@ -1,5 +1,5 @@
 import { JsonTransformer } from '../../../../utils'
-import { Ed25519Signature2018Fixtures } from '../../__tests__/fixtures'
+import { Ed25519Signature2018Fixtures } from '../../data-integrity/__tests__/fixtures'
 import { W3cJsonLdVerifiableCredential } from '../../data-integrity/models'
 import { W3cCredentialRecord } from '../W3cCredentialRecord'
 

@@ -2,15 +2,24 @@ import type { SingleOrArray } from '../../../../utils'
 import type { ClaimFormat } from '../../W3cCredentialServiceOptions'
 
 import { Transform, TransformationType } from 'class-transformer'
+import { ValidationError } from 'class-validator'
 
+import { AriesFrameworkError, ClassValidationError } from '../../../../error'
 import { JsonTransformer } from '../../../../utils'
 import { W3cJsonLdVerifiableCredential } from '../../data-integrity/models/W3cJsonLdVerifiableCredential'
 import { W3cJwtVerifiableCredential } from '../../jwt-vc/W3cJwtVerifiableCredential'
 
-const getCredential = (v: unknown) =>
-  typeof v === 'string'
-    ? W3cJwtVerifiableCredential.fromSerializedJwt(v)
-    : JsonTransformer.fromJSON(v, W3cJsonLdVerifiableCredential)
+const getCredential = (v: unknown) => {
+  try {
+    return typeof v === 'string'
+      ? W3cJwtVerifiableCredential.fromSerializedJwt(v)
+      : // Validation is done separately
+        JsonTransformer.fromJSON(v, W3cJsonLdVerifiableCredential, { validate: false })
+  } catch (error) {
+    if (error instanceof ValidationError || error instanceof ClassValidationError) throw error
+    throw new AriesFrameworkError(`value '${v}' is not a valid W3cJwtVerifiableCredential. ${error.message}`)
+  }
+}
 
 const getEncoded = (v: unknown) =>
   v instanceof W3cJwtVerifiableCredential ? v.serializedJwt : JsonTransformer.toJSON(v)

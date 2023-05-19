@@ -11,18 +11,19 @@ import type {
   W3cVerifyPresentationOptions,
 } from './W3cCredentialServiceOptions'
 import type { W3cVerifiableCredential, W3cVerifiablePresentation } from './models'
-import type { W3cPresentation } from './models/presentation/W3cPresentation'
 import type { AgentContext } from '../../agent/context'
 import type { Query } from '../../storage/StorageService'
 
 import { AriesFrameworkError } from '../../error'
 import { injectable } from '../../plugins'
 
+import { CREDENTIALS_CONTEXT_V1_URL } from './constants'
 import { W3cJsonLdVerifiableCredential } from './data-integrity'
 import { W3cJsonLdCredentialService } from './data-integrity/W3cJsonLdCredentialService'
 import { W3cJsonLdVerifiablePresentation } from './data-integrity/models/W3cJsonLdVerifiablePresentation'
 import { W3cJwtVerifiableCredential, W3cJwtVerifiablePresentation } from './jwt-vc'
 import { W3cJwtCredentialService } from './jwt-vc/W3cJwtCredentialService'
+import { W3cPresentation } from './models/presentation/W3cPresentation'
 import { W3cCredentialRecord, W3cCredentialRepository } from './repository'
 
 @injectable()
@@ -84,8 +85,15 @@ export class W3cCredentialService {
    * @returns An instance of {@link W3cPresentation}
    */
   public async createPresentation(options: W3cCreatePresentationOptions): Promise<W3cPresentation> {
-    // TODO:
-    throw new AriesFrameworkError('Not implemented')
+    const presentation = new W3cPresentation({
+      context: [CREDENTIALS_CONTEXT_V1_URL],
+      type: ['VerifiablePresentation'],
+      verifiableCredential: options.credentials,
+      holder: options.holder,
+      id: options.id,
+    })
+
+    return presentation
   }
 
   /**
@@ -144,6 +152,7 @@ export class W3cCredentialService {
   ): Promise<W3cCredentialRecord> {
     let expandedTypes: string[] = []
 
+    // JsonLd credentials need expanded types to be stored.
     if (options.credential instanceof W3cJsonLdVerifiableCredential) {
       expandedTypes = await this.w3cJsonLdCredentialService.getExpandedTypesForCredential(
         agentContext,

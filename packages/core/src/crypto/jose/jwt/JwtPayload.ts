@@ -155,7 +155,40 @@ export class JwtPayload {
   public static fromJson(jwtPayloadJson: JwtPayloadJson) {
     const { iss, sub, aud, exp, nbf, iat, jti, ...additionalClaims } = jwtPayloadJson
 
-    // TODO: JWT payload validation
+    // Validate iss
+    if (iss && typeof iss !== 'string') {
+      throw new AriesFrameworkError(`JWT payload iss must be a string`)
+    }
+
+    // Validate sub
+    if (sub && typeof sub !== 'string') {
+      throw new AriesFrameworkError(`JWT payload sub must be a string`)
+    }
+
+    // Validate aud
+    if (aud && typeof aud !== 'string' && !(Array.isArray(aud) && aud.every((aud) => typeof aud === 'string'))) {
+      throw new AriesFrameworkError(`JWT payload aud must be a string or an array of strings`)
+    }
+
+    // Validate exp
+    if (exp && (typeof exp !== 'number' || exp < 0)) {
+      throw new AriesFrameworkError(`JWT payload exp must be a positive number`)
+    }
+
+    // Validate nbf
+    if (nbf && (typeof nbf !== 'number' || nbf < 0)) {
+      throw new AriesFrameworkError(`JWT payload nbf must be a positive number`)
+    }
+
+    // Validate iat
+    if (iat && (typeof iat !== 'number' || iat < 0)) {
+      throw new AriesFrameworkError(`JWT payload iat must be a positive number`)
+    }
+
+    // Validate jti
+    if (jti && typeof jti !== 'string') {
+      throw new AriesFrameworkError(`JWT payload jti must be a string`)
+    }
 
     const jwtPayload = new JwtPayload({
       iss,

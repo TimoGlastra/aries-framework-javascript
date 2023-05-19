@@ -3,7 +3,7 @@ import type { ValidationOptions } from 'class-validator'
 import { Transform, TransformationType, plainToInstance, instanceToPlain } from 'class-transformer'
 import { buildMessage, isInstance, isString, ValidateBy } from 'class-validator'
 
-import { IsUri, UriValidator } from '../../../../utils/validators'
+import { IsUri, isUri } from '../../../../utils/validators'
 
 /**
  * TODO: check how to support arbitrary data in class
@@ -50,15 +50,15 @@ export function IsIssuer(validationOptions?: ValidationOptions): PropertyDecorat
       validator: {
         validate: (value): boolean => {
           if (typeof value === 'string') {
-            return UriValidator.test(value)
+            return isUri(value)
           }
           if (isInstance(value, Issuer)) {
-            return UriValidator.test(value.id)
+            return isUri(value.id)
           }
           return false
         },
         defaultMessage: buildMessage(
-          (eachPrefix) => eachPrefix + '$property must be a string or an object with an id property',
+          (eachPrefix) => eachPrefix + '$property must be an URI or an object with an id property which is an URI',
           validationOptions
         ),
       },

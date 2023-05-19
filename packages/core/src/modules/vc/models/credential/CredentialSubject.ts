@@ -1,5 +1,5 @@
 import { Transform, TransformationType, plainToInstance, instanceToPlain } from 'class-transformer'
-import { isString } from 'class-validator'
+import { IsOptional, isString } from 'class-validator'
 
 import { IsUri } from '../../../../utils/validators'
 
@@ -9,7 +9,7 @@ import { IsUri } from '../../../../utils/validators'
  */
 
 export interface CredentialSubjectOptions {
-  id: string
+  id?: string
 }
 
 export class CredentialSubject {
@@ -20,7 +20,8 @@ export class CredentialSubject {
   }
 
   @IsUri()
-  public id!: string
+  @IsOptional()
+  public id?: string
 }
 
 // Custom transformers

@@ -9,7 +9,7 @@ import type {
   W3cJsonLdVerifyPresentationOptions,
 } from '../W3cCredentialServiceOptions'
 import type { W3cVerifyCredentialResult } from '../models'
-import type { VerifyPresentationResult } from '../models/presentation/VerifyPresentationResult'
+import type { W3cVerifyPresentationResult } from '../models/presentation/VerifyPresentationResult'
 
 import { createWalletKeyPairClass } from '../../../crypto/WalletKeyPair'
 import { AriesFrameworkError } from '../../../error'
@@ -182,6 +182,7 @@ export class W3cJsonLdCredentialService {
       presentation: JsonTransformer.toJSON(options.presentation),
       suite: suite,
       challenge: options.challenge,
+      domain: options.domain,
       documentLoader: this.w3cCredentialsModuleConfig.documentLoader(agentContext),
     })
 
@@ -197,7 +198,7 @@ export class W3cJsonLdCredentialService {
   public async verifyPresentation(
     agentContext: AgentContext,
     options: W3cJsonLdVerifyPresentationOptions
-  ): Promise<VerifyPresentationResult> {
+  ): Promise<W3cVerifyPresentationResult> {
     // create keyPair
     const WalletKeyPair = createWalletKeyPairClass(agentContext.wallet)
 
@@ -234,6 +235,7 @@ export class W3cJsonLdCredentialService {
       presentation: JsonTransformer.toJSON(options.presentation),
       suite: allSuites,
       challenge: options.challenge,
+      domain: options.domain,
       documentLoader: this.w3cCredentialsModuleConfig.documentLoader(agentContext),
     }
 
@@ -244,7 +246,7 @@ export class W3cJsonLdCredentialService {
 
     const result = await vc.verify(verifyOptions)
 
-    return result as unknown as VerifyPresentationResult
+    return result as unknown as W3cVerifyPresentationResult
   }
 
   public async deriveProof(

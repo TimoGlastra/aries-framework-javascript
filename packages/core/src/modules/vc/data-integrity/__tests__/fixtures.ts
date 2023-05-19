@@ -1,4 +1,4 @@
-import { CREDENTIALS_CONTEXT_V1_URL } from '../constants'
+import { CREDENTIALS_CONTEXT_V1_URL } from '../../constants'
 
 export const Ed25519Signature2018Fixtures = {
   TEST_LD_DOCUMENT: {

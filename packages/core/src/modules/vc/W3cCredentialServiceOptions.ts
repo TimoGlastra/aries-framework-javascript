@@ -88,7 +88,7 @@ export interface W3cJsonLdVerifyCredentialOptions extends W3cVerifyCredentialOpt
 }
 
 export interface W3cCreatePresentationOptions {
-  credentials: SingleOrArray<W3cJsonLdVerifiableCredential | W3cJwtVerifyCredentialOptions>
+  credentials: SingleOrArray<W3cVerifiableCredential>
   id?: string
   holder?: string
 }
@@ -117,6 +117,11 @@ interface W3cSignPresentationOptionsBase {
    * The challenge / nonce to be used in the proof to prevent replay attacks.
    */
   challenge: string
+
+  /**
+   * The domain / aud to be used in the proof to assert the intended recipient.
+   */
+  domain?: string
 }
 
 export interface W3cJsonLdSignPresentationOptions extends W3cSignPresentationOptionsBase {
@@ -153,6 +158,11 @@ interface W3cVerifyPresentationOptionsBase {
    * The challenge / nonce that must present in the presentation prevent replay attacks.
    */
   challenge: string
+
+  /**
+   * The domain / aud to be used in the proof to assert the intended recipient.
+   */
+  domain?: string
 
   /**
    * Whether to verify the credentialStatus, if present.

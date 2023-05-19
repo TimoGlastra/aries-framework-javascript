@@ -1,6 +1,8 @@
 import type { LinkedDataProofOptions } from './LinkedDataProof'
 import type { W3cCredentialOptions } from '../../models/credential/W3cCredential'
 
+import { ValidateNested } from 'class-validator'
+
 import { IsInstanceOrArrayOfInstances, SingleOrArray, asArray } from '../../../../utils'
 import { W3cCredential } from '../../models/credential/W3cCredential'
 
@@ -22,6 +24,7 @@ export class W3cJsonLdVerifiableCredential extends W3cCredential {
 
   @LinkedDataProofTransformer()
   @IsInstanceOrArrayOfInstances({ classType: LinkedDataProof })
+  @ValidateNested()
   public proof!: SingleOrArray<LinkedDataProof>
 
   public get proofTypes(): Array<string> {

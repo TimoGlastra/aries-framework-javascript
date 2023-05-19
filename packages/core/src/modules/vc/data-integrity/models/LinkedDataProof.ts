@@ -3,6 +3,8 @@ import type { SingleOrArray } from '../../../../utils/type'
 import { Transform, TransformationType, plainToInstance, instanceToPlain } from 'class-transformer'
 import { IsOptional, IsString } from 'class-validator'
 
+import { IsUri } from '../../../../utils'
+
 export interface LinkedDataProofOptions {
   type: string
   proofPurpose: string
@@ -48,7 +50,7 @@ export class LinkedDataProof {
   @IsString()
   public created!: string
 
-  @IsString()
+  @IsUri()
   @IsOptional()
   public domain?: string
 
