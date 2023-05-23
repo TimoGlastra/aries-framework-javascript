@@ -1,6 +1,3 @@
-import type { Key } from '../../../../crypto'
-
-import { W3cJwtVerifiablePresentation } from '..'
 import { describeRunInNodeVersion } from '../../../../../../../tests/runInVersion'
 import { AskarWallet } from '../../../../../../askar/src'
 import { agentDependencies, getAgentConfig, getAgentContext, testLogger } from '../../../../../tests'
@@ -8,15 +5,23 @@ import { InjectionSymbols } from '../../../../constants'
 import { JwsService, KeyType, SigningProviderRegistry } from '../../../../crypto'
 import { JwaSignatureAlgorithm } from '../../../../crypto/jose/jwa'
 import { getJwkFromKey } from '../../../../crypto/jose/jwk'
-import { JsonTransformer, TypedArrayEncoder } from '../../../../utils'
+import { AriesFrameworkError, ClassValidationError } from '../../../../error'
+import { JsonTransformer, MessageValidator } from '../../../../utils'
 import { DidJwk, DidKey, DidsModuleConfig } from '../../../dids'
-import { W3cCredentialsModuleConfig } from '../../W3cCredentialsModuleConfig'
 import { CREDENTIALS_CONTEXT_V1_URL } from '../../constants'
 import { W3cCredential, W3cPresentation } from '../../models'
 import { W3cJwtCredentialService } from '../W3cJwtCredentialService'
 import { W3cJwtVerifiableCredential } from '../W3cJwtVerifiableCredential'
 
-import { didIonJwtVcPresentationProfileJwtVc, didKeyTransmuteJwtVc } from './fixtures/jwt-vc-presentation-profile'
+import {
+  AfjEs256DidJwkJwtVc,
+  AfjEs256DidJwkJwtVcIssuerSeed,
+  AfjEs256DidJwkJwtVcSubjectSeed,
+  AfjEs256DidKeyJwtVp,
+  Ed256DidJwkJwtVcUnsigned,
+} from './fixtures/afj-jwt-vc'
+import { didIonJwtVcPresentationProfileJwtVc } from './fixtures/jwt-vc-presentation-profile'
+import { didKeyTransmuteJwtVc, didKeyTransmuteJwtVp } from './fixtures/transmute-verifiable-data'
 
 const config = getAgentConfig('W3cJwtCredentialService')
 const wallet = new AskarWallet(config.logger, new agentDependencies.FileSystem(), new SigningProviderRegistry([]))
@@ -29,138 +34,95 @@ const agentContext = getAgentContext({
 })
 
 const jwsService = new JwsService()
-const w3cCredentialsModuleConfig = new W3cCredentialsModuleConfig({})
-const w3cJwtCredentialService = new W3cJwtCredentialService(w3cCredentialsModuleConfig, jwsService)
+const w3cJwtCredentialService = new W3cJwtCredentialService(jwsService)
 
 // Runs in Node 18 because of usage of Askar
 describeRunInNodeVersion([18], 'W3cJwtCredentialService', () => {
-  let issuerKey: Key
-  let holderKey: Key
+  let issuerDidJwk: DidJwk
+  let holderDidKey: DidKey
 
   beforeAll(async () => {
     await wallet.createAndOpen(config.walletConfig)
 
-    issuerKey = await agentContext.wallet.createKey({
+    const issuerKey = await agentContext.wallet.createKey({
       keyType: KeyType.P256,
-      seed: TypedArrayEncoder.fromString('00000000000000000000000000000My100000000000000000000000000000My1'),
+      seed: AfjEs256DidJwkJwtVcIssuerSeed,
     })
+    issuerDidJwk = DidJwk.fromJwk(getJwkFromKey(issuerKey))
 
-    holderKey = await agentContext.wallet.createKey({
+    const holderKey = await agentContext.wallet.createKey({
       keyType: KeyType.Ed25519,
-      seed: TypedArrayEncoder.fromString('00000000000000000000000000000My1'),
+      seed: AfjEs256DidJwkJwtVcSubjectSeed,
     })
+    holderDidKey = new DidKey(holderKey)
   })
 
-  test('signCredential', async () => {
-    const issuerDidJwk = DidJwk.fromJwk(getJwkFromKey(issuerKey))
-    const holderDidKey = new DidKey(holderKey)
+  describe('signCredential', () => {
+    test('signs an ES256 JWT vc', async () => {
+      const credential = JsonTransformer.fromJSON(Ed256DidJwkJwtVcUnsigned, W3cCredential)
 
-    const credential = JsonTransformer.fromJSON(
-      {
-        '@context': ['https://www.w3.org/2018/credentials/v1', 'https://purl.imsglobal.org/spec/ob/v3p0/context.json'],
-        type: ['VerifiableCredential', 'VerifiableCredentialExtension', 'OpenBadgeCredential'],
-        issuer: {
-          id: issuerDidJwk.did,
-          name: 'Jobs for the Future (JFF)',
-          iconUrl: 'https://w3c-ccg.github.io/vc-ed/plugfest-1-2022/images/JFF_LogoLockup.png',
-          image: 'https://w3c-ccg.github.io/vc-ed/plugfest-1-2022/images/JFF_LogoLockup.png',
-        },
-        name: 'JFF x vc-edu PlugFest 2',
-        description: "MATTR's submission for JFF Plugfest 2",
-        credentialBranding: {
-          backgroundColor: '#464c49',
-        },
+      const vcJwt = await w3cJwtCredentialService.signCredential(agentContext, {
+        alg: JwaSignatureAlgorithm.ES256,
+        format: 'jwt_vc',
+        verificationMethod: issuerDidJwk.keyReference,
+        credential,
+      })
+
+      expect(vcJwt.serializedJwt).toEqual(AfjEs256DidJwkJwtVc)
+    })
+
+    test('throws when invalid credential is passed', async () => {
+      const credentialJson = {
+        '@context': ['https://www.w3.org/2018/credentials/v1'],
+        type: ['VerifiableCredential'],
+        issuer:
+          'did:jwk:eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwieCI6InpRT293SUMxZ1dKdGRkZEI1R0F0NGxhdTZMdDhJaHk3NzFpQWZhbS0xcGMiLCJ5IjoiY2pEXzdvM2dkUTF2Z2lReTNfc01HczdXcndDTVU5RlFZaW1BM0h4bk1sdyJ9',
         issuanceDate: '2023-01-25T16:58:06.292Z',
         credentialSubject: {
-          id: holderDidKey.did,
-          type: ['AchievementSubject'],
-          achievement: {
-            id: 'urn:uuid:bd6d9316-f7ae-4073-a1e5-2f7f5bd22922',
-            name: 'JFF x vc-edu PlugFest 2 Interoperability',
-            type: ['Achievement'],
-            image: {
-              id: 'https://w3c-ccg.github.io/vc-ed/plugfest-2-2022/images/JFF-VC-EDU-PLUGFEST2-badge-image.png',
-              type: 'Image',
-            },
-            criteria: {
-              type: 'Criteria',
-              narrative:
-                'Solutions providers earned this badge by demonstrating interoperability between multiple providers based on the OBv3 candidate final standard, with some additional required fields. Credential issuers earning this badge successfully issued a credential into at least two wallets.  Wallet implementers earning this badge successfully displayed credentials issued by at least two different credential issuers.',
-            },
-            description:
-              'This credential solution supports the use of OBv3 and w3c Verifiable Credentials and is interoperable with at least two other solutions.  This was demonstrated successfully during JFF x vc-edu PlugFest 2.',
-          },
+          id: 'did:key:z6MkqgkLrRyLg6bqk27djwbbaQWgaSYgFVCKq9YKxZbNkpVv',
         },
-      },
-      W3cCredential
-    )
+      }
 
-    const vcJwt = await w3cJwtCredentialService.signCredential(agentContext, {
-      alg: JwaSignatureAlgorithm.ES256,
-      format: 'jwt_vc',
-      verificationMethod: issuerDidJwk.keyReference,
-      credential,
-    })
+      // Throw when verificationMethod is not a did
+      await expect(
+        w3cJwtCredentialService.signCredential(agentContext, {
+          verificationMethod: 'hello',
+          alg: JwaSignatureAlgorithm.ES256,
+          credential: JsonTransformer.fromJSON(credentialJson, W3cCredential),
+          format: 'jwt_vc',
+        })
+      ).rejects.toThrowError('Only did identifiers are supported as verification method')
 
-    expect(vcJwt.serializedJwt).toEqual(
-      'eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6ImRpZDpqd2s6ZXlKcmRIa2lPaUpGUXlJc0ltTnlkaUk2SWxBdE1qVTJJaXdpZUNJNklucFJUMjkzU1VNeFoxZEtkR1JrWkVJMVIwRjBOR3hoZFRaTWREaEphSGszTnpGcFFXWmhiUzB4Y0dNaUxDSjVJam9pWTJwRVh6ZHZNMmRrVVRGMloybFJlVE5mYzAxSGN6ZFhjbmREVFZVNVJsRlphVzFCTTBoNGJrMXNkeUo5IzAifQ.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vcHVybC5pbXNnbG9iYWwub3JnL3NwZWMvb2IvdjNwMC9jb250ZXh0Lmpzb24iXSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIlZlcmlmaWFibGVDcmVkZW50aWFsRXh0ZW5zaW9uIiwiT3BlbkJhZGdlQ3JlZGVudGlhbCJdLCJpc3N1ZXIiOnsibmFtZSI6IkpvYnMgZm9yIHRoZSBGdXR1cmUgKEpGRikiLCJpY29uVXJsIjoiaHR0cHM6Ly93M2MtY2NnLmdpdGh1Yi5pby92Yy1lZC9wbHVnZmVzdC0xLTIwMjIvaW1hZ2VzL0pGRl9Mb2dvTG9ja3VwLnBuZyIsImltYWdlIjoiaHR0cHM6Ly93M2MtY2NnLmdpdGh1Yi5pby92Yy1lZC9wbHVnZmVzdC0xLTIwMjIvaW1hZ2VzL0pGRl9Mb2dvTG9ja3VwLnBuZyJ9LCJuYW1lIjoiSkZGIHggdmMtZWR1IFBsdWdGZXN0IDIiLCJkZXNjcmlwdGlvbiI6Ik1BVFRSJ3Mgc3VibWlzc2lvbiBmb3IgSkZGIFBsdWdmZXN0IDIiLCJjcmVkZW50aWFsQnJhbmRpbmciOnsiYmFja2dyb3VuZENvbG9yIjoiIzQ2NGM0OSJ9LCJjcmVkZW50aWFsU3ViamVjdCI6eyJ0eXBlIjpbIkFjaGlldmVtZW50U3ViamVjdCJdLCJhY2hpZXZlbWVudCI6eyJpZCI6InVybjp1dWlkOmJkNmQ5MzE2LWY3YWUtNDA3My1hMWU1LTJmN2Y1YmQyMjkyMiIsIm5hbWUiOiJKRkYgeCB2Yy1lZHUgUGx1Z0Zlc3QgMiBJbnRlcm9wZXJhYmlsaXR5IiwidHlwZSI6WyJBY2hpZXZlbWVudCJdLCJpbWFnZSI6eyJpZCI6Imh0dHBzOi8vdzNjLWNjZy5naXRodWIuaW8vdmMtZWQvcGx1Z2Zlc3QtMi0yMDIyL2ltYWdlcy9KRkYtVkMtRURVLVBMVUdGRVNUMi1iYWRnZS1pbWFnZS5wbmciLCJ0eXBlIjoiSW1hZ2UifSwiY3JpdGVyaWEiOnsidHlwZSI6IkNyaXRlcmlhIiwibmFycmF0aXZlIjoiU29sdXRpb25zIHByb3ZpZGVycyBlYXJuZWQgdGhpcyBiYWRnZSBieSBkZW1vbnN0cmF0aW5nIGludGVyb3BlcmFiaWxpdHkgYmV0d2VlbiBtdWx0aXBsZSBwcm92aWRlcnMgYmFzZWQgb24gdGhlIE9CdjMgY2FuZGlkYXRlIGZpbmFsIHN0YW5kYXJkLCB3aXRoIHNvbWUgYWRkaXRpb25hbCByZXF1aXJlZCBmaWVsZHMuIENyZWRlbnRpYWwgaXNzdWVycyBlYXJuaW5nIHRoaXMgYmFkZ2Ugc3VjY2Vzc2Z1bGx5IGlzc3VlZCBhIGNyZWRlbnRpYWwgaW50byBhdCBsZWFzdCB0d28gd2FsbGV0cy4gIFdhbGxldCBpbXBsZW1lbnRlcnMgZWFybmluZyB0aGlzIGJhZGdlIHN1Y2Nlc3NmdWxseSBkaXNwbGF5ZWQgY3JlZGVudGlhbHMgaXNzdWVkIGJ5IGF0IGxlYXN0IHR3byBkaWZmZXJlbnQgY3JlZGVudGlhbCBpc3N1ZXJzLiJ9LCJkZXNjcmlwdGlvbiI6IlRoaXMgY3JlZGVudGlhbCBzb2x1dGlvbiBzdXBwb3J0cyB0aGUgdXNlIG9mIE9CdjMgYW5kIHczYyBWZXJpZmlhYmxlIENyZWRlbnRpYWxzIGFuZCBpcyBpbnRlcm9wZXJhYmxlIHdpdGggYXQgbGVhc3QgdHdvIG90aGVyIHNvbHV0aW9ucy4gIFRoaXMgd2FzIGRlbW9uc3RyYXRlZCBzdWNjZXNzZnVsbHkgZHVyaW5nIEpGRiB4IHZjLWVkdSBQbHVnRmVzdCAyLiJ9fX0sImlzcyI6ImRpZDpqd2s6ZXlKcmRIa2lPaUpGUXlJc0ltTnlkaUk2SWxBdE1qVTJJaXdpZUNJNklucFJUMjkzU1VNeFoxZEtkR1JrWkVJMVIwRjBOR3hoZFRaTWREaEphSGszTnpGcFFXWmhiUzB4Y0dNaUxDSjVJam9pWTJwRVh6ZHZNMmRrVVRGMloybFJlVE5mYzAxSGN6ZFhjbmREVFZVNVJsRlphVzFCTTBoNGJrMXNkeUo5Iiwic3ViIjoiZGlkOmtleTp6Nk1rcWdrTHJSeUxnNmJxazI3ZGp3YmJhUVdnYVNZZ0ZWQ0txOVlLeFpiTmtwVnYiLCJuYmYiOjE2NzQ2NjU4ODZ9.anABxv424eMpp0xgbTx6aZvZxblkSThq-XbgixhWegFCVz2Q-EtRUiGJuOUjmql5TttTZ_YgtN9PgozOfuTZtg'
-    )
+      // Throw when not according to data model
+      await expect(
+        w3cJwtCredentialService.signCredential(agentContext, {
+          verificationMethod: issuerDidJwk.keyReference,
+          alg: JwaSignatureAlgorithm.ES256,
+          credential: JsonTransformer.fromJSON({ ...credentialJson, issuanceDate: undefined }, W3cCredential, {
+            validate: false,
+          }),
+          format: 'jwt_vc',
+        })
+      ).rejects.toThrowError(
+        'property issuanceDate has failed the following constraints: issuanceDate must be RFC 3339 date'
+      )
 
-    // Create a new instance of the credential from the serialized JWT
-    const reParsedJwtVc = W3cJwtVerifiableCredential.fromSerializedJwt(vcJwt.serializedJwt)
-    const credentialResult = await w3cJwtCredentialService.verifyCredential(agentContext, { credential: reParsedJwtVc })
-    expect(credentialResult).toEqual({
-      verified: true,
-      results: [{ credential: reParsedJwtVc, verified: true }],
-    })
-
-    const presentation = new W3cPresentation({
-      context: [CREDENTIALS_CONTEXT_V1_URL],
-      type: ['VerifiablePresentation'],
-      verifiableCredential: [vcJwt],
-      id: 'urn:21ff21f1-3cf9-4fa3-88b4-a045efbb1b5f',
-      holder: holderDidKey.did,
-    })
-
-    const signedJwtVp = await w3cJwtCredentialService.signPresentation(agentContext, {
-      presentation,
-      alg: JwaSignatureAlgorithm.EdDSA,
-      challenge: 'daf942ad-816f-45ee-a9fc-facd08e5abca',
-      domain: 'example.com',
-      format: 'jwt_vp',
-      verificationMethod: `${holderDidKey.did}#${holderDidKey.key.fingerprint}`,
-    })
-
-    expect(signedJwtVp.serializedJwt).toEqual(
-      'eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6ImRpZDprZXk6ejZNa3Fna0xyUnlMZzZicWsyN2Rqd2JiYVFXZ2FTWWdGVkNLcTlZS3haYk5rcFZ2I3o2TWtxZ2tMclJ5TGc2YnFrMjdkandiYmFRV2dhU1lnRlZDS3E5WUt4WmJOa3BWdiJ9.eyJ2cCI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVQcmVzZW50YXRpb24iXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlsiZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKRlV6STFOaUlzSW10cFpDSTZJbVJwWkRwcWQyczZaWGxLY21SSWEybFBhVXBHVVhsSmMwbHRUbmxrYVVrMlNXeEJkRTFxVlRKSmFYZHBaVU5KTmtsdWNGSlVNamt6VTFWTmVGb3haRXRrUjFKcldrVkpNVkl3UmpCT1IzaG9aRlJhVFdSRWFFcGhTR3N6VG5wR2NGRlhXbWhpVXpCNFkwZE5hVXhEU2pWSmFtOXBXVEp3UlZoNlpIWk5NbVJyVlZSR01sb3liRkpsVkU1bVl6QXhTR042WkZoamJtUkVWRlpWTlZKc1JscGhWekZDVFRCb05HSnJNWE5rZVVvNUl6QWlmUS5leUoyWXlJNmV5SkFZMjl1ZEdWNGRDSTZXeUpvZEhSd2N6b3ZMM2QzZHk1M015NXZjbWN2TWpBeE9DOWpjbVZrWlc1MGFXRnNjeTkyTVNJc0ltaDBkSEJ6T2k4dmNIVnliQzVwYlhObmJHOWlZV3d1YjNKbkwzTndaV012YjJJdmRqTndNQzlqYjI1MFpYaDBMbXB6YjI0aVhTd2lkSGx3WlNJNld5SldaWEpwWm1saFlteGxRM0psWkdWdWRHbGhiQ0lzSWxabGNtbG1hV0ZpYkdWRGNtVmtaVzUwYVdGc1JYaDBaVzV6YVc5dUlpd2lUM0JsYmtKaFpHZGxRM0psWkdWdWRHbGhiQ0pkTENKcGMzTjFaWElpT25zaWJtRnRaU0k2SWtwdlluTWdabTl5SUhSb1pTQkdkWFIxY21VZ0tFcEdSaWtpTENKcFkyOXVWWEpzSWpvaWFIUjBjSE02THk5M00yTXRZMk5uTG1kcGRHaDFZaTVwYnk5Mll5MWxaQzl3YkhWblptVnpkQzB4TFRJd01qSXZhVzFoWjJWekwwcEdSbDlNYjJkdlRHOWphM1Z3TG5CdVp5SXNJbWx0WVdkbElqb2lhSFIwY0hNNkx5OTNNMk10WTJObkxtZHBkR2gxWWk1cGJ5OTJZeTFsWkM5d2JIVm5abVZ6ZEMweExUSXdNakl2YVcxaFoyVnpMMHBHUmw5TWIyZHZURzlqYTNWd0xuQnVaeUo5TENKdVlXMWxJam9pU2taR0lIZ2dkbU10WldSMUlGQnNkV2RHWlhOMElESWlMQ0prWlhOamNtbHdkR2x2YmlJNklrMUJWRlJTSjNNZ2MzVmliV2x6YzJsdmJpQm1iM0lnU2taR0lGQnNkV2RtWlhOMElESWlMQ0pqY21Wa1pXNTBhV0ZzUW5KaGJtUnBibWNpT25zaVltRmphMmR5YjNWdVpFTnZiRzl5SWpvaUl6UTJOR00wT1NKOUxDSmpjbVZrWlc1MGFXRnNVM1ZpYW1WamRDSTZleUowZVhCbElqcGJJa0ZqYUdsbGRtVnRaVzUwVTNWaWFtVmpkQ0pkTENKaFkyaHBaWFpsYldWdWRDSTZleUpwWkNJNkluVnlianAxZFdsa09tSmtObVE1TXpFMkxXWTNZV1V0TkRBM015MWhNV1UxTFRKbU4yWTFZbVF5TWpreU1pSXNJbTVoYldVaU9pSktSa1lnZUNCMll5MWxaSFVnVUd4MVowWmxjM1FnTWlCSmJuUmxjbTl3WlhKaFltbHNhWFI1SWl3aWRIbHdaU0k2V3lKQlkyaHBaWFpsYldWdWRDSmRMQ0pwYldGblpTSTZleUpwWkNJNkltaDBkSEJ6T2k4dmR6TmpMV05qWnk1bmFYUm9kV0l1YVc4dmRtTXRaV1F2Y0d4MVoyWmxjM1F0TWkweU1ESXlMMmx0WVdkbGN5OUtSa1l0VmtNdFJVUlZMVkJNVlVkR1JWTlVNaTFpWVdSblpTMXBiV0ZuWlM1d2JtY2lMQ0owZVhCbElqb2lTVzFoWjJVaWZTd2lZM0pwZEdWeWFXRWlPbnNpZEhsd1pTSTZJa055YVhSbGNtbGhJaXdpYm1GeWNtRjBhWFpsSWpvaVUyOXNkWFJwYjI1eklIQnliM1pwWkdWeWN5QmxZWEp1WldRZ2RHaHBjeUJpWVdSblpTQmllU0JrWlcxdmJuTjBjbUYwYVc1bklHbHVkR1Z5YjNCbGNtRmlhV3hwZEhrZ1ltVjBkMlZsYmlCdGRXeDBhWEJzWlNCd2NtOTJhV1JsY25NZ1ltRnpaV1FnYjI0Z2RHaGxJRTlDZGpNZ1kyRnVaR2xrWVhSbElHWnBibUZzSUhOMFlXNWtZWEprTENCM2FYUm9JSE52YldVZ1lXUmthWFJwYjI1aGJDQnlaWEYxYVhKbFpDQm1hV1ZzWkhNdUlFTnlaV1JsYm5ScFlXd2dhWE56ZFdWeWN5QmxZWEp1YVc1bklIUm9hWE1nWW1Ga1oyVWdjM1ZqWTJWemMyWjFiR3g1SUdsemMzVmxaQ0JoSUdOeVpXUmxiblJwWVd3Z2FXNTBieUJoZENCc1pXRnpkQ0IwZDI4Z2QyRnNiR1YwY3k0Z0lGZGhiR3hsZENCcGJYQnNaVzFsYm5SbGNuTWdaV0Z5Ym1sdVp5QjBhR2x6SUdKaFpHZGxJSE4xWTJObGMzTm1kV3hzZVNCa2FYTndiR0Y1WldRZ1kzSmxaR1Z1ZEdsaGJITWdhWE56ZFdWa0lHSjVJR0YwSUd4bFlYTjBJSFIzYnlCa2FXWm1aWEpsYm5RZ1kzSmxaR1Z1ZEdsaGJDQnBjM04xWlhKekxpSjlMQ0prWlhOamNtbHdkR2x2YmlJNklsUm9hWE1nWTNKbFpHVnVkR2xoYkNCemIyeDFkR2x2YmlCemRYQndiM0owY3lCMGFHVWdkWE5sSUc5bUlFOUNkak1nWVc1a0lIY3pZeUJXWlhKcFptbGhZbXhsSUVOeVpXUmxiblJwWVd4eklHRnVaQ0JwY3lCcGJuUmxjbTl3WlhKaFlteGxJSGRwZEdnZ1lYUWdiR1ZoYzNRZ2RIZHZJRzkwYUdWeUlITnZiSFYwYVc5dWN5NGdJRlJvYVhNZ2QyRnpJR1JsYlc5dWMzUnlZWFJsWkNCemRXTmpaWE56Wm5Wc2JIa2daSFZ5YVc1bklFcEdSaUI0SUhaakxXVmtkU0JRYkhWblJtVnpkQ0F5TGlKOWZYMHNJbWx6Y3lJNkltUnBaRHBxZDJzNlpYbEtjbVJJYTJsUGFVcEdVWGxKYzBsdFRubGthVWsyU1d4QmRFMXFWVEpKYVhkcFpVTkpOa2x1Y0ZKVU1qa3pVMVZOZUZveFpFdGtSMUpyV2tWSk1WSXdSakJPUjNob1pGUmFUV1JFYUVwaFNHc3pUbnBHY0ZGWFdtaGlVekI0WTBkTmFVeERTalZKYW05cFdUSndSVmg2WkhaTk1tUnJWVlJHTWxveWJGSmxWRTVtWXpBeFNHTjZaRmhqYm1SRVZGWlZOVkpzUmxwaFZ6RkNUVEJvTkdKck1YTmtlVW81SWl3aWMzVmlJam9pWkdsa09tdGxlVHA2TmsxcmNXZHJUSEpTZVV4bk5tSnhhekkzWkdwM1ltSmhVVmRuWVZOWlowWldRMHR4T1ZsTGVGcGlUbXR3Vm5ZaUxDSnVZbVlpT2pFMk56UTJOalU0T0RaOS5hbkFCeHY0MjRlTXBwMHhnYlR4NmFadlp4YmxrU1RocS1YYmdpeGhXZWdGQ1Z6MlEtRXRSVWlHSnVPVWptcWw1VHR0VFpfWWd0TjlQZ296T2Z1VFp0ZyJdfSwibm9uY2UiOiJkYWY5NDJhZC04MTZmLTQ1ZWUtYTlmYy1mYWNkMDhlNWFiY2EiLCJpc3MiOiJkaWQ6a2V5Ono2TWtxZ2tMclJ5TGc2YnFrMjdkandiYmFRV2dhU1lnRlZDS3E5WUt4WmJOa3BWdiIsImF1ZCI6ImV4YW1wbGUuY29tIiwianRpIjoidXJuOjIxZmYyMWYxLTNjZjktNGZhMy04OGI0LWEwNDVlZmJiMWI1ZiJ9.ar3YGkn333XW8_624RfW2DlA2XuLNJAUk9OrSAvS6RtoqVVzH_TWklvCq1BT-Mot3j56cERx748qWyKhDAm1Dw'
-    )
-
-    // Create a new instance of the presentation from the serialized JWT
-    const reParsedJwtVp = W3cJwtVerifiablePresentation.fromSerializedJwt(signedJwtVp.serializedJwt)
-    const presentationResult = await w3cJwtCredentialService.verifyPresentation(agentContext, {
-      presentation: reParsedJwtVp,
-      challenge: 'daf942ad-816f-45ee-a9fc-facd08e5abca',
-      domain: 'example.com',
-      verifyCredentialStatus: false,
-    })
-    expect(presentationResult).toEqual({
-      verified: true,
-      presentationResult: {
-        verified: true,
-        presentation: reParsedJwtVp,
-      },
-      credentialResults: [
-        {
-          verified: true,
-          credential: reParsedJwtVc,
-          presentationAuthenticatesCredentialSubject: true,
-        },
-      ],
+      // Throw when verificationMethod id does not exist in did document
+      await expect(
+        w3cJwtCredentialService.signCredential(agentContext, {
+          verificationMethod: issuerDidJwk.keyReference + 'extra',
+          alg: JwaSignatureAlgorithm.ES256,
+          credential: JsonTransformer.fromJSON(credentialJson, W3cCredential),
+          format: 'jwt_vc',
+        })
+      ).rejects.toThrowError(
+        `Unable to locate verification method with id 'did:jwk:eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwieCI6InpRT293SUMxZ1dKdGRkZEI1R0F0NGxhdTZMdDhJaHk3NzFpQWZhbS0xcGMiLCJ5IjoiY2pEXzdvM2dkUTF2Z2lReTNfc01HczdXcndDTVU5RlFZaW1BM0h4bk1sdyJ9#0extra' in purposes assertionMethod`
+      )
     })
   })
 
   describe('verifyCredential', () => {
-    // Fails because the `jti` is not an Uri (and the `vc.id` MUST be an Uri)
+    // Fails because the `jti` is not an uri (and the `vc.id` MUST be an uri according to vc data model)
     test.skip('verifies a vc from the vc-jwt-presentation-profile', async () => {
       const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
         credential: didIonJwtVcPresentationProfileJwtVc,
@@ -172,13 +134,270 @@ describeRunInNodeVersion([18], 'W3cJwtCredentialService', () => {
       })
     })
 
-    test('verifies a vc from the vc-jwt-presentation-profile', async () => {
+    test('verifies an ES256 JWT vc signed by AFJ', async () => {
+      const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
+        credential: AfjEs256DidJwkJwtVc,
+        verifyCredentialStatus: false,
+      })
+
+      expect(result).toEqual({
+        isValid: true,
+        validations: {
+          // credential has no credentialStatus, so always valid
+          credentialStatus: {
+            isValid: true,
+          },
+          // This both validates whether the credential matches the
+          // data model, as well as whether the credential is expired etc..
+          dataModel: {
+            isValid: true,
+          },
+          // This validates whether the signature is valid
+          signature: {
+            isValid: true,
+          },
+          // This validates whether the issuer is also the signer of the credential
+          issuerIsSigner: {
+            isValid: true,
+          },
+        },
+      })
+    })
+
+    test('verifies an EdDSA JWT vc from the transmute vc.js library', async () => {
       const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
         credential: didKeyTransmuteJwtVc,
         verifyCredentialStatus: false,
       })
 
-      console.log(result.error?.message)
+      expect(result).toEqual({
+        isValid: true,
+        validations: {
+          // credential has no credentialStatus, so always valid
+          credentialStatus: {
+            isValid: true,
+          },
+          // This both validates whether the credential matches the
+          // data model, as well as whether the credential is expired etc..
+          dataModel: {
+            isValid: true,
+          },
+          // This validates whether the signature is valid
+          signature: {
+            isValid: true,
+          },
+          // This validates whether the issuer is also the signer of the credential
+          issuerIsSigner: {
+            isValid: true,
+          },
+        },
+      })
+    })
+
+    test('returns invalid result when credential is not according to data model', async () => {
+      const jwtVc = W3cJwtVerifiableCredential.fromSerializedJwt(AfjEs256DidJwkJwtVc)
+
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      delete jwtVc.credential.issuer
+
+      const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
+        credential: jwtVc,
+        verifyCredentialStatus: false,
+      })
+
+      expect(result).toEqual({
+        isValid: false,
+        validations: {
+          dataModel: {
+            isValid: false,
+            error: expect.any(ClassValidationError),
+          },
+        },
+      })
+
+      expect(result.validations.dataModel?.error?.message).toContain('Failed to validate class')
+    })
+
+    test('returns invalid result when credential is expired', async () => {
+      const jwtVc = W3cJwtVerifiableCredential.fromSerializedJwt(AfjEs256DidJwkJwtVc)
+
+      jwtVc.jwt.payload.exp = new Date('2020-01-01').getTime() / 1000
+
+      const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
+        credential: jwtVc,
+        verifyCredentialStatus: false,
+      })
+
+      expect(result).toEqual({
+        isValid: false,
+        validations: {
+          dataModel: {
+            isValid: false,
+            error: expect.any(AriesFrameworkError),
+          },
+        },
+      })
+
+      expect(result.validations.dataModel?.error?.message).toContain('JWT expired at 1577836800')
+    })
+
+    test('returns invalid result when signature is not valid', async () => {
+      const jwtVc = W3cJwtVerifiableCredential.fromSerializedJwt(AfjEs256DidJwkJwtVc + 'a')
+
+      const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
+        credential: jwtVc,
+        verifyCredentialStatus: false,
+      })
+
+      expect(result).toEqual({
+        isValid: false,
+        validations: {
+          dataModel: {
+            isValid: true,
+          },
+          signature: {
+            isValid: false,
+            error: expect.any(AriesFrameworkError),
+          },
+          issuerIsSigner: {
+            isValid: false,
+            error: expect.any(AriesFrameworkError),
+          },
+          credentialStatus: {
+            isValid: true,
+          },
+        },
+      })
+
+      expect(result.validations.signature?.error?.message).toContain('Invalid JWS signature')
+    })
+  })
+
+  describe('signPresentation', () => {
+    test('signs an ES256 JWT vp', async () => {
+      // Create a new instance of the credential from the serialized JWT
+      const parsedJwtVc = W3cJwtVerifiableCredential.fromSerializedJwt(AfjEs256DidJwkJwtVc)
+
+      const presentation = new W3cPresentation({
+        context: [CREDENTIALS_CONTEXT_V1_URL],
+        type: ['VerifiablePresentation'],
+        verifiableCredential: [parsedJwtVc],
+        id: 'urn:21ff21f1-3cf9-4fa3-88b4-a045efbb1b5f',
+        holder: holderDidKey.did,
+      })
+
+      const signedJwtVp = await w3cJwtCredentialService.signPresentation(agentContext, {
+        presentation,
+        alg: JwaSignatureAlgorithm.EdDSA,
+        challenge: 'daf942ad-816f-45ee-a9fc-facd08e5abca',
+        domain: 'example.com',
+        format: 'jwt_vp',
+        verificationMethod: `${holderDidKey.did}#${holderDidKey.key.fingerprint}`,
+      })
+
+      expect(signedJwtVp.serializedJwt).toEqual(AfjEs256DidKeyJwtVp)
+    })
+  })
+
+  describe('verifyPresentation', () => {
+    test('verifies an ES256 JWT vp signed by AFJ', async () => {
+      const result = await w3cJwtCredentialService.verifyPresentation(agentContext, {
+        presentation: AfjEs256DidKeyJwtVp,
+        challenge: 'daf942ad-816f-45ee-a9fc-facd08e5abca',
+        domain: 'example.com',
+        verifyCredentialStatus: false,
+      })
+
+      expect(result).toEqual({
+        isValid: true,
+        validations: {
+          dataModel: {
+            isValid: true,
+          },
+          presentationSignature: {
+            isValid: true,
+          },
+          holderIsSigner: {
+            isValid: true,
+          },
+          credentials: [
+            {
+              isValid: true,
+              validations: {
+                dataModel: {
+                  isValid: true,
+                },
+                signature: {
+                  isValid: true,
+                },
+                issuerIsSigner: {
+                  isValid: true,
+                },
+                credentialStatus: {
+                  isValid: true,
+                },
+                credentialSubjectAuthentication: {
+                  isValid: true,
+                },
+              },
+            },
+          ],
+        },
+      })
+    })
+
+    // NOTE: this test doesn't fully succeed because the VP from the transmute
+    // library doesn't authenticate the credentialSubject.id in the credential
+    // in the VP. For now, all VPs must authenticate the credentialSubject, if
+    // the credential has a credential subject id (so it's not a bearer credential)
+    test('verifies an EdDSA JWT vp from the transmute vc.js library', async () => {
+      const result = await w3cJwtCredentialService.verifyPresentation(agentContext, {
+        presentation: didKeyTransmuteJwtVp,
+        challenge: '123',
+        domain: 'example.com',
+        verifyCredentialStatus: false,
+      })
+
+      expect(result).toEqual({
+        isValid: false,
+        validations: {
+          dataModel: {
+            isValid: true,
+          },
+          presentationSignature: {
+            isValid: true,
+          },
+          holderIsSigner: {
+            isValid: true,
+          },
+          credentials: [
+            {
+              isValid: false,
+              validations: {
+                dataModel: {
+                  isValid: true,
+                },
+                signature: {
+                  isValid: true,
+                },
+                issuerIsSigner: {
+                  isValid: true,
+                },
+                credentialStatus: {
+                  isValid: true,
+                },
+                credentialSubjectAuthentication: {
+                  isValid: false,
+                  error: new AriesFrameworkError(
+                    'Credential has one or more credentialSubject ids, but presentation does not authenticate credential subject'
+                  ),
+                },
+              },
+            },
+          ],
+        },
+      })
     })
   })
 })

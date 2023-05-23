@@ -5,7 +5,7 @@ export interface W3cJsonPresentation {
   '@context': Array<string | JsonObject>
   id?: string
   type: Array<string>
-  holder: string
+  holder: string | { id?: string }
   verifiableCredential: Array<W3cJsonCredential | string>
   [key: string]: unknown
 }

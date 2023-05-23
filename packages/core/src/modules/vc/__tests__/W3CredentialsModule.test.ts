@@ -1,12 +1,12 @@
 import { KeyType } from '../../../crypto'
 import { DependencyManager } from '../../../plugins/DependencyManager'
-import { SignatureSuiteRegistry, SignatureSuiteToken } from '../data-integrity/SignatureSuiteRegistry'
 import { W3cCredentialService } from '../W3cCredentialService'
 import { W3cCredentialsApi } from '../W3cCredentialsApi'
 import { W3cCredentialsModule } from '../W3cCredentialsModule'
 import { W3cCredentialsModuleConfig } from '../W3cCredentialsModuleConfig'
+import { SignatureSuiteRegistry, SignatureSuiteToken } from '../data-integrity/SignatureSuiteRegistry'
+import { Ed25519Signature2018 } from '../data-integrity/signature-suites'
 import { W3cCredentialRepository } from '../repository'
-import { Ed25519Signature2018 } from '../signature-suites'
 
 jest.mock('../../../plugins/DependencyManager')
 const DependencyManagerMock = DependencyManager as jest.Mock<DependencyManager>

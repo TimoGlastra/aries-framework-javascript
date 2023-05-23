@@ -15,11 +15,21 @@ export function getJwtPayloadFromPresentation(presentation: W3cPresentation) {
     },
   }
 
-  if (presentation.holder) {
-    payloadOptions.iss = presentation.holder
-    delete vp.holder
+  // Extract `iss` and remove holder id from vp
+  if (presentation.holderId) {
+    payloadOptions.iss = presentation.holderId
+
+    if (typeof vp.holder === 'string') {
+      delete vp.holder
+    } else if (typeof vp.holder === 'object') {
+      delete vp.holder.id
+      if (Object.keys(vp.holder).length === 0) {
+        delete vp.holder
+      }
+    }
   }
 
+  // Extract `jti` and remove id from vp
   if (presentation.id) {
     payloadOptions.jti = presentation.id
     delete vp.id
@@ -41,7 +51,7 @@ export function getPresentationFromJwtPayload(jwtPayload: JwtPayload) {
   }
 
   // Validate vp.holder and iss
-  if (jwtVp.holder && jwtPayload.iss !== jwtVp.holder) {
+  if (jwtVp.holderId && jwtPayload.iss !== jwtVp.holderId) {
     throw new AriesFrameworkError('JWT iss and vp.holder do not match')
   }
 

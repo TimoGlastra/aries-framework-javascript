@@ -17,8 +17,7 @@ export function IsCredentialJsonLdContext(validationOptions?: ValidationOptions)
           // First item must be the verifiable credential context
           if (value[0] !== CREDENTIALS_CONTEXT_V1_URL) return false
 
-          // check if all items are URLs or objects
-          return value.every((v) => (isString(v) && isURL(v)) || isJsonObject(value))
+          return value.every((v) => (isString(v) && isURL(v)) || isJsonObject(v))
         },
         defaultMessage: buildMessage(
           (eachPrefix) =>

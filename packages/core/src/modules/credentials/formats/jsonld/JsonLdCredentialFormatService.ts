@@ -30,8 +30,8 @@ import { JsonEncoder, areObjectsEqual } from '../../../../utils'
 import { JsonTransformer } from '../../../../utils/JsonTransformer'
 import { findVerificationMethodByKeyType } from '../../../dids/domain/DidDocument'
 import { DidResolverService } from '../../../dids/services/DidResolverService'
-import { W3cCredentialService } from '../../../vc'
-import { W3cCredential, W3cJsonLdVerifiableCredential } from '../../../vc/models'
+import { W3cCredential, W3cCredentialService, W3cJsonLdVerifiableCredential } from '../../../vc'
+import { W3cJsonLdCredentialService } from '../../../vc/data-integrity/W3cJsonLdCredentialService'
 import { CredentialFormatSpec } from '../../models/CredentialFormatSpec'
 
 import { JsonLdCredentialDetail } from './JsonLdCredentialDetail'
@@ -214,7 +214,7 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
     agentContext: AgentContext,
     { credentialFormats, attachmentId, requestAttachment }: CredentialFormatAcceptRequestOptions<JsonLdCredentialFormat>
   ): Promise<CredentialFormatCreateReturn> {
-    const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
+    const w3cJsonLdCredentialService = agentContext.dependencyManager.resolve(W3cJsonLdCredentialService)
 
     // sign credential here. credential to be signed is received as the request attachment
     // (attachment in the request message from holder to issuer)
@@ -246,7 +246,8 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
 
     const credential = JsonTransformer.fromJSON(credentialRequest.credential, W3cCredential)
 
-    const verifiableCredential = await w3cCredentialService.signCredential(agentContext, {
+    const verifiableCredential = await w3cJsonLdCredentialService.signCredential(agentContext, {
+      format: 'ldp_vc',
       credential,
       proofType: credentialRequest.options.proofType,
       verificationMethod: verificationMethod,
@@ -267,7 +268,7 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
     credentialRequest: JsonLdFormatDataCredentialDetail
   ): Promise<string> {
     const didResolver = agentContext.dependencyManager.resolve(DidResolverService)
-    const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
+    const w3cJsonLdCredentialService = agentContext.dependencyManager.resolve(W3cJsonLdCredentialService)
 
     const credential = JsonTransformer.fromJSON(credentialAsJson, W3cCredential)
 
@@ -284,7 +285,7 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
     const proofType = credentialRequest.options.proofType
 
     // actually gets the key type(s)
-    const keyType = w3cCredentialService.getVerificationMethodTypesByProofType(proofType)
+    const keyType = w3cJsonLdCredentialService.getVerificationMethodTypesByProofType(proofType)
 
     if (!keyType || keyType.length === 0) {
       throw new AriesFrameworkError(`No Key Type found for proofType ${proofType}`)
@@ -308,7 +309,7 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
   ): Promise<void> {
     const w3cCredentialService = agentContext.dependencyManager.resolve(W3cCredentialService)
 
-    const credentialAsJson = attachment.getDataAsJson<W3cJsonLdVerifiableCredential>()
+    const credentialAsJson = attachment.getDataAsJson()
     const credential = JsonTransformer.fromJSON(credentialAsJson, W3cJsonLdVerifiableCredential)
     const requestAsJson = requestAttachment.getDataAsJson<JsonLdFormatDataCredentialDetail>()
 
@@ -317,12 +318,12 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
 
     // verify signatures of the credential
     const result = await w3cCredentialService.verifyCredential(agentContext, { credential })
-    if (result && !result.verified) {
+    if (result && !result.isValid) {
       throw new AriesFrameworkError(`Failed to validate credential, error = ${result.error}`)
     }
 
     const verifiableCredential = await w3cCredentialService.storeCredential(agentContext, {
-      credential: credential,
+      credential,
     })
 
     credentialRecord.credentials.push({

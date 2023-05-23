@@ -8,12 +8,12 @@ import { IsUri } from '../../../../utils/validators'
  * @see https://www.w3.org/TR/vc-data-model/#credential-subject
  */
 
-export interface CredentialSubjectOptions {
+export interface W3cCredentialSubjectOptions {
   id?: string
 }
 
-export class CredentialSubject {
-  public constructor(options: CredentialSubjectOptions) {
+export class W3cCredentialSubject {
+  public constructor(options: W3cCredentialSubjectOptions) {
     if (options) {
       this.id = options.id
     }
@@ -26,11 +26,11 @@ export class CredentialSubject {
 
 // Custom transformers
 
-export function CredentialSubjectTransformer() {
-  return Transform(({ value, type }: { value: string | CredentialSubjectOptions; type: TransformationType }) => {
+export function W3cCredentialSubjectTransformer() {
+  return Transform(({ value, type }: { value: string | W3cCredentialSubjectOptions; type: TransformationType }) => {
     if (type === TransformationType.PLAIN_TO_CLASS) {
       if (isString(value)) return value
-      return plainToInstance(CredentialSubject, value)
+      return plainToInstance(W3cCredentialSubject, value)
     } else if (type === TransformationType.CLASS_TO_PLAIN) {
       if (isString(value)) return value
       return instanceToPlain(value)

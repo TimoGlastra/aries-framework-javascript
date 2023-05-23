@@ -10,7 +10,12 @@ import type {
   W3cVerifyCredentialOptions,
   W3cVerifyPresentationOptions,
 } from './W3cCredentialServiceOptions'
-import type { W3cVerifiableCredential, W3cVerifiablePresentation } from './models'
+import type {
+  W3cVerifiableCredential,
+  W3cVerifiablePresentation,
+  W3cVerifyCredentialResult,
+  W3cVerifyPresentationResult,
+} from './models'
 import type { AgentContext } from '../../agent/context'
 import type { Query } from '../../storage/StorageService'
 
@@ -64,8 +69,10 @@ export class W3cCredentialService {
   /**
    * Verifies the signature(s) of a credential
    */
-  public async verifyCredential(agentContext: AgentContext, options: W3cVerifyCredentialOptions) {
-    // TODO: return type
+  public async verifyCredential(
+    agentContext: AgentContext,
+    options: W3cVerifyCredentialOptions
+  ): Promise<W3cVerifyCredentialResult> {
     if (options.credential instanceof W3cJsonLdVerifiableCredential) {
       return this.w3cJsonLdCredentialService.verifyCredential(agentContext, options as W3cJsonLdVerifyCredentialOptions)
     } else if (options.credential instanceof W3cJwtVerifiableCredential || typeof options.credential === 'string') {
@@ -121,8 +128,10 @@ export class W3cCredentialService {
    * @param presentation the presentation to be verified
    * @returns the verification result
    */
-  public async verifyPresentation(agentContext: AgentContext, options: W3cVerifyPresentationOptions) {
-    // TODO: return type
+  public async verifyPresentation(
+    agentContext: AgentContext,
+    options: W3cVerifyPresentationOptions
+  ): Promise<W3cVerifyPresentationResult> {
     if (options.presentation instanceof W3cJsonLdVerifiablePresentation) {
       return this.w3cJsonLdCredentialService.verifyPresentation(
         agentContext,

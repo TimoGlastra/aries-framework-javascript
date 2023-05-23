@@ -58,7 +58,7 @@ describe('W3cCredentialsService', () => {
     w3cCredentialService = new W3cCredentialService(
       w3cCredentialsRepository,
       new W3cJsonLdCredentialService(new SignatureSuiteRegistry([]), credentialsModuleConfig),
-      new W3cJwtCredentialService(credentialsModuleConfig, new JwsService())
+      new W3cJwtCredentialService(new JwsService())
     )
   })
 

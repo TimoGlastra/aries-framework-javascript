@@ -1,6 +1,5 @@
 import type { JwaSignatureAlgorithm } from './jose/jwa'
 import type { Jwk } from './jose/jwk'
-import type { JwkJson } from './jose/jwk/Jwk'
 
 export type Kid = string
 
@@ -8,13 +7,6 @@ export interface JwsProtectedHeaderOptions {
   alg: JwaSignatureAlgorithm | string
   kid?: Kid
   jwk?: Jwk
-  [key: string]: unknown
-}
-
-export interface JwsProtectedHeader {
-  alg: JwaSignatureAlgorithm | string
-  kid?: Kid
-  jwk?: JwkJson
   [key: string]: unknown
 }
 

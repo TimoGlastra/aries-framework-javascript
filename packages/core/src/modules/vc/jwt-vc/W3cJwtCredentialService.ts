@@ -1,4 +1,5 @@
 import type { AgentContext } from '../../../agent/context'
+import type { VerifyJwsResult } from '../../../crypto/JwsService'
 import type { DidPurpose, VerificationMethod } from '../../dids'
 import type {
   W3cJwtSignCredentialOptions,
@@ -6,20 +7,19 @@ import type {
   W3cJwtVerifyCredentialOptions,
   W3cJwtVerifyPresentationOptions,
 } from '../W3cCredentialServiceOptions'
-import type { W3cVerifyCredentialInnerResult, W3cVerifyCredentialResult, W3cVerifyPresentationResult } from '../models'
+import type { SingleValidationResult, W3cVerifyCredentialResult, W3cVerifyPresentationResult } from '../models'
 
 import { JwsService } from '../../../crypto'
-import { getJwkFromKey } from '../../../crypto/jose/jwk'
+import { getJwkFromKey, getJwkClassFromJwaSignatureAlgorithm } from '../../../crypto/jose/jwk'
 import { AriesFrameworkError } from '../../../error'
 import { injectable } from '../../../plugins'
 import { asArray, isDid, MessageValidator } from '../../../utils'
-import { DidResolverService, getKeyFromVerificationMethod } from '../../dids'
-import { W3cCredentialsModuleConfig } from '../W3cCredentialsModuleConfig'
+import { getKeyDidMappingByKeyType, DidResolverService, getKeyFromVerificationMethod } from '../../dids'
+import { W3cJsonLdVerifiableCredential } from '../data-integrity'
 
 import { W3cJwtVerifiableCredential } from './W3cJwtVerifiableCredential'
 import { W3cJwtVerifiablePresentation } from './W3cJwtVerifiablePresentation'
 import { getJwtPayloadFromCredential } from './credentialTransformer'
-import { assertOnlyW3cJwtVerifiableCredentials } from './jwtUtil'
 import { getJwtPayloadFromPresentation } from './presentationTransformer'
 
 /**
@@ -28,11 +28,9 @@ import { getJwtPayloadFromPresentation } from './presentationTransformer'
  */
 @injectable()
 export class W3cJwtCredentialService {
-  private w3cCredentialsModuleConfig: W3cCredentialsModuleConfig
   private jwsService: JwsService
 
-  public constructor(w3cCredentialsModuleConfig: W3cCredentialsModuleConfig, jwsService: JwsService) {
-    this.w3cCredentialsModuleConfig = w3cCredentialsModuleConfig
+  public constructor(jwsService: JwsService) {
     this.jwsService = jwsService
   }
 
@@ -54,7 +52,9 @@ export class W3cJwtCredentialService {
       throw new AriesFrameworkError(`Only did identifiers are supported as verification method`)
     }
 
-    const verificationMethod = await this.resolveVerificationMethod(agentContext, options.verificationMethod)
+    const verificationMethod = await this.resolveVerificationMethod(agentContext, options.verificationMethod, [
+      'assertionMethod',
+    ])
     const key = getKeyFromVerificationMethod(verificationMethod)
 
     const jwt = await this.jwsService.createJwsCompact(agentContext, {
@@ -84,86 +84,124 @@ export class W3cJwtCredentialService {
     agentContext: AgentContext,
     options: W3cJwtVerifyCredentialOptions
   ): Promise<W3cVerifyCredentialResult> {
+    // NOTE: this is mostly from the JSON-LD service that adds this option. Once we support
+    // the same granular validation results, we can remove this and the user could just check
+    // which of the validations failed. Supporting for consistency with the JSON-LD service for now.
+    const verifyCredentialStatus = options.verifyCredentialStatus ?? true
+
+    const validationResults: W3cVerifyCredentialResult = {
+      isValid: false,
+      validations: {},
+    }
+
     try {
-      if (options.verifyCredentialStatus) {
-        throw new AriesFrameworkError('Verifying credential status is not supported for JWT VCs')
+      let credential: W3cJwtVerifiableCredential
+      try {
+        // If instance is provided as input, we want to validate the credential (otherwise it's done in the fromSerializedJwt method below)
+        if (options.credential instanceof W3cJwtVerifiableCredential) {
+          MessageValidator.validateSync(options.credential.credential)
+        }
+
+        credential =
+          options.credential instanceof W3cJwtVerifiableCredential
+            ? options.credential
+            : W3cJwtVerifiableCredential.fromSerializedJwt(options.credential)
+
+        // Verify the JWT payload (verifies whether it's not expired, etc...)
+        credential.jwt.payload.validate()
+
+        validationResults.validations.dataModel = {
+          isValid: true,
+        }
+      } catch (error) {
+        validationResults.validations.dataModel = {
+          isValid: false,
+          error,
+        }
+
+        return validationResults
       }
 
-      // If instance is provided as input, we want to validate the credential (otherwise it's done in the fromSerializedJwt method below)
-      if (options.credential instanceof W3cJwtVerifiableCredential) {
-        MessageValidator.validateSync(options.credential.credential)
-      }
-
-      const credential =
-        options.credential instanceof W3cJwtVerifiableCredential
-          ? options.credential
-          : W3cJwtVerifiableCredential.fromSerializedJwt(options.credential)
-
-      // Verify the JWT payload (verifies whether it's not expired, etc...)
-      credential.jwt.payload.validate()
-
-      // // We only support dids for now, and the `kid` property MUST point to the key within the did document
-      // // We may want to loosen this and add alternatives, but this is the most straightforward way to do it.
-      // if (!credential.jwt.header.kid || !isDid(credential.jwt.header.kid)) {
-      //   throw new AriesFrameworkError(
-      //     `JWT header property 'kid' value '${credential.jwt.header.kid}' is not a valid did.`
-      //   )
-      // }
-
-      // Ways to resolve the publicKey for a credentials
-      // - header `kid`
-      // - issuer property in the payload and then finding a key in the did document
-      //     how does this work?
-      //     veramo just tries to verify with all keys in the did document that match the
-      //      alg etc.. https://github.com/decentralized-identity/did-jwt/blob/master/src/JWT.ts#L573-L582
-      // the spec specifies it may be used if multiple keys are available for a did
-      // Answer: we resolve the did, check the number of keys for hte purpose, alg we have and if there's multiple we
-      // require the kid to be set in the header
-
-      // NOTE: we only support 'assertionMethod' for now. We may want to allow to pass a `proofPurpose` to the verify method.
-      const verificationMethod = await this.resolveVerificationMethod(agentContext, credential.jwt.header.kid, [
-        'assertionMethod',
-      ])
-      const key = getKeyFromVerificationMethod(verificationMethod)
-      const jwk = getJwkFromKey(key)
-
-      // Verify the controller of the verificationMethod matches the issuer of the credential
-      if (verificationMethod.controller !== credential.jwt.payload.iss) {
-        throw new AriesFrameworkError(
-          `Verification method controller '${verificationMethod.controller}' does not match the issuer '${credential.jwt.header.iss}'`
-        )
-      }
-
-      // Verify the JWS signature
-      const result = await this.jwsService.verifyJws(agentContext, {
-        jws: credential.jwt.serializedJwt,
-        keyResolver: (kid: string) => {
-          // We have pre-fetched the verificationMethod for the kid, this shouldn't happen
-          if (kid !== credential.jwt.header.kid) throw new AriesFrameworkError(`Unexpected kid '${kid}'`)
-
-          return jwk
-        },
+      const issuerVerificationMethod = await this.getVerificationMethodForJwtCredential(agentContext, {
+        credential,
+        purpose: ['assertionMethod'],
       })
+      const issuerPublicKey = getKeyFromVerificationMethod(issuerVerificationMethod)
+      const issuerPublicJwk = getJwkFromKey(issuerPublicKey)
 
-      if (!result.isValid) {
-        throw new AriesFrameworkError('Invalid JWS signature')
+      let signatureResult: VerifyJwsResult | undefined = undefined
+      try {
+        // Verify the JWS signature
+        signatureResult = await this.jwsService.verifyJws(agentContext, {
+          jws: credential.jwt.serializedJwt,
+          // We have pre-fetched the key based on the issuer/signer of the credential
+          jwkResolver: () => issuerPublicJwk,
+        })
+
+        if (!signatureResult.isValid) {
+          validationResults.validations.signature = {
+            isValid: false,
+            error: new AriesFrameworkError('Invalid JWS signature'),
+          }
+        } else {
+          validationResults.validations.signature = {
+            isValid: true,
+          }
+        }
+      } catch (error) {
+        validationResults.validations.signature = {
+          isValid: false,
+          error,
+        }
       }
 
-      // Make sure the JWS is signed by the 'issuer' of the credential
-      if (!result.signerKeys.some((signerKey) => signerKey.fingerprint === signerKey.fingerprint)) {
-        throw new AriesFrameworkError('Credential is not signed by the issuer of the credential')
+      // Validate whether the credential is signed with the 'issuer' id
+      // NOTE: this uses the verificationMethod.controller. We may want to use the verificationMethod.id?
+      if (credential.issuerId !== issuerVerificationMethod.controller) {
+        validationResults.validations.issuerIsSigner = {
+          isValid: false,
+          error: new AriesFrameworkError(
+            `Credential is signed using verification method ${issuerVerificationMethod.id}, while the issuer of the credential is '${credential.issuerId}'`
+          ),
+        }
+      } else {
+        validationResults.validations.issuerIsSigner = {
+          isValid: true,
+        }
       }
 
-      return {
-        verified: true,
-        results: [{ credential, verified: true }],
+      // Validate whether the `issuer` of the credential is also the signer
+      const issuerIsSigner = signatureResult?.signerKeys.some(
+        (signerKey) => signerKey.fingerprint === issuerPublicKey.fingerprint
+      )
+      if (!issuerIsSigner) {
+        validationResults.validations.issuerIsSigner = {
+          isValid: false,
+          error: new AriesFrameworkError('Credential is not signed by the issuer of the credential'),
+        }
+      } else {
+        validationResults.validations.issuerIsSigner = {
+          isValid: true,
+        }
       }
+
+      // Validate credentialStatus
+      if (verifyCredentialStatus && !credential.credentialStatus) {
+        validationResults.validations.credentialStatus = {
+          isValid: true,
+        }
+      } else if (verifyCredentialStatus && credential.credentialStatus) {
+        validationResults.validations.credentialStatus = {
+          isValid: false,
+          error: new AriesFrameworkError('Verifying credential status is not supported for JWT VCs'),
+        }
+      }
+
+      validationResults.isValid = Object.values(validationResults.validations).every((v) => v.isValid)
+
+      return validationResults
     } catch (error) {
-      return {
-        verified: false,
-        results: [{ credential: options.credential, verified: false, error: error }],
-        error,
-      }
+      return validationResults
     }
   }
 
@@ -188,7 +226,9 @@ export class W3cJwtCredentialService {
     jwtPayload.additionalClaims.nonce = options.challenge
     jwtPayload.aud = options.domain
 
-    const verificationMethod = await this.resolveVerificationMethod(agentContext, options.verificationMethod)
+    const verificationMethod = await this.resolveVerificationMethod(agentContext, options.verificationMethod, [
+      'authentication',
+    ])
 
     const jwt = await this.jwsService.createJwsCompact(agentContext, {
       payload: jwtPayload,
@@ -217,80 +257,123 @@ export class W3cJwtCredentialService {
     agentContext: AgentContext,
     options: W3cJwtVerifyPresentationOptions
   ): Promise<W3cVerifyPresentationResult> {
+    const validationResults: W3cVerifyPresentationResult = {
+      isValid: false,
+      validations: {},
+    }
+
     try {
-      // If instance is provided as input, we want to validate the presentation
-      if (options.presentation instanceof W3cJwtVerifiablePresentation) {
-        MessageValidator.validateSync(options.presentation.presentation)
+      let presentation: W3cJwtVerifiablePresentation
+      try {
+        // If instance is provided as input, we want to validate the presentation
+        if (options.presentation instanceof W3cJwtVerifiablePresentation) {
+          MessageValidator.validateSync(options.presentation.presentation)
+        }
+
+        presentation =
+          options.presentation instanceof W3cJwtVerifiablePresentation
+            ? options.presentation
+            : W3cJwtVerifiablePresentation.fromSerializedJwt(options.presentation)
+
+        // Verify the JWT payload (verifies whether it's not expired, etc...)
+        presentation.jwt.payload.validate()
+
+        // Make sure challenge matches nonce
+        if (options.challenge !== presentation.jwt.payload.additionalClaims.nonce) {
+          throw new AriesFrameworkError(`JWT payload 'nonce' does not match challenge '${options.challenge}'`)
+        }
+
+        const audArray = asArray(presentation.jwt.payload.aud)
+        if (options.domain && !audArray.includes(options.domain)) {
+          throw new AriesFrameworkError(`JWT payload 'aud' does not include domain '${options.domain}'`)
+        }
+
+        validationResults.validations.dataModel = {
+          isValid: true,
+        }
+      } catch (error) {
+        validationResults.validations.dataModel = {
+          isValid: false,
+          error,
+        }
+
+        return validationResults
       }
 
-      const presentation =
-        options.presentation instanceof W3cJwtVerifiablePresentation
-          ? options.presentation
-          : W3cJwtVerifiablePresentation.fromSerializedJwt(options.presentation)
-
-      // Verify the JWT payload (verifies whether it's not expired, etc...)
-      presentation.jwt.payload.validate()
-
-      // Make sure challenge matches nonce
-      if (options.challenge !== presentation.jwt.payload.additionalClaims.nonce) {
-        throw new AriesFrameworkError(`JWT payload 'nonce' does not match challenge '${options.challenge}'`)
-      }
-
-      const audArray = asArray(presentation.jwt.payload.aud)
-      if (options.domain && !audArray.includes(options.domain)) {
-        throw new AriesFrameworkError(`JWT payload 'aud' does not include domain '${options.domain}'`)
-      }
-
-      // We only support dids for now, and the `kid` property MUST pont to the key within the did document
-      // We may want to loosen this and add alternatives, but this is the most straightforward way to do it.
-      if (!presentation.jwt.header.kid || !isDid(presentation.jwt.header.kid)) {
-        throw new AriesFrameworkError(
-          `JWT header property 'kid' value '${presentation.jwt.header.kid}' is not a valid did.`
-        )
-      }
-
-      // NOTE: we only support 'authentication' for now. We may want to allow to pass a `proofPurpose` to the verify method.
-      const verificationMethod = await this.resolveVerificationMethod(agentContext, presentation.jwt.header.kid, [
-        'authentication',
-      ])
-      const key = getKeyFromVerificationMethod(verificationMethod)
-      const jwk = getJwkFromKey(key)
-
-      // Verify the controller of the verificationMethod matches the 'holder' of the presentation
-      if (presentation.jwt.payload.iss && verificationMethod.controller !== presentation.jwt.payload.iss) {
-        throw new AriesFrameworkError(
-          `Verification method controller '${verificationMethod.controller}' does not match the holder '${presentation.jwt.header.iss}'`
-        )
-      }
-
-      // Verify the JWS signature
-      const result = await this.jwsService.verifyJws(agentContext, {
-        jws: presentation.jwt.serializedJwt,
-        kidResolver: (kid: string) => {
-          // We have pre-fetched the verificationMethod for the kid, this shouldn't happen
-          if (kid !== presentation.jwt.header.kid) throw new AriesFrameworkError(`Unexpected kid '${kid}'`)
-
-          return jwk
-        },
+      const proverVerificationMethod = await this.getVerificationMethodForJwtCredential(agentContext, {
+        credential: presentation,
+        purpose: ['authentication'],
       })
+      const proverPublicKey = getKeyFromVerificationMethod(proverVerificationMethod)
+      const proverPublicJwk = getJwkFromKey(proverPublicKey)
 
-      if (!result.isValid) {
-        throw new AriesFrameworkError('Invalid JWS signature on presentation')
+      let signatureResult: VerifyJwsResult | undefined = undefined
+      try {
+        // Verify the JWS signature
+        signatureResult = await this.jwsService.verifyJws(agentContext, {
+          jws: presentation.jwt.serializedJwt,
+          // We have pre-fetched the key based on the singer/holder of the presentation
+          jwkResolver: () => proverPublicJwk,
+        })
+
+        if (!signatureResult.isValid) {
+          validationResults.validations.presentationSignature = {
+            isValid: false,
+            error: new AriesFrameworkError('Invalid JWS signature on presentation'),
+          }
+        } else {
+          validationResults.validations.presentationSignature = {
+            isValid: true,
+          }
+        }
+      } catch (error) {
+        validationResults.validations.presentationSignature = {
+          isValid: false,
+          error,
+        }
+      }
+
+      // Validate whether the presentation is signed with the 'holder' id
+      // NOTE: this uses the verificationMethod.controller. We may want to use the verificationMethod.id?
+      if (presentation.holderId && proverVerificationMethod.controller !== presentation.holderId) {
+        validationResults.validations.holderIsSigner = {
+          isValid: false,
+          error: new AriesFrameworkError(
+            `Presentation is signed using verification method ${proverVerificationMethod.id}, while the holder of the presentation is '${presentation.holderId}'`
+          ),
+        }
+      } else {
+        // If no holderId is present, this validation passes by default as there can't be
+        // a mismatch between the 'holder' property and the signer of the presentation.
+        validationResults.validations.holderIsSigner = {
+          isValid: true,
+        }
       }
 
       // To keep things simple, we only support JWT VCs in JWT VPs for now
       const credentials = asArray(presentation.presentation.verifiableCredential)
-      assertOnlyW3cJwtVerifiableCredentials(credentials)
 
       // Verify all credentials in parallel, and await the result
-      const credentialResults = await Promise.all(
+      validationResults.validations.credentials = await Promise.all(
         credentials.map(async (credential) => {
+          if (credential instanceof W3cJsonLdVerifiableCredential) {
+            return {
+              isValid: false,
+              error: new AriesFrameworkError(
+                'Credential is of format ldp_vc. presentations in jwp_vp format can only contain credentials in jwt_vc format'
+              ),
+              validations: {},
+            }
+          }
+
           const credentialResult = await this.verifyCredential(agentContext, {
             credential,
             verifyCredentialStatus: options.verifyCredentialStatus,
           })
 
-          // Check whether any of the credentialSubjectIds is the same as the controller of the verificationMethod
+          let credentialSubjectAuthentication: SingleValidationResult
+
+          // Check whether any of the credentialSubjectIds for each credential is the same as the controller of the verificationMethod
           // This authenticates the presentation creator controls one of the credentialSubject ids.
           // NOTE: this doesn't take into account the case where the credentialSubject is no the holder. In the
           // future we can add support for other flows, but for now this is the most common use case.
@@ -299,48 +382,41 @@ export class W3cJwtCredentialService {
           // more experience on the use cases before we loosen the restrictions (as it means we need to handle it on a higher layer).
           const credentialSubjectIds = credential.credentialSubjectIds
           const presentationAuthenticatesCredentialSubject = credentialSubjectIds.some(
-            (subjectId) => verificationMethod.controller === subjectId
+            (subjectId) => proverVerificationMethod.controller === subjectId
           )
 
           if (credentialSubjectIds.length > 0 && !presentationAuthenticatesCredentialSubject) {
-            return {
-              verified: false,
-              credential,
+            credentialSubjectAuthentication = {
+              isValid: false,
               error: new AriesFrameworkError(
                 'Credential has one or more credentialSubject ids, but presentation does not authenticate credential subject'
               ),
-              presentationAuthenticatesCredentialSubject,
+            }
+          } else {
+            credentialSubjectAuthentication = {
+              isValid: true,
             }
           }
 
           return {
-            verified: credentialResult.verified,
-            error: credentialResult.error,
-            credential,
-            presentationAuthenticatesCredentialSubject,
+            ...credentialResult,
+            isValid: credentialResult.isValid && credentialSubjectAuthentication.isValid,
+            validations: {
+              ...credentialResult.validations,
+              credentialSubjectAuthentication,
+            },
           }
         })
       )
 
-      return {
-        verified: credentialResults.every((result) => result.verified),
-        credentialResults,
-        presentationResult: {
-          verified: true,
-          presentation,
-        },
-      }
+      // Deeply nested check whether all validations have passed
+      validationResults.isValid = Object.values(validationResults.validations).every((v) =>
+        Array.isArray(v) ? v.every((vv) => vv.isValid) : v.isValid
+      )
+
+      return validationResults
     } catch (error) {
-      return {
-        verified: false,
-        presentationResult: {
-          verified: false,
-          error,
-          presentation: options.presentation,
-        },
-        credentialResults: [],
-        error,
-      }
+      return validationResults
     }
   }
 
@@ -353,5 +429,102 @@ export class W3cJwtCredentialService {
     const didDocument = await didResolver.resolveDidDocument(agentContext, verificationMethod)
 
     return didDocument.dereferenceKey(verificationMethod, allowsPurposes)
+  }
+
+  /**
+   * This method tries to find the verification method associated with the JWT credential or presentation.
+   * This verification method can then be used to verify the credential or presentation signature.
+   *
+   * The following methods are used to extract the verification method:
+   *  - verification method is resolved based on the `kid` in the protected header
+   *    - either as absolute reference (e.g. `did:example:123#key-1`)
+   *    - or as relative reference to the `iss` of the JWT (e.g. `iss` is `did:example:123` and `kid` is `#key-1`)
+   *  - the did document is resolved based on the `iss` field, after which the verification method is extracted based on the `alg`
+   *    used to sign the JWT and the specified `purpose`. Only a single verification method may be present, and in all other cases,
+   *    an error is thrown.
+   *
+   * The signer (`iss`) of the JWT is verified against the `controller` of the verificationMethod resolved in the did
+   * document. This means if the `iss` of a credential is `did:example:123` and the controller of the verificationMethod
+   * is `did:example:456`, an error is thrown to prevent the JWT from successfully being verified.
+   *
+   * In addition the JWT must conform to one of the following rules:
+   *   - MUST be a credential and have an `iss` field and MAY have an absolute or relative `kid`
+   *   - MUST not be a credential AND ONE of the following:
+   *      - have an `iss` field and MAY have an absolute or relative `kid`
+   *      - does not have an `iss` field and MUST have an absolute `kid`
+   */
+  private async getVerificationMethodForJwtCredential(
+    agentContext: AgentContext,
+    options: {
+      credential: W3cJwtVerifiableCredential | W3cJwtVerifiablePresentation
+      purpose?: DidPurpose[]
+    }
+  ) {
+    const { credential, purpose } = options
+    const kid = credential.jwt.header.kid
+
+    const didResolver = agentContext.dependencyManager.resolve(DidResolverService)
+
+    // The signerId is the `holder` of the presentation or the `issuer` of the credential
+    // For a credential only the `iss` COULD be enough to resolve the signer key (see method comments)
+    const signerId = credential.jwt.payload.iss
+
+    let verificationMethod: VerificationMethod
+
+    // If the kid starts with # we assume it is a relative did url, and we resolve it based on the `iss` and the `kid`
+    if (kid?.startsWith('#')) {
+      if (!signerId) {
+        throw new AriesFrameworkError(`JWT 'kid' MUST be absolute when when no 'iss' is present in JWT payload`)
+      }
+
+      const didDocument = await didResolver.resolveDidDocument(agentContext, signerId)
+      verificationMethod = didDocument.dereferenceKey(`${signerId}${kid}`, purpose)
+    }
+    // this is a full did url (todo check if it contains a #)
+    else if (kid && isDid(kid)) {
+      const didDocument = await didResolver.resolveDidDocument(agentContext, kid)
+
+      verificationMethod = didDocument.dereferenceKey(kid, purpose)
+
+      if (signerId && didDocument.id !== signerId) {
+        throw new AriesFrameworkError(`kid '${kid}' does not match id of signer (holder/issuer) '${signerId}'`)
+      }
+    } else {
+      if (!signerId) {
+        throw new AriesFrameworkError(`JWT 'iss' MUST be present in payload when no 'kid' is specified`)
+      }
+
+      // Find the verificationMethod in the did document based on the alg and proofPurpose
+      const jwkClass = getJwkClassFromJwaSignatureAlgorithm(credential.jwt.header.alg)
+      if (!jwkClass) throw new AriesFrameworkError(`Unsupported JWT alg '${credential.jwt.header.alg}'`)
+      const { supportedVerificationMethodTypes } = getKeyDidMappingByKeyType(jwkClass.keyType)
+
+      const didDocument = await didResolver.resolveDidDocument(agentContext, signerId)
+      const verificationMethods =
+        didDocument.assertionMethod
+          ?.map((v) => (typeof v === 'string' ? didDocument.dereferenceVerificationMethod(v) : v))
+          .filter((v) => supportedVerificationMethodTypes.includes(v.type)) ?? []
+
+      if (verificationMethods.length === 0) {
+        throw new AriesFrameworkError(
+          `No verification methods found for signer '${signerId}' and key type '${jwkClass.keyType}' for alg '${credential.jwt.header.alg}'. Unable to determine which public key is associated with the credential.`
+        )
+      } else if (verificationMethods.length > 1) {
+        throw new AriesFrameworkError(
+          `Multiple verification methods found for signer '${signerId}' and key type '${jwkClass.keyType}' for alg '${credential.jwt.header.alg}'. Unable to determine which public key is associated with the credential.`
+        )
+      }
+
+      verificationMethod = verificationMethods[0]
+    }
+
+    // Verify the controller of the verificationMethod matches the signer of the credential
+    if (signerId && verificationMethod.controller !== signerId) {
+      throw new AriesFrameworkError(
+        `Verification method controller '${verificationMethod.controller}' does not match the signer '${signerId}'`
+      )
+    }
+
+    return verificationMethod
   }
 }

@@ -9,11 +9,11 @@ import { SigningProviderRegistry } from '../../../../crypto/signing-provider'
 import { asArray, TypedArrayEncoder } from '../../../../utils'
 import { JsonTransformer } from '../../../../utils/JsonTransformer'
 import { WalletError } from '../../../../wallet/error'
-import { DidKey } from '../../../dids'
 import {
+  DidKey,
   VERIFICATION_METHOD_TYPE_ED25519_VERIFICATION_KEY_2018,
   VERIFICATION_METHOD_TYPE_ED25519_VERIFICATION_KEY_2020,
-} from '../../../dids/domain/key-type/ed25519'
+} from '../../../dids'
 import { W3cCredentialsModuleConfig } from '../../W3cCredentialsModuleConfig'
 import { W3cCredential } from '../../models'
 import { W3cPresentation } from '../../models/presentation/W3cPresentation'
@@ -44,7 +44,7 @@ const signatureSuiteRegistry = new SignatureSuiteRegistry([
 const signingProviderRegistry = new SigningProviderRegistry([])
 const agentConfig = getAgentConfig('W3cJsonLdCredentialServiceTest')
 
-describe('W3cCredentialsService', () => {
+describe('W3cJsonLdCredentialsService', () => {
   let wallet: Wallet
   let agentContext: AgentContext
   let w3cJsonLdCredentialService: W3cJsonLdCredentialService
@@ -142,20 +142,23 @@ describe('W3cCredentialsService', () => {
     })
 
     describe('verifyCredential', () => {
-      it('should credential verify successfully', async () => {
+      it('should verify a credential successfully', async () => {
         const vc = JsonTransformer.fromJSON(
           Ed25519Signature2018Fixtures.TEST_LD_DOCUMENT_SIGNED,
           W3cJsonLdVerifiableCredential
         )
         const result = await w3cJsonLdCredentialService.verifyCredential(agentContext, { credential: vc })
 
-        expect(result.verified).toBe(true)
-        expect(result.error).toBeUndefined()
-
-        expect(result.results.length).toBe(1)
-
-        expect(result.results[0].verified).toBe(true)
-        expect(result.results[0].error).toBeUndefined()
+        expect(result).toEqual({
+          isValid: true,
+          error: undefined,
+          validations: {
+            vcJs: {
+              isValid: true,
+              results: expect.any(Array),
+            },
+          },
+        })
       })
 
       it('should fail because of invalid signature', async () => {
@@ -165,13 +168,17 @@ describe('W3cCredentialsService', () => {
         )
         const result = await w3cJsonLdCredentialService.verifyCredential(agentContext, { credential: vc })
 
-        expect(result.verified).toBe(false)
-        expect(result.error).toBeDefined()
-
-        // @ts-ignore
-        expect(result.error.errors[0]).toBeInstanceOf(Error)
-        // @ts-ignore
-        expect(result.error.errors[0].message).toBe('Invalid signature.')
+        expect(result).toEqual({
+          isValid: false,
+          error: expect.any(Error),
+          validations: {
+            vcJs: {
+              error: expect.any(Error),
+              isValid: false,
+              results: expect.any(Array),
+            },
+          },
+        })
       })
 
       it('should fail because of an unsigned statement', async () => {
@@ -186,12 +193,17 @@ describe('W3cCredentialsService', () => {
         const vc = JsonTransformer.fromJSON(vcJson, W3cJsonLdVerifiableCredential)
         const result = await w3cJsonLdCredentialService.verifyCredential(agentContext, { credential: vc })
 
-        expect(result.verified).toBe(false)
-
-        // @ts-ignore
-        expect(result.error.errors[0]).toBeInstanceOf(Error)
-        // @ts-ignore
-        expect(result.error.errors[0].message).toBe('Invalid signature.')
+        expect(result).toEqual({
+          isValid: false,
+          error: expect.any(Error),
+          validations: {
+            vcJs: {
+              error: expect.any(Error),
+              isValid: false,
+              results: expect.any(Array),
+            },
+          },
+        })
       })
 
       it('should fail because of a changed statement', async () => {
@@ -209,12 +221,17 @@ describe('W3cCredentialsService', () => {
         const vc = JsonTransformer.fromJSON(vcJson, W3cJsonLdVerifiableCredential)
         const result = await w3cJsonLdCredentialService.verifyCredential(agentContext, { credential: vc })
 
-        expect(result.verified).toBe(false)
-
-        // @ts-ignore
-        expect(result.error.errors[0]).toBeInstanceOf(Error)
-        // @ts-ignore
-        expect(result.error.errors[0].message).toBe('Invalid signature.')
+        expect(result).toEqual({
+          isValid: false,
+          error: expect.any(Error),
+          validations: {
+            vcJs: {
+              error: expect.any(Error),
+              isValid: false,
+              results: expect.any(Array),
+            },
+          },
+        })
       })
     })
 
@@ -242,6 +259,7 @@ describe('W3cCredentialsService', () => {
         expect(verifiablePresentation).toBeInstanceOf(W3cJsonLdVerifiablePresentation)
       })
     })
+
     describe('verifyPresentation', () => {
       it('should successfully verify a presentation containing a single verifiable credential', async () => {
         const vp = JsonTransformer.fromJSON(
@@ -254,7 +272,48 @@ describe('W3cCredentialsService', () => {
           challenge: '7bf32d0b-39d4-41f3-96b6-45de52988e4c',
         })
 
-        expect(result.verified).toBe(true)
+        expect(result).toEqual({
+          isValid: true,
+          error: undefined,
+          validations: {
+            vcJs: {
+              isValid: true,
+              presentationResult: expect.any(Object),
+              credentialResults: expect.any(Array),
+            },
+          },
+        })
+      })
+
+      it('should fail when presentation signature is not valid', async () => {
+        const vp = JsonTransformer.fromJSON(
+          {
+            ...Ed25519Signature2018Fixtures.TEST_VP_DOCUMENT_SIGNED,
+            proof: {
+              ...Ed25519Signature2018Fixtures.TEST_VP_DOCUMENT_SIGNED.proof,
+              jws: Ed25519Signature2018Fixtures.TEST_VP_DOCUMENT_SIGNED.proof.jws + 'a',
+            },
+          },
+          W3cJsonLdVerifiablePresentation
+        )
+
+        const result = await w3cJsonLdCredentialService.verifyPresentation(agentContext, {
+          presentation: vp,
+          challenge: '7bf32d0b-39d4-41f3-96b6-45de52988e4c',
+        })
+
+        expect(result).toEqual({
+          isValid: false,
+          error: expect.any(Error),
+          validations: {
+            vcJs: {
+              isValid: false,
+              credentialResults: expect.any(Array),
+              presentationResult: expect.any(Object),
+              error: expect.any(Error),
+            },
+          },
+        })
       })
     })
   })

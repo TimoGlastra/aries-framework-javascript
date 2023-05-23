@@ -533,7 +533,7 @@ export class DidExchangeProtocol {
         ...jws,
         payload: base64UrlPayload,
       },
-      keyResolver: ({ header }) => {
+      jwkResolver: ({ jws: { header } }) => {
         if (typeof header.kid !== 'string' || !isDid(header.kid, 'key')) {
           throw new AriesFrameworkError('JWS header kid must be a did:key DID.')
         }

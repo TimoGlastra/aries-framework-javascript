@@ -1,4 +1,5 @@
 import type { LinkedDataProofOptions } from './LinkedDataProof'
+import type { ClaimFormat } from '../../W3cCredentialServiceOptions'
 import type { W3cCredentialOptions } from '../../models/credential/W3cCredential'
 
 import { ValidateNested } from 'class-validator'
@@ -30,5 +31,12 @@ export class W3cJsonLdVerifiableCredential extends W3cCredential {
   public get proofTypes(): Array<string> {
     const proofArray = asArray<LinkedDataProof>(this.proof)
     return proofArray?.map((x) => x.type) ?? []
+  }
+
+  /**
+   * The {@link ClaimFormat} of the credential. For JSON-LD credentials this is always `ldp_vc`.
+   */
+  public get claimFormat(): Extract<ClaimFormat, 'ldp_vc'> {
+    return 'ldp_vc'
   }
 }

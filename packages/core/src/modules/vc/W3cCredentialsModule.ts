@@ -5,7 +5,7 @@ import { KeyType } from '../../crypto'
 import {
   VERIFICATION_METHOD_TYPE_ED25519_VERIFICATION_KEY_2018,
   VERIFICATION_METHOD_TYPE_ED25519_VERIFICATION_KEY_2020,
-} from '../dids/domain/key-type/ed25519'
+} from '../dids'
 
 import { W3cCredentialService } from './W3cCredentialService'
 import { W3cCredentialsApi } from './W3cCredentialsApi'

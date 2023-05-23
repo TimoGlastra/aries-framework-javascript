@@ -2,13 +2,13 @@ import { IsString } from 'class-validator'
 
 import { IsUri } from '../../../../utils/validators'
 
-export interface CredentialSchemaOptions {
+export interface W3cCredentialStatusOptions {
   id: string
   type: string
 }
 
-export class CredentialSchema {
-  public constructor(options: CredentialSchemaOptions) {
+export class W3cCredentialStatus {
+  public constructor(options: W3cCredentialStatusOptions) {
     if (options) {
       this.id = options.id
       this.type = options.type

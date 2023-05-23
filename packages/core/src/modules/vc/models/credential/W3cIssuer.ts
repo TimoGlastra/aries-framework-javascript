@@ -10,12 +10,12 @@ import { IsUri, isUri } from '../../../../utils/validators'
  * @see https://www.w3.org/TR/vc-data-model/#credential-subject
  */
 
-export interface IssuerOptions {
+export interface W3cIssuerOptions {
   id: string
 }
 
-export class Issuer {
-  public constructor(options: IssuerOptions) {
+export class W3cIssuer {
+  public constructor(options: W3cIssuerOptions) {
     if (options) {
       this.id = options.id
     }
@@ -27,11 +27,11 @@ export class Issuer {
 
 // Custom transformers
 
-export function IssuerTransformer() {
-  return Transform(({ value, type }: { value: string | IssuerOptions; type: TransformationType }) => {
+export function W3cIssuerTransformer() {
+  return Transform(({ value, type }: { value: string | W3cIssuerOptions; type: TransformationType }) => {
     if (type === TransformationType.PLAIN_TO_CLASS) {
       if (isString(value)) return value
-      return plainToInstance(Issuer, value)
+      return plainToInstance(W3cIssuer, value)
     } else if (type === TransformationType.CLASS_TO_PLAIN) {
       if (isString(value)) return value
       return instanceToPlain(value)
@@ -43,16 +43,16 @@ export function IssuerTransformer() {
 
 // Custom validators
 
-export function IsIssuer(validationOptions?: ValidationOptions): PropertyDecorator {
+export function IsW3cIssuer(validationOptions?: ValidationOptions): PropertyDecorator {
   return ValidateBy(
     {
-      name: 'IsIssuer',
+      name: 'IsW3cIssuer',
       validator: {
         validate: (value): boolean => {
           if (typeof value === 'string') {
             return isUri(value)
           }
-          if (isInstance(value, Issuer)) {
+          if (isInstance(value, W3cIssuer)) {
             return isUri(value.id)
           }
           return false

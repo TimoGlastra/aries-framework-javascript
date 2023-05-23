@@ -18,12 +18,15 @@ export function getJwtPayloadFromCredential(credential: W3cCredential) {
     },
   }
 
+  // Extract `nbf` and remove issuance date from vc
   const issuanceDate = Date.parse(credential.issuanceDate)
-  if (!isNaN(issuanceDate)) {
-    payloadOptions.nbf = Math.floor(issuanceDate / 1000)
-    delete vc.issuanceDate
+  if (isNaN(issuanceDate)) {
+    throw new AriesFrameworkError('JWT VCs must have a valid issuance date')
   }
+  payloadOptions.nbf = Math.floor(issuanceDate / 1000)
+  delete vc.issuanceDate
 
+  // Extract `exp` and remove expiration date from vc
   if (credential.expirationDate) {
     const expirationDate = Date.parse(credential.expirationDate)
     if (!isNaN(expirationDate)) {
@@ -32,6 +35,7 @@ export function getJwtPayloadFromCredential(credential: W3cCredential) {
     }
   }
 
+  // Extract `iss` and remove issuer id from vc
   payloadOptions.iss = credential.issuerId
   if (typeof vc.issuer === 'string') {
     delete vc.issuer
@@ -42,6 +46,7 @@ export function getJwtPayloadFromCredential(credential: W3cCredential) {
     }
   }
 
+  // Extract `jti` and remove id from vc
   if (credential.id) {
     payloadOptions.jti = credential.id
     delete vc.id
@@ -51,6 +56,7 @@ export function getJwtPayloadFromCredential(credential: W3cCredential) {
     throw new AriesFrameworkError('JWT VCs must have exactly one credential subject')
   }
 
+  // Extract `sub` and remove credential subject id from vc
   const [credentialSubjectId] = credential.credentialSubjectIds
   if (credentialSubjectId) {
     payloadOptions.sub = credentialSubjectId
@@ -90,7 +96,7 @@ export function getCredentialFromJwtPayload(jwtPayload: JwtPayload) {
   if (!isJsonObject(credentialSubject)) {
     throw new AriesFrameworkError('JWT VC does not have a valid credential subject')
   }
-  const subjectWithId = { ...credentialSubject, id: jwtPayload.sub }
+  const subjectWithId = jwtPayload.sub ? { ...credentialSubject, id: jwtPayload.sub } : credentialSubject
 
   // Validate vc.id and jti
   if (jwtVc.id && jwtPayload.jti !== jwtVc.id) {
@@ -106,15 +112,27 @@ export function getCredentialFromJwtPayload(jwtPayload: JwtPayload) {
   }
 
   // Validate vc.issuanceDate and nbf
-  const issuanceDate = w3cDate(jwtPayload.nbf * 1000)
-  if (jwtVc.issuanceDate && issuanceDate !== jwtVc.issuanceDate) {
-    throw new AriesFrameworkError('JWT nbf and vc.issuanceDate do not match')
+  if (jwtVc.issuanceDate) {
+    if (typeof jwtVc.issuanceDate !== 'string') {
+      throw new AriesFrameworkError('JWT vc.issuanceDate must be a string')
+    }
+
+    const issuanceDate = Date.parse(jwtVc.issuanceDate) / 1000
+    if (jwtPayload.nbf !== issuanceDate) {
+      throw new AriesFrameworkError('JWT nbf and vc.issuanceDate do not match')
+    }
   }
 
   // Validate vc.expirationDate and exp
-  const expirationDate = jwtPayload.exp ? w3cDate(jwtPayload.exp * 1000) : undefined
-  if (jwtVc.expirationDate && (!expirationDate || expirationDate !== jwtVc.expirationDate)) {
-    throw new AriesFrameworkError('JWT exp and vc.expirationDate do not match')
+  if (jwtVc.expirationDate) {
+    if (typeof jwtVc.expirationDate !== 'string') {
+      throw new AriesFrameworkError('JWT vc.expirationDate must be a string')
+    }
+
+    const expirationDate = Date.parse(jwtVc.expirationDate) / 1000
+    if (expirationDate !== jwtPayload.exp) {
+      throw new AriesFrameworkError('JWT exp and vc.expirationDate do not match')
+    }
   }
 
   // Validate vc.credentialSubject.id and sub
@@ -131,11 +149,10 @@ export function getCredentialFromJwtPayload(jwtPayload: JwtPayload) {
   }
 
   // Create a verifiable credential structure that is compatible with the VC data model
-
   const dataModelVc = {
     ...jwtVc,
-    issuanceDate,
-    expirationDate,
+    issuanceDate: w3cDate(jwtPayload.nbf * 1000),
+    expirationDate: jwtPayload.exp ? w3cDate(jwtPayload.exp * 1000) : undefined,
     issuer: typeof jwtVc.issuer === 'object' ? { ...jwtVc.issuer, id: jwtPayload.iss } : jwtPayload.iss,
     id: jwtPayload.jti,
     credentialSubject: Array.isArray(jwtVc.credentialSubject) ? [subjectWithId] : subjectWithId,

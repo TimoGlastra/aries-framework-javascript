@@ -8,8 +8,7 @@ import type {
   W3cJsonLdVerifyCredentialOptions,
   W3cJsonLdVerifyPresentationOptions,
 } from '../W3cCredentialServiceOptions'
-import type { W3cVerifyCredentialResult } from '../models'
-import type { W3cVerifyPresentationResult } from '../models/presentation/VerifyPresentationResult'
+import type { W3cVerifyCredentialResult, W3cVerifyPresentationResult } from '../models'
 
 import { createWalletKeyPairClass } from '../../../crypto/WalletKeyPair'
 import { AriesFrameworkError } from '../../../error'
@@ -100,34 +99,56 @@ export class W3cJsonLdCredentialService {
     agentContext: AgentContext,
     options: W3cJsonLdVerifyCredentialOptions
   ): Promise<W3cVerifyCredentialResult> {
-    const verifyCredentialStatus = options.verifyCredentialStatus ?? true
+    try {
+      const verifyCredentialStatus = options.verifyCredentialStatus ?? true
 
-    const suites = this.getSignatureSuitesForCredential(agentContext, options.credential)
+      const suites = this.getSignatureSuitesForCredential(agentContext, options.credential)
 
-    const verifyOptions: Record<string, unknown> = {
-      credential: JsonTransformer.toJSON(options.credential),
-      suite: suites,
-      documentLoader: this.w3cCredentialsModuleConfig.documentLoader(agentContext),
-      checkStatus: () => {
-        if (verifyCredentialStatus) {
-          throw new AriesFrameworkError(
-            'Verifying credential status for JSON-LD credentials is currently not supported'
-          )
-        }
-        return {
-          verified: true,
-        }
-      },
+      const verifyOptions: Record<string, unknown> = {
+        credential: JsonTransformer.toJSON(options.credential),
+        suite: suites,
+        documentLoader: this.w3cCredentialsModuleConfig.documentLoader(agentContext),
+        checkStatus: () => {
+          if (verifyCredentialStatus) {
+            throw new AriesFrameworkError(
+              'Verifying credential status for JSON-LD credentials is currently not supported'
+            )
+          }
+          return {
+            verified: true,
+          }
+        },
+      }
+
+      // this is a hack because vcjs throws if purpose is passed as undefined or null
+      if (options.proofPurpose) {
+        verifyOptions['purpose'] = options.proofPurpose
+      }
+
+      const result = await vc.verifyCredential(verifyOptions)
+
+      const { verified: isValid, ...remainingResult } = result
+
+      // We map the result to our own result type to make it easier to work with
+      // however, for now we just add a single vcJs validation result as we don't
+      // have access to the internal validation results of vc-js
+      return {
+        isValid,
+        validations: {
+          vcJs: {
+            isValid,
+            ...remainingResult,
+          },
+        },
+        error: result.error,
+      }
+    } catch (error) {
+      return {
+        isValid: false,
+        validations: {},
+        error,
+      }
     }
-
-    // this is a hack because vcjs throws if purpose is passed as undefined or null
-    if (options.proofPurpose) {
-      verifyOptions['purpose'] = options.proofPurpose
-    }
-
-    const result = await vc.verifyCredential(verifyOptions)
-
-    return result as unknown as W3cVerifyCredentialResult
   }
 
   /**
@@ -199,54 +220,76 @@ export class W3cJsonLdCredentialService {
     agentContext: AgentContext,
     options: W3cJsonLdVerifyPresentationOptions
   ): Promise<W3cVerifyPresentationResult> {
-    // create keyPair
-    const WalletKeyPair = createWalletKeyPairClass(agentContext.wallet)
+    try {
+      // create keyPair
+      const WalletKeyPair = createWalletKeyPairClass(agentContext.wallet)
 
-    let proofs = options.presentation.proof
+      let proofs = options.presentation.proof
 
-    if (!Array.isArray(proofs)) {
-      proofs = [proofs]
-    }
-    if (options.purpose) {
-      proofs = proofs.filter((proof) => proof.proofPurpose === options.purpose.term)
-    }
+      if (!Array.isArray(proofs)) {
+        proofs = [proofs]
+      }
+      if (options.purpose) {
+        proofs = proofs.filter((proof) => proof.proofPurpose === options.purpose.term)
+      }
 
-    const presentationSuites = proofs.map((proof) => {
-      const SuiteClass = this.signatureSuiteRegistry.getByProofType(proof.type).suiteClass
-      return new SuiteClass({
-        LDKeyClass: WalletKeyPair,
-        proof: {
-          verificationMethod: proof.verificationMethod,
-        },
-        date: proof.created,
-        useNativeCanonize: false,
+      const presentationSuites = proofs.map((proof) => {
+        const SuiteClass = this.signatureSuiteRegistry.getByProofType(proof.type).suiteClass
+        return new SuiteClass({
+          LDKeyClass: WalletKeyPair,
+          proof: {
+            verificationMethod: proof.verificationMethod,
+          },
+          date: proof.created,
+          useNativeCanonize: false,
+        })
       })
-    })
 
-    const credentials = asArray(options.presentation.verifiableCredential)
-    assertOnlyW3cJsonLdVerifiableCredentials(credentials)
+      const credentials = asArray(options.presentation.verifiableCredential)
+      assertOnlyW3cJsonLdVerifiableCredentials(credentials)
 
-    const credentialSuites = credentials.map((credential) =>
-      this.getSignatureSuitesForCredential(agentContext, credential)
-    )
-    const allSuites = presentationSuites.concat(...credentialSuites)
+      const credentialSuites = credentials.map((credential) =>
+        this.getSignatureSuitesForCredential(agentContext, credential)
+      )
+      const allSuites = presentationSuites.concat(...credentialSuites)
 
-    const verifyOptions: Record<string, unknown> = {
-      presentation: JsonTransformer.toJSON(options.presentation),
-      suite: allSuites,
-      challenge: options.challenge,
-      domain: options.domain,
-      documentLoader: this.w3cCredentialsModuleConfig.documentLoader(agentContext),
+      const verifyOptions: Record<string, unknown> = {
+        presentation: JsonTransformer.toJSON(options.presentation),
+        suite: allSuites,
+        challenge: options.challenge,
+        domain: options.domain,
+        documentLoader: this.w3cCredentialsModuleConfig.documentLoader(agentContext),
+      }
+
+      // this is a hack because vcjs throws if purpose is passed as undefined or null
+      if (options.purpose) {
+        verifyOptions['presentationPurpose'] = options.purpose
+      }
+
+      const result = await vc.verify(verifyOptions)
+
+      const { verified: isValid, ...remainingResult } = result
+
+      // We map the result to our own result type to make it easier to work with
+      // however, for now we just add a single vcJs validation result as we don't
+      // have access to the internal validation results of vc-js
+      return {
+        isValid,
+        validations: {
+          vcJs: {
+            isValid,
+            ...remainingResult,
+          },
+        },
+        error: result.error,
+      }
+    } catch (error) {
+      return {
+        isValid: false,
+        validations: {},
+        error,
+      }
     }
-
-    // this is a hack because vcjs throws if purpose is passed as undefined or null
-    if (options.purpose) {
-      verifyOptions['presentationPurpose'] = options.purpose
-    }
-
-    const result = await vc.verify(verifyOptions)
-
-    return result as unknown as W3cVerifyPresentationResult
   }
 
   public async deriveProof(

@@ -74,4 +74,8 @@ export class W3cJwtVerifiablePresentation {
   public get verifiableCredential() {
     return this.presentation.verifiableCredential
   }
+
+  public get holderId() {
+    return this.presentation.holderId
+  }
 }

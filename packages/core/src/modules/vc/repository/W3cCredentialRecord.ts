@@ -2,8 +2,6 @@ import type { TagsBase } from '../../../storage/BaseRecord'
 
 import { BaseRecord } from '../../../storage/BaseRecord'
 import { uuid } from '../../../utils/uuid'
-import { W3cJsonLdVerifiableCredential } from '../data-integrity/models/W3cJsonLdVerifiableCredential'
-import { W3cJwtVerifiableCredential } from '../jwt-vc'
 import { W3cVerifiableCredential, W3cVerifiableCredentialTransformer } from '../models'
 
 export interface W3cCredentialRecordOptions {
@@ -26,6 +24,9 @@ export type DefaultW3cCredentialTags = {
   schemaIds: Array<string>
   contexts: Array<string>
   givenId?: string
+
+  // Can be any of the values for claimFormat
+  claimFormat: W3cVerifiableCredential['claimFormat']
 
   proofTypes?: Array<string>
   algs?: Array<string>
@@ -60,14 +61,16 @@ export class W3cCredentialRecord extends BaseRecord<DefaultW3cCredentialTags, Cu
       schemaIds: this.credential.credentialSchemaIds,
       contexts: stringContexts,
       givenId: this.credential.id,
+      claimFormat: this.credential.claimFormat,
     }
 
-    // Proof types is used for JSON-LD credentials
-    if (this.credential instanceof W3cJsonLdVerifiableCredential) {
+    // Proof types is used for ldp_vc credentials
+    if (this.credential.claimFormat === 'ldp_vc') {
       tags.proofTypes = this.credential.proofTypes
     }
-    // Algs is used for JWT credentials
-    else if (this.credential instanceof W3cJwtVerifiableCredential) {
+
+    // Algs is used for jwt_vc credentials
+    else if (this.credential.claimFormat === 'jwt_vc') {
       tags.algs = [this.credential.jwt.header.alg]
     }
 

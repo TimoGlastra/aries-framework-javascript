@@ -1,3 +1,4 @@
+import type { ClaimFormat } from '../W3cCredentialServiceOptions'
 import type { W3cCredential } from '../models/credential/W3cCredential'
 
 import { Jwt } from '../../../crypto/jose/jwt/Jwt'
@@ -82,6 +83,10 @@ export class W3cJwtVerifiableCredential {
     return this.credential.credentialSchema
   }
 
+  public get credentialStatus() {
+    return this.credential.credentialStatus
+  }
+
   public get issuerId() {
     return this.credential.issuerId
   }
@@ -96,5 +101,12 @@ export class W3cJwtVerifiableCredential {
 
   public get contexts() {
     return this.credential.contexts
+  }
+
+  /**
+   * The {@link ClaimFormat} of the credential. For JWT credentials this is always `jwt_vc`.
+   */
+  public get claimFormat(): Extract<ClaimFormat, 'jwt_vc'> {
+    return 'jwt_vc'
   }
 }

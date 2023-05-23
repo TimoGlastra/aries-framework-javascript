@@ -1,3 +1,4 @@
+import type { W3cHolderOptions } from './W3cHolder'
 import type { JsonObject } from '../../../../types'
 import type { W3cVerifiableCredential } from '../credential/W3cVerifiableCredential'
 import type { ValidationOptions } from 'class-validator'
@@ -13,12 +14,14 @@ import { W3cJwtVerifiableCredential } from '../../jwt-vc/W3cJwtVerifiableCredent
 import { IsCredentialJsonLdContext } from '../../validators'
 import { W3cVerifiableCredentialTransformer } from '../credential/W3cVerifiableCredential'
 
+import { IsW3cHolder, W3cHolder, W3cHolderTransformer } from './W3cHolder'
+
 export interface W3cPresentationOptions {
   id?: string
   context: Array<string | JsonObject>
   verifiableCredential: SingleOrArray<W3cVerifiableCredential>
   type: Array<string>
-  holder?: string
+  holder?: string | W3cHolderOptions
 }
 
 export class W3cPresentation {
@@ -28,7 +31,10 @@ export class W3cPresentation {
       this.context = options.context
       this.type = options.type
       this.verifiableCredential = options.verifiableCredential
-      this.holder = options.holder
+
+      if (options.holder) {
+        this.holder = typeof options.holder === 'string' ? options.holder : new W3cHolder(options.holder)
+      }
     }
   }
 
@@ -43,15 +49,21 @@ export class W3cPresentation {
   @IsVerifiablePresentationType()
   public type!: Array<string>
 
+  @W3cHolderTransformer()
+  @IsW3cHolder()
   @IsOptional()
-  @IsUri()
-  public holder?: string
+  public holder?: string | W3cHolder
 
-  // TODO: VC-DATA-MODEL supports VPs without credentials
   @W3cVerifiableCredentialTransformer()
   @IsInstanceOrArrayOfInstances({ classType: [W3cJsonLdVerifiableCredential, W3cJwtVerifiableCredential] })
   @ValidateNested({ each: true })
   public verifiableCredential!: SingleOrArray<W3cVerifiableCredential>
+
+  public get holderId(): string | null {
+    if (!this.holder) return null
+
+    return this.holder instanceof W3cHolder ? this.holder.id : this.holder
+  }
 }
 
 // Custom validators

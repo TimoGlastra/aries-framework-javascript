@@ -1,10 +1,4 @@
-import type {
-  Jws,
-  JwsDetachedFormat,
-  JwsGeneralFormat,
-  JwsProtectedHeader,
-  JwsProtectedHeaderOptions,
-} from './JwsTypes'
+import type { Jws, JwsDetachedFormat, JwsGeneralFormat, JwsProtectedHeaderOptions } from './JwsTypes'
 import type { Key } from './Key'
 import type { Jwk } from './jose/jwk'
 import type { JwkJson } from './jose/jwk/Jwk'
@@ -97,8 +91,8 @@ export class JwsService {
   /**
    * Verify a JWS
    */
-  public async verifyJws(agentContext: AgentContext, { jws, kidResolver }: VerifyJwsOptions): Promise<VerifyJwsResult> {
-    const signatures: JwsDetachedFormat[] = []
+  public async verifyJws(agentContext: AgentContext, { jws, jwkResolver }: VerifyJwsOptions): Promise<VerifyJwsResult> {
+    let signatures: JwsDetachedFormat[] = []
     let payload: string
 
     if (typeof jws === 'string') {
@@ -113,7 +107,7 @@ export class JwsService {
         signature,
       })
     } else if ('signatures' in jws) {
-      signatures.concat(jws.signatures)
+      signatures = jws.signatures
       payload = jws.payload
     } else {
       signatures.push(jws)
@@ -136,12 +130,14 @@ export class JwsService {
         throw new AriesFrameworkError('Unable to verify JWS, protected header alg is not a string.')
       }
 
-      const jwk = await this.jwkFromProtectedHeader({
+      const jwk = await this.jwkFromJws({
+        jws,
+        payload,
         protectedHeader: {
           ...protectedJson,
           alg: protectedJson.alg,
         },
-        kidResolver,
+        jwkResolver,
       })
       if (!jwk.supportsSignatureAlgorithm(protectedJson.alg)) {
         throw new AriesFrameworkError(
@@ -197,11 +193,13 @@ export class JwsService {
     }
   }
 
-  private async jwkFromProtectedHeader(options: {
-    protectedHeader: { alg: string; jwk?: unknown; kid?: unknown }
-    kidResolver?: JwsKidResolver
+  private async jwkFromJws(options: {
+    jws: JwsDetachedFormat
+    protectedHeader: { alg: string; [key: string]: unknown }
+    payload: string
+    jwkResolver?: JwsJwkResolver
   }): Promise<Jwk> {
-    const { protectedHeader, kidResolver } = options
+    const { protectedHeader, jwkResolver, jws, payload } = options
 
     if (protectedHeader.jwk && protectedHeader.kid) {
       throw new AriesFrameworkError(
@@ -215,15 +213,25 @@ export class JwsService {
       return getJwkFromJson(protectedHeader.jwk as JwkJson)
     }
 
-    // Kid
-    if (protectedHeader.kid) {
-      if (typeof protectedHeader.kid !== 'string') throw new AriesFrameworkError('kid is not a string.')
-      if (!kidResolver) throw new AriesFrameworkError('kidResolver is required to resolve kid to a JWK.')
-
-      return kidResolver(protectedHeader.kid)
+    if (!jwkResolver) {
+      throw new AriesFrameworkError(
+        `jwkResolver is required when the JWS protected header does not contain a 'jwk' property.`
+      )
     }
 
-    throw new AriesFrameworkError('Both JWK and kid are undefined. Protected header must contain one of the two.')
+    try {
+      const jwk = await jwkResolver({
+        jws,
+        protectedHeader,
+        payload,
+      })
+
+      return jwk
+    } catch (error) {
+      throw new AriesFrameworkError(`Error when resolving JWK for JWS in jwkResolver. ${error.message}`, {
+        cause: error,
+      })
+    }
   }
 }
 
@@ -241,26 +249,25 @@ export interface VerifyJwsOptions {
   jws: Jws
 
   /*
-   * Method that should return the public key (`Key` instance) that was used
+   * Method that should return the JWK public key that was used
    * to sign the JWS.
    *
    * This method is called by the JWS Service when it could not determine the public key.
    *
    * Currently the JWS Service can only determine the public key if the JWS protected header
    * contains a `jwk` property. In all other cases, it's up to the caller to resolve the public
-   * key based on hte JWS.
+   * key based on the JWS.
    *
    * A common use case is the `kid` property in the JWS protected header. Or determining the key
    * base on the `iss` property in the JWT payload.
    */
-  keyResolver?: JwsPublicKeyResolver
+  jwkResolver?: JwsJwkResolver
 }
 
-export type JwsPublicKeyResolver = (jws: {
-  protectedHeader: JwsProtectedHeader
+export type JwsJwkResolver = (options: {
+  jws: JwsDetachedFormat
   payload: string
-  signature: string
-  header: Record<string, unknown>
+  protectedHeader: { alg: string; [key: string]: unknown }
 }) => Promise<Jwk> | Jwk
 
 export interface VerifyJwsResult {
