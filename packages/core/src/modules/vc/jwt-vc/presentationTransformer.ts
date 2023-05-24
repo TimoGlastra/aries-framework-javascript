@@ -51,8 +51,11 @@ export function getPresentationFromJwtPayload(jwtPayload: JwtPayload) {
   }
 
   // Validate vp.holder and iss
-  if (jwtVp.holderId && jwtPayload.iss !== jwtVp.holderId) {
-    throw new AriesFrameworkError('JWT iss and vp.holder do not match')
+  if (
+    (typeof jwtVp.holder === 'string' && jwtPayload.iss !== jwtVp.holder) ||
+    (isJsonObject(jwtVp.holder) && jwtVp.holder.id && jwtPayload.iss !== jwtVp.holder.id)
+  ) {
+    throw new AriesFrameworkError('JWT iss and vp.holder(.id) do not match')
   }
 
   const dataModelVp = {

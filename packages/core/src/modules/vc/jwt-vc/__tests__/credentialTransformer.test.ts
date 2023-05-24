@@ -244,7 +244,7 @@ describe('credentialTransformer', () => {
     test(`throw validation error if vc is not a valid w3c vc`, () => {
       const vc: Record<string, unknown> = {
         '@context': ['https://www.w3.org/2018/credentials/v1'],
-        type: ['VerifiableCredential'],
+        type: ['VerifiableCredential2'],
         credentialSubject: {},
       }
 
@@ -259,7 +259,9 @@ describe('credentialTransformer', () => {
         },
       })
 
-      expect(() => getCredentialFromJwtPayload(jwtPayload)).not.toThrowError()
+      expect(() => getCredentialFromJwtPayload(jwtPayload)).toThrowError(
+        'property type has failed the following constraints: type must be an array of strings which includes "VerifiableCredential"'
+      )
     })
   })
 })

@@ -114,7 +114,7 @@ describe('W3cPresentation', () => {
 
     expect(() =>
       JsonTransformer.fromJSON({ ...validPresentation, verifiableCredential: [{ random: 'prop' }] }, W3cPresentation)
-    ).toThrowError(/W3cJsonLdVerifiableCredential has failed the validation/)
+    ).toThrowError(/property verifiableCredential\[0\]\./)
 
     expect(() =>
       JsonTransformer.fromJSON({ ...validPresentation, verifiableCredential: ['ey.incorrect.jwt'] }, W3cPresentation)
@@ -134,7 +134,7 @@ describe('W3cPresentation', () => {
         W3cPresentation
       )
     ).toThrowError(
-      /property proof.verificationMethod has failed the following constraints: verificationMethod must be a string/
+      /property verifiableCredential\[0\]\.proof\.verificationMethod has failed the following constraints: verificationMethod must be a string/
     )
   })
 

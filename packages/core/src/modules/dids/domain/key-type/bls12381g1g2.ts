@@ -14,12 +14,12 @@ export function getBls12381g1g2VerificationMethod(did: string, key: Key) {
 
   const bls12381g1VerificationMethod = getBls12381G1Key2020({
     id: `${did}#${bls12381g1Key.fingerprint}`,
-    key,
+    key: bls12381g1Key,
     controller: did,
   })
   const bls12381g2VerificationMethod = getBls12381G2Key2020({
     id: `${did}#${bls12381g2Key.fingerprint}`,
-    key,
+    key: bls12381g2Key,
     controller: did,
   })
 

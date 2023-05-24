@@ -72,15 +72,16 @@ describe('W3cCredentialsService', () => {
         Ed25519Signature2018Fixtures.TEST_LD_DOCUMENT_SIGNED,
         W3cJsonLdVerifiableCredential
       )
-      const result = await w3cCredentialService.createPresentation({ credentials: vc })
+      const result = await w3cCredentialService.createPresentation({ credentials: [vc] })
 
       expect(result).toBeInstanceOf(W3cPresentation)
 
       expect(result.type).toEqual(expect.arrayContaining(['VerifiablePresentation']))
 
       expect(result.verifiableCredential).toHaveLength(1)
-      expect(result.verifiableCredential).toEqual(expect.arrayContaining([vc]))
+      expect(result.verifiableCredential).toEqual([vc])
     })
+
     it('should successfully create a presentation from two verifiable credential', async () => {
       const vc1 = JsonTransformer.fromJSON(
         Ed25519Signature2018Fixtures.TEST_LD_DOCUMENT_SIGNED,
@@ -105,7 +106,7 @@ describe('W3cCredentialsService', () => {
 
   describe('Credential Storage', () => {
     let w3cCredentialRecord: W3cCredentialRecord
-    let w3cCredentialRepositoryDeleteMock: jest.MockedFunction<(typeof w3cCredentialsRepository)['delete']>
+    let w3cCredentialRepositoryDeleteMock: jest.MockedFunction<(typeof w3cCredentialsRepository)['deleteById']>
 
     beforeEach(async () => {
       const credential = JsonTransformer.fromJSON(
@@ -117,7 +118,7 @@ describe('W3cCredentialsService', () => {
 
       mockFunction(w3cCredentialsRepository.getById).mockResolvedValue(w3cCredentialRecord)
       mockFunction(w3cCredentialsRepository.getAll).mockResolvedValue([w3cCredentialRecord])
-      w3cCredentialRepositoryDeleteMock = mockFunction(w3cCredentialsRepository.delete).mockResolvedValue()
+      w3cCredentialRepositoryDeleteMock = mockFunction(w3cCredentialsRepository.deleteById).mockResolvedValue()
     })
     describe('storeCredential', () => {
       it('should store a credential and expand the tags correctly', async () => {
@@ -146,15 +147,9 @@ describe('W3cCredentialsService', () => {
 
     describe('removeCredentialRecord', () => {
       it('should remove a credential', async () => {
-        const credential = JsonTransformer.fromJSON(
-          Ed25519Signature2018Fixtures.TEST_LD_DOCUMENT_SIGNED,
-          W3cJsonLdVerifiableCredential
-        )
+        await w3cCredentialService.removeCredentialRecord(agentContext, 'some-id')
 
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        await w3cCredentialService.removeCredentialRecord(agentContext, credential.id!)
-
-        expect(w3cCredentialRepositoryDeleteMock).toBeCalledWith(agentContext, w3cCredentialRecord)
+        expect(w3cCredentialRepositoryDeleteMock).toBeCalledWith(agentContext, 'some-id')
       })
     })
 

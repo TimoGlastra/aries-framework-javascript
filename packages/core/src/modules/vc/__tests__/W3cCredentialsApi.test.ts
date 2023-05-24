@@ -76,7 +76,7 @@ describe('W3cCredentialsApi', () => {
   })
 
   it('Should successfully remove a credential by id', async () => {
-    const repoSpy = jest.spyOn(w3cCredentialRepository, 'delete')
+    const repoSpy = jest.spyOn(w3cCredentialRepository, 'deleteById')
     const serviceSpy = jest.spyOn(w3cCredentialService, 'removeCredentialRecord')
 
     const storedCredential = await agent.w3cCredentials.storeCredential({

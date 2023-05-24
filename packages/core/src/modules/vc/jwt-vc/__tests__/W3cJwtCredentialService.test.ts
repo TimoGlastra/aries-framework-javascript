@@ -137,7 +137,6 @@ describeRunInNodeVersion([18], 'W3cJwtCredentialService', () => {
     test('verifies an ES256 JWT vc signed by AFJ', async () => {
       const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
         credential: AfjEs256DidJwkJwtVc,
-        verifyCredentialStatus: false,
       })
 
       expect(result).toEqual({
@@ -167,7 +166,6 @@ describeRunInNodeVersion([18], 'W3cJwtCredentialService', () => {
     test('verifies an EdDSA JWT vc from the transmute vc.js library', async () => {
       const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
         credential: didKeyTransmuteJwtVc,
-        verifyCredentialStatus: false,
       })
 
       expect(result).toEqual({
@@ -247,7 +245,6 @@ describeRunInNodeVersion([18], 'W3cJwtCredentialService', () => {
 
       const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
         credential: jwtVc,
-        verifyCredentialStatus: false,
       })
 
       expect(result).toEqual({
@@ -306,7 +303,6 @@ describeRunInNodeVersion([18], 'W3cJwtCredentialService', () => {
         presentation: AfjEs256DidKeyJwtVp,
         challenge: 'daf942ad-816f-45ee-a9fc-facd08e5abca',
         domain: 'example.com',
-        verifyCredentialStatus: false,
       })
 
       expect(result).toEqual({
@@ -356,7 +352,6 @@ describeRunInNodeVersion([18], 'W3cJwtCredentialService', () => {
         presentation: didKeyTransmuteJwtVp,
         challenge: '123',
         domain: 'example.com',
-        verifyCredentialStatus: false,
       })
 
       expect(result).toEqual({

@@ -19,6 +19,7 @@ describe('W3cCredentialRecord', () => {
       })
 
       expect(w3cCredentialRecord.getTags()).toEqual({
+        claimFormat: 'ldp_vc',
         issuerId: credential.issuerId,
         subjectIds: credential.credentialSubjectIds,
         schemaIds: credential.credentialSchemaIds,

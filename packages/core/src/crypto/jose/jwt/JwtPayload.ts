@@ -122,21 +122,22 @@ export class JwtPayload {
    *  - if `exp` is present, it must be greater than now
    */
   public validate(options?: { skewTime?: number; now?: number }) {
-    const nowSkewed = getNowSkewed(options?.now, options?.skewTime)
+    const { nowSkewedFuture, nowSkewedPast } = getNowSkewed(options?.now, options?.skewTime)
 
-    if (typeof this.nbf === 'number' && this.nbf > nowSkewed) {
+    if (typeof this.nbf === 'number' && this.nbf > nowSkewedFuture) {
       throw new AriesFrameworkError(`JWT not valid before ${this.nbf}`)
     }
 
-    if (typeof this.iat === 'number' && this.iat > nowSkewed) {
+    if (typeof this.iat === 'number' && this.iat > nowSkewedFuture) {
       throw new AriesFrameworkError(`JWT issued in the future at ${this.iat}`)
     }
 
-    if (typeof this.exp === 'number' && this.exp < nowSkewed) {
+    if (typeof this.exp === 'number' && this.exp < nowSkewedPast) {
       throw new AriesFrameworkError(`JWT expired at ${this.exp}`)
     }
 
-    // TODO: audience validation?
+    // NOTE: nonce and aud are not validated in here. We could maybe add
+    // the values as input, so you can provide the expected nonce and aud values
   }
 
   public toJson(): JwtPayloadJson {
@@ -209,6 +210,8 @@ function getNowSkewed(now?: number, skewTime?: number) {
   const _now = typeof now === 'number' ? now : Math.floor(Date.now() / 1000)
   const _skewTime = typeof skewTime !== 'undefined' && skewTime >= 0 ? skewTime : DEFAULT_SKEW_TIME
 
-  const nowSkewed = _now + _skewTime
-  return nowSkewed
+  return {
+    nowSkewedPast: _now - _skewTime,
+    nowSkewedFuture: _now + _skewTime,
+  }
 }

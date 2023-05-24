@@ -138,16 +138,8 @@ describe('W3cCredential', () => {
   })
 
   test('throws an error when credentialSubject is present and it is not a valid credentialSubject object/array', () => {
-    expect(() => JsonTransformer.fromJSON({ ...validCredential, credentialSubject: {} }, W3cCredential)).toThrowError(
-      /property credentialSubject\./
-    )
-
-    expect(() => JsonTransformer.fromJSON({ ...validCredential, credentialSubject: [{}] }, W3cCredential)).toThrowError(
-      /property credentialSubject\[0\]\./
-    )
-
     expect(() => JsonTransformer.fromJSON({ ...validCredential, credentialSubject: [] }, W3cCredential)).toThrowError(
-      /credentialSubject value must be an instance of, or an array of instances containing CredentialSubject/
+      /credentialSubject has failed the following constraints: credentialSubject value must be an instance of, or an array of instances containing W3cCredentialSubject/
     )
 
     expect(() =>

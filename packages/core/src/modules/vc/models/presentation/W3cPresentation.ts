@@ -8,7 +8,7 @@ import { ValidateNested, buildMessage, IsOptional, ValidateBy } from 'class-vali
 
 import { SingleOrArray } from '../../../../utils/type'
 import { IsUri, IsInstanceOrArrayOfInstances } from '../../../../utils/validators'
-import { VERIFIABLE_PRESENTATION_TYPE } from '../../constants'
+import { CREDENTIALS_CONTEXT_V1_URL, VERIFIABLE_PRESENTATION_TYPE } from '../../constants'
 import { W3cJsonLdVerifiableCredential } from '../../data-integrity/models/W3cJsonLdVerifiableCredential'
 import { W3cJwtVerifiableCredential } from '../../jwt-vc/W3cJwtVerifiableCredential'
 import { IsCredentialJsonLdContext } from '../../validators'
@@ -18,9 +18,9 @@ import { IsW3cHolder, W3cHolder, W3cHolderTransformer } from './W3cHolder'
 
 export interface W3cPresentationOptions {
   id?: string
-  context: Array<string | JsonObject>
+  context?: Array<string | JsonObject>
+  type?: Array<string>
   verifiableCredential: SingleOrArray<W3cVerifiableCredential>
-  type: Array<string>
   holder?: string | W3cHolderOptions
 }
 
@@ -28,8 +28,8 @@ export class W3cPresentation {
   public constructor(options: W3cPresentationOptions) {
     if (options) {
       this.id = options.id
-      this.context = options.context
-      this.type = options.type
+      this.context = options.context ?? [CREDENTIALS_CONTEXT_V1_URL]
+      this.type = options.type ?? [VERIFIABLE_PRESENTATION_TYPE]
       this.verifiableCredential = options.verifiableCredential
 
       if (options.holder) {
