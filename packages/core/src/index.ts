@@ -84,7 +84,7 @@ export { Hasher, HashName } from './utils/Hasher'
 export { MessageValidator } from './utils/MessageValidator'
 export { LinkedAttachment, LinkedAttachmentOptions } from './utils/LinkedAttachment'
 import { parseInvitationUrl } from './utils/parseInvitation'
-import { uuid, isValidUuid } from './utils/uuid'
+import { isValidUuid, uuid } from './utils/uuid'
 
 const utils = {
   uuid,

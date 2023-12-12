@@ -1,6 +1,6 @@
-import type { IndyVdrPool } from '../pool'
 import type { AgentContext, Key } from '@aries-framework/core'
 import type { IndyVdrRequest } from '@hyperledger/indy-vdr-shared'
+import type { IndyVdrPool } from '../pool'
 
 import { TypedArrayEncoder } from '@aries-framework/core'
 

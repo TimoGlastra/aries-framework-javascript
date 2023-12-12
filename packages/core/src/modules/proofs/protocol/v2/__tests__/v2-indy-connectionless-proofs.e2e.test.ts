@@ -13,12 +13,12 @@ import {
   setupAnonCredsTests,
 } from '../../../../../../../anoncreds/tests/legacyAnonCredsSetup'
 import {
-  waitForProofExchangeRecordSubject,
   getAgentOptions,
   makeConnection,
-  testLogger,
   setupEventReplaySubjects,
+  testLogger,
   waitForProofExchangeRecord,
+  waitForProofExchangeRecordSubject,
 } from '../../../../../../tests'
 import { Agent } from '../../../../../agent/Agent'
 import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
@@ -26,7 +26,7 @@ import { LinkedAttachment } from '../../../../../utils/LinkedAttachment'
 import { uuid } from '../../../../../utils/uuid'
 import { HandshakeProtocol } from '../../../../connections'
 import { CredentialEventTypes } from '../../../../credentials'
-import { MediatorModule, MediatorPickupStrategy, MediationRecipientModule } from '../../../../routing'
+import { MediationRecipientModule, MediatorModule, MediatorPickupStrategy } from '../../../../routing'
 import { ProofEventTypes } from '../../../ProofEvents'
 import { AutoAcceptProof, ProofState } from '../../../models'
 
@@ -203,7 +203,7 @@ describe('V2 Connectionless Proofs - Indy', () => {
     agents = [aliceAgent, faberAgent]
 
     // eslint-disable-next-line prefer-const
-    let { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
+    const { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
       protocolVersion: 'v2',
       proofFormats: {
         indy: {
@@ -381,7 +381,7 @@ describe('V2 Connectionless Proofs - Indy', () => {
     })
 
     // eslint-disable-next-line prefer-const
-    let { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
+    const { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
       protocolVersion: 'v2',
       proofFormats: {
         indy: {
@@ -485,7 +485,7 @@ describe('V2 Connectionless Proofs - Indy', () => {
     agents = [aliceAgent, faberAgent]
 
     // eslint-disable-next-line prefer-const
-    let { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
+    const { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
       protocolVersion: 'v2',
       proofFormats: {
         indy: {
@@ -582,7 +582,7 @@ describe('V2 Connectionless Proofs - Indy', () => {
 
     // eslint-disable-next-line prefer-const
     // eslint-disable-next-line prefer-const
-    let { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
+    const { message, proofRecord: faberProofExchangeRecord } = await faberAgent.proofs.createRequest({
       protocolVersion: 'v2',
       proofFormats: {
         indy: {

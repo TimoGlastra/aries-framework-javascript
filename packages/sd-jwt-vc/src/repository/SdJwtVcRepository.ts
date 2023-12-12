@@ -1,4 +1,4 @@
-import { EventEmitter, InjectionSymbols, inject, injectable, Repository, StorageService } from '@aries-framework/core'
+import { EventEmitter, InjectionSymbols, Repository, StorageService, inject, injectable } from '@aries-framework/core'
 
 import { SdJwtVcRecord } from './SdJwtVcRecord'
 

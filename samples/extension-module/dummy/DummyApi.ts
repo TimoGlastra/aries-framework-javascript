@@ -1,12 +1,12 @@
-import type { DummyRecord } from './repository/DummyRecord'
 import type { Query } from '@aries-framework/core'
+import type { DummyRecord } from './repository/DummyRecord'
 
 import {
-  getOutboundMessageContext,
   AgentContext,
   ConnectionService,
-  injectable,
   MessageSender,
+  getOutboundMessageContext,
+  injectable,
 } from '@aries-framework/core'
 
 import { DummyRequestHandler, DummyResponseHandler } from './handlers'

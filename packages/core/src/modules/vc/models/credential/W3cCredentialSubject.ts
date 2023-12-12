@@ -1,4 +1,4 @@
-import { Transform, TransformationType, plainToInstance, instanceToPlain } from 'class-transformer'
+import { Transform, TransformationType, instanceToPlain, plainToInstance } from 'class-transformer'
 import { IsOptional, isString } from 'class-validator'
 
 import { IsUri } from '../../../../utils/validators'
@@ -31,7 +31,8 @@ export function W3cCredentialSubjectTransformer() {
     if (type === TransformationType.PLAIN_TO_CLASS) {
       if (isString(value)) return value
       return plainToInstance(W3cCredentialSubject, value)
-    } else if (type === TransformationType.CLASS_TO_PLAIN) {
+    }
+    if (type === TransformationType.CLASS_TO_PLAIN) {
       if (isString(value)) return value
       return instanceToPlain(value)
     }

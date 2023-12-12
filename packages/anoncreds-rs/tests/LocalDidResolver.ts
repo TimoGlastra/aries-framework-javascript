@@ -1,4 +1,4 @@
-import type { DidResolutionResult, DidResolver, AgentContext } from '@aries-framework/core'
+import type { AgentContext, DidResolutionResult, DidResolver } from '@aries-framework/core'
 
 import { DidsApi } from '@aries-framework/core'
 

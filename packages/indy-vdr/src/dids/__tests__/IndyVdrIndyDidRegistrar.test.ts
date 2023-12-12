@@ -4,9 +4,9 @@ import type { DidRecord, RecordSavedEvent } from '@aries-framework/core'
 import {
   DidCommV1Service,
   DidCommV2Service,
-  DidDocumentService,
   DidDocument,
   DidDocumentRole,
+  DidDocumentService,
   DidRepository,
   DidsApi,
   EventEmitter,
@@ -371,21 +371,21 @@ describe('IndyVdrIndyDidRegistrar', () => {
         role: 'STEWARD',
         services: [
           new DidDocumentService({
-            id: `#endpoint`,
+            id: '#endpoint',
             serviceEndpoint: 'https://example.com/endpoint',
             type: 'endpoint',
           }),
           new DidCommV1Service({
-            id: `#did-communication`,
+            id: '#did-communication',
             priority: 0,
-            recipientKeys: [`#key-agreement-1`],
+            recipientKeys: ['#key-agreement-1'],
             routingKeys: ['key-1'],
             serviceEndpoint: 'https://example.com/endpoint',
             accept: ['didcomm/aip2;env=rfc19'],
           }),
           new DidCommV2Service({
             accept: ['didcomm/v2'],
-            id: `#didcomm-1`,
+            id: '#didcomm-1',
             routingKeys: ['key-1'],
             serviceEndpoint: 'https://example.com/endpoint',
           }),
@@ -552,21 +552,21 @@ describe('IndyVdrIndyDidRegistrar', () => {
         useEndpointAttrib: true,
         services: [
           new DidDocumentService({
-            id: `#endpoint`,
+            id: '#endpoint',
             serviceEndpoint: 'https://example.com/endpoint',
             type: 'endpoint',
           }),
           new DidCommV1Service({
-            id: `#did-communication`,
+            id: '#did-communication',
             priority: 0,
-            recipientKeys: [`#key-agreement-1`],
+            recipientKeys: ['#key-agreement-1'],
             routingKeys: ['key-1'],
             serviceEndpoint: 'https://example.com/endpoint',
             accept: ['didcomm/aip2;env=rfc19'],
           }),
           new DidCommV2Service({
             accept: ['didcomm/v2'],
-            id: `#didcomm-1`,
+            id: '#didcomm-1',
             routingKeys: ['key-1'],
             serviceEndpoint: 'https://example.com/endpoint',
           }),
@@ -704,21 +704,21 @@ describe('IndyVdrIndyDidRegistrar', () => {
         role: 'STEWARD',
         services: [
           new DidDocumentService({
-            id: `#endpoint`,
+            id: '#endpoint',
             serviceEndpoint: 'https://example.com/endpoint',
             type: 'endpoint',
           }),
           new DidCommV1Service({
-            id: `#did-communication`,
+            id: '#did-communication',
             priority: 0,
-            recipientKeys: [`#key-agreement-1`],
+            recipientKeys: ['#key-agreement-1'],
             routingKeys: ['key-1'],
             serviceEndpoint: 'https://example.com/endpoint',
             accept: ['didcomm/aip2;env=rfc19'],
           }),
           new DidCommV2Service({
             accept: ['didcomm/v2'],
-            id: `#didcomm-1`,
+            id: '#didcomm-1',
             routingKeys: ['key-1'],
             serviceEndpoint: 'https://example.com/endpoint',
           }),
@@ -750,7 +750,7 @@ describe('IndyVdrIndyDidRegistrar', () => {
       didRegistrationMetadata: {},
       didState: {
         state: 'failed',
-        reason: `notImplemented: updating did:indy not implemented yet`,
+        reason: 'notImplemented: updating did:indy not implemented yet',
       },
     })
   })
@@ -763,7 +763,7 @@ describe('IndyVdrIndyDidRegistrar', () => {
       didRegistrationMetadata: {},
       didState: {
         state: 'failed',
-        reason: `notImplemented: deactivating did:indy not implemented yet`,
+        reason: 'notImplemented: deactivating did:indy not implemented yet',
       },
     })
   })

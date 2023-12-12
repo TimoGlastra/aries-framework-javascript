@@ -1,7 +1,7 @@
 import type { Key } from '@aries-framework/core'
 
-import { TypedArrayEncoder, KeyType, SigningProviderRegistry } from '@aries-framework/core'
-import { GetNymRequest, NymRequest, SchemaRequest, CredentialDefinitionRequest } from '@hyperledger/indy-vdr-shared'
+import { KeyType, SigningProviderRegistry, TypedArrayEncoder } from '@aries-framework/core'
+import { CredentialDefinitionRequest, GetNymRequest, NymRequest, SchemaRequest } from '@hyperledger/indy-vdr-shared'
 
 import { genesisTransactions, getAgentConfig, getAgentContext } from '../../core/tests/helpers'
 import testLogger from '../../core/tests/logger'
@@ -21,7 +21,7 @@ const agentContext = getAgentContext({ wallet, agentConfig })
 const config = {
   isProduction: false,
   genesisTransactions,
-  indyNamespace: `pool:localtest`,
+  indyNamespace: 'pool:localtest',
   transactionAuthorAgreement: { version: '1', acceptanceMechanism: 'accept' },
 } as const
 

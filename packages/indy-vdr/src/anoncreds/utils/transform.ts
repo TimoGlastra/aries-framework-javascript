@@ -1,4 +1,4 @@
-import type { AnonCredsRevocationStatusList, AnonCredsRevocationRegistryDefinition } from '@aries-framework/anoncreds'
+import type { AnonCredsRevocationRegistryDefinition, AnonCredsRevocationStatusList } from '@aries-framework/anoncreds'
 
 export function anonCredsRevocationStatusListFromIndyVdr(
   revocationRegistryDefinitionId: string,

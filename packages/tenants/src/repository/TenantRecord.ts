@@ -1,5 +1,5 @@
-import type { TenantConfig } from '../models/TenantConfig'
 import type { RecordTags, TagsBase } from '@aries-framework/core'
+import type { TenantConfig } from '../models/TenantConfig'
 
 import { BaseRecord, utils } from '@aries-framework/core'
 

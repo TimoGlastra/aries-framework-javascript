@@ -1,5 +1,5 @@
-import type { IndyVdrDidCreateOptions } from '../src/dids/IndyVdrIndyDidRegistrar'
 import type { Agent } from '@aries-framework/core'
+import type { IndyVdrDidCreateOptions } from '../src/dids/IndyVdrIndyDidRegistrar'
 
 import { DidCommV1Service, DidCommV2Service, DidDocumentService, KeyType } from '@aries-framework/core'
 import { indyVdr } from '@hyperledger/indy-vdr-nodejs'
@@ -34,21 +34,21 @@ export async function createDidOnLedger(agent: Agent, endorserDid: string) {
       useEndpointAttrib: true,
       services: [
         new DidDocumentService({
-          id: `#endpoint`,
+          id: '#endpoint',
           serviceEndpoint: 'http://localhost:3000',
           type: 'endpoint',
         }),
         new DidCommV1Service({
-          id: `#did-communication`,
+          id: '#did-communication',
           priority: 0,
-          recipientKeys: [`#key-agreement-1`],
+          recipientKeys: ['#key-agreement-1'],
           routingKeys: ['a-routing-key'],
           serviceEndpoint: 'http://localhost:3000',
           accept: ['didcomm/aip2;env=rfc19'],
         }),
         new DidCommV2Service({
           accept: ['didcomm/v2'],
-          id: `#didcomm-1`,
+          id: '#didcomm-1',
           routingKeys: ['a-routing-key'],
           serviceEndpoint: 'http://localhost:3000',
         }),

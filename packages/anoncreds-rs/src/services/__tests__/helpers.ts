@@ -7,7 +7,6 @@ import type {
 import type { JsonObject } from '@hyperledger/anoncreds-nodejs'
 
 import {
-  anoncreds,
   Credential,
   CredentialDefinition,
   CredentialOffer,
@@ -18,6 +17,7 @@ import {
   RevocationRegistryDefinitionPrivate,
   RevocationStatusList,
   Schema,
+  anoncreds,
 } from '@hyperledger/anoncreds-shared'
 
 /**

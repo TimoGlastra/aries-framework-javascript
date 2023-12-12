@@ -8,11 +8,11 @@ import { AriesFrameworkError } from '../../../../error/AriesFrameworkError'
 import { DidCommMessageRepository, DidCommMessageRole } from '../../../../storage'
 
 import {
+  V2CredentialPreview,
   V2IssueCredentialMessage,
   V2OfferCredentialMessage,
   V2ProposeCredentialMessage,
   V2RequestCredentialMessage,
-  V2CredentialPreview,
 } from './messages'
 
 export class CredentialFormatCoordinator<CFs extends CredentialFormatService[]> {

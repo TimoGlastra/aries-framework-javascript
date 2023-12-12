@@ -11,8 +11,8 @@ import {
   AriesFrameworkError,
   ConnectionService,
   MessageSender,
-  injectable,
   getOutboundMessageContext,
+  injectable,
 } from '@aries-framework/core'
 
 import { ActionMenuRole } from './ActionMenuRole'

@@ -1,6 +1,6 @@
 import type { ProblemReportMessageOptions } from '@aries-framework/core'
 
-import { ProblemReportMessage, IsValidMessageType, parseMessageType } from '@aries-framework/core'
+import { IsValidMessageType, ProblemReportMessage, parseMessageType } from '@aries-framework/core'
 
 export type V1CredentialProblemReportMessageOptions = ProblemReportMessageOptions
 
@@ -9,14 +9,6 @@ export type V1CredentialProblemReportMessageOptions = ProblemReportMessageOption
  */
 export class V1CredentialProblemReportMessage extends ProblemReportMessage {
   public readonly allowDidSovPrefix = true
-
-  /**
-   * Create new CredentialProblemReportMessage instance.
-   * @param options
-   */
-  public constructor(options: V1CredentialProblemReportMessageOptions) {
-    super(options)
-  }
 
   @IsValidMessageType(V1CredentialProblemReportMessage.type)
   public readonly type = V1CredentialProblemReportMessage.type.messageTypeUri

@@ -1,5 +1,5 @@
-import type { ActionMenuProblemReportReason } from './ActionMenuProblemReportReason'
 import type { ProblemReportErrorOptions } from '@aries-framework/core'
+import type { ActionMenuProblemReportReason } from './ActionMenuProblemReportReason'
 
 import { ProblemReportError } from '@aries-framework/core'
 

@@ -1,7 +1,7 @@
 import type { JsonObject } from '../../../../types'
-import type { Proof, DocumentLoader } from '../jsonldUtil'
+import type { DocumentLoader, Proof } from '../jsonldUtil'
 
-import { suites, purposes } from '../libraries/jsonld-signatures'
+import { purposes, suites } from '../libraries/jsonld-signatures'
 
 const AssertionProofPurpose = purposes.AssertionProofPurpose
 const LinkedDataProof = suites.LinkedDataProof
@@ -56,7 +56,7 @@ export class CredentialIssuancePurpose extends AssertionProofPurpose {
       documentLoader?: DocumentLoader
       expansionMap?: () => void
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny:
   ): Promise<{ valid: boolean; error?: any }> {
     try {
       const result = await super.validate(proof, options)

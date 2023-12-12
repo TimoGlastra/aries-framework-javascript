@@ -1,4 +1,4 @@
-import type { Module, DependencyManager, ApiModule } from '../plugins'
+import type { ApiModule, DependencyManager, Module } from '../plugins'
 import type { IsAny } from '../types'
 import type { Constructor } from '../utils/mixins'
 
@@ -35,9 +35,9 @@ export type AgentModulesInput = Partial<DefaultAgentModulesInput> & ModulesMap
  * want the input type to allow for generics to be passed in for the credentials module.
  */
 export type DefaultAgentModulesInput = Omit<DefaultAgentModules, 'credentials' | 'proofs'> & {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny:
   credentials: CredentialsModule<any>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny:
   proofs: ProofsModule<any>
 }
 
@@ -149,7 +149,7 @@ export function extendModulesWithDefaultModules<AgentModules extends AgentModule
   // Register all default modules, if not registered yet
   for (const [moduleKey, getConfiguredModule] of Object.entries(defaultAgentModules)) {
     // Do not register if the module is already registered.
-    if (modules && modules[moduleKey]) continue
+    if (modules?.[moduleKey]) continue
 
     extendedModules[moduleKey] = getConfiguredModule()
   }

@@ -1,10 +1,10 @@
 import type {
-  AnonCredsRevocationRegistryDefinition,
-  AnonCredsRevocationStatusList,
-  AnonCredsProofRequest,
-  AnonCredsSelectedCredentials,
   AnonCredsCredentialInfo,
   AnonCredsNonRevokedInterval,
+  AnonCredsProofRequest,
+  AnonCredsRevocationRegistryDefinition,
+  AnonCredsRevocationStatusList,
+  AnonCredsSelectedCredentials,
 } from '@aries-framework/anoncreds'
 import type { AgentContext } from '@aries-framework/core'
 import type { RevStates } from 'indy-sdk'
@@ -58,7 +58,7 @@ export class IndySdkRevocationService {
     }
   ): Promise<RevStates> {
     try {
-      agentContext.config.logger.debug(`Creating Revocation State(s) for proof request`, {
+      agentContext.config.logger.debug('Creating Revocation State(s) for proof request', {
         proofRequest,
         selectedCredentials,
       })
@@ -137,13 +137,13 @@ export class IndySdkRevocationService {
         }
       }
 
-      agentContext.config.logger.debug(`Created Revocation States for Proof Request`, {
+      agentContext.config.logger.debug('Created Revocation States for Proof Request', {
         indyRevocationStates,
       })
 
       return indyRevocationStates
     } catch (error) {
-      agentContext.config.logger.error(`Error creating Indy Revocation State for Proof Request`, {
+      agentContext.config.logger.error('Error creating Indy Revocation State for Proof Request', {
         error,
         proofRequest,
         selectedCredentials,

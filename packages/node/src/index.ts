@@ -4,7 +4,7 @@ import { EventEmitter } from 'events'
 import WebSocket from 'ws'
 
 import { NodeFileSystem } from './NodeFileSystem'
-import { IndySdkPostgresStorageConfig, loadIndySdkPostgresPlugin, IndySdkPostgresWalletScheme } from './PostgresPlugin'
+import { IndySdkPostgresStorageConfig, IndySdkPostgresWalletScheme, loadIndySdkPostgresPlugin } from './PostgresPlugin'
 import { HttpInboundTransport } from './transport/HttpInboundTransport'
 import { WsInboundTransport } from './transport/WsInboundTransport'
 

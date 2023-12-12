@@ -3,11 +3,11 @@ import type { EventReplaySubject } from '../../../../../../tests'
 import { randomUUID } from 'crypto'
 
 import {
+  AnonCredsModule,
   LegacyIndyCredentialFormatService,
   LegacyIndyProofFormatService,
   V1CredentialProtocol,
   V1ProofProtocol,
-  AnonCredsModule,
 } from '../../../../../../../anoncreds/src'
 import { prepareForAnonCredsIssuance } from '../../../../../../../anoncreds/tests/legacyAnonCredsSetup'
 import {
@@ -19,15 +19,15 @@ import {
 } from '../../../../../../../indy-sdk/src'
 import { indySdk } from '../../../../../../../indy-sdk/tests/setupIndySdkModule'
 import {
+  genesisPath,
+  getAgentOptions,
+  makeConnection,
   setupEventReplaySubjects,
   setupSubjectTransports,
-  genesisPath,
   taaAcceptanceMechanism,
   taaVersion,
-  getAgentOptions,
-  waitForCredentialRecordSubject,
   testLogger,
-  makeConnection,
+  waitForCredentialRecordSubject,
 } from '../../../../../../tests'
 import { Agent } from '../../../../../agent/Agent'
 import { KeyType } from '../../../../../crypto'
@@ -118,7 +118,7 @@ const getIndyJsonLdModules = () =>
           isProduction: false,
           genesisPath,
           id: randomUUID(),
-          indyNamespace: `pool:localtest`,
+          indyNamespace: 'pool:localtest',
           transactionAuthorAgreement: { version: taaVersion, acceptanceMechanism: taaAcceptanceMechanism },
         },
       ],

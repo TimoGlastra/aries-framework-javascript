@@ -1,6 +1,6 @@
+import path from 'path'
 import { TypedArrayEncoder } from '@aries-framework/core'
 import nock, { cleanAll, enableNetConnect } from 'nock'
-import path from 'path'
 
 import { NodeFileSystem } from '../src/NodeFileSystem'
 

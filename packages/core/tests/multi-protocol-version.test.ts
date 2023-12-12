@@ -3,7 +3,7 @@ import type { AgentMessageProcessedEvent } from '../src/agent/Events'
 import { filter, firstValueFrom, timeout } from 'rxjs'
 
 import { getIndySdkModules } from '../../indy-sdk/tests/setupIndySdkModule'
-import { parseMessageType, MessageSender, AgentMessage, IsValidMessageType } from '../src'
+import { AgentMessage, IsValidMessageType, MessageSender, parseMessageType } from '../src'
 import { Agent } from '../src/agent/Agent'
 import { AgentEventTypes } from '../src/agent/Events'
 import { OutboundMessageContext } from '../src/agent/models'

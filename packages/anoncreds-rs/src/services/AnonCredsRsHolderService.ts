@@ -31,10 +31,10 @@ import {
   AnonCredsCredentialRecord,
   AnonCredsCredentialRepository,
   AnonCredsLinkSecretRepository,
-  AnonCredsRestrictionWrapper,
-  unqualifiedCredentialDefinitionIdRegex,
   AnonCredsRegistryService,
+  AnonCredsRestrictionWrapper,
   storeLinkSecret,
+  unqualifiedCredentialDefinitionIdRegex,
 } from '@aries-framework/anoncreds'
 import { AriesFrameworkError, JsonTransformer, TypedArrayEncoder, injectable, utils } from '@aries-framework/core'
 import {
@@ -369,7 +369,7 @@ export class AnonCredsRsHolderService implements AnonCredsHolderService {
       proofRequest.requested_attributes[referent] ?? proofRequest.requested_predicates[referent]
 
     if (!requestedAttribute) {
-      throw new AnonCredsRsError(`Referent not found in proof request`)
+      throw new AnonCredsRsError('Referent not found in proof request')
     }
 
     const $and = []

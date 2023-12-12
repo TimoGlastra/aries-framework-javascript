@@ -1,8 +1,8 @@
-import type { DependencyManager } from './DependencyManager'
 import type { AgentContext } from '../agent'
 import type { FeatureRegistry } from '../agent/FeatureRegistry'
 import type { Update } from '../storage/migration/updates'
 import type { Constructor } from '../utils/mixins'
+import type { DependencyManager } from './DependencyManager'
 
 export interface Module {
   api?: Constructor<unknown>

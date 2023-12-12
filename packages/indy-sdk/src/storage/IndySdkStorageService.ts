@@ -1,17 +1,17 @@
-import type { IndySdkWallet } from '../wallet/IndySdkWallet'
 import type {
-  BaseRecordConstructor,
   AgentContext,
   BaseRecord,
-  TagsBase,
+  BaseRecordConstructor,
   Query,
   StorageService,
+  TagsBase,
 } from '@aries-framework/core'
 import type { WalletQuery, WalletRecord, WalletSearchOptions } from 'indy-sdk'
+import type { IndySdkWallet } from '../wallet/IndySdkWallet'
 
-import { RecordDuplicateError, RecordNotFoundError, injectable, inject, JsonTransformer } from '@aries-framework/core'
+import { JsonTransformer, RecordDuplicateError, RecordNotFoundError, inject, injectable } from '@aries-framework/core'
 
-import { isIndyError, IndySdkError } from '../error'
+import { IndySdkError, isIndyError } from '../error'
 import { IndySdk, IndySdkSymbol } from '../types'
 import { assertIndySdkWallet } from '../utils/assertIndySdkWallet'
 
@@ -125,7 +125,7 @@ export class IndySdkStorageService<T extends BaseRecord> implements StorageServi
   }
 
   private recordToInstance(record: WalletRecord, recordClass: BaseRecordConstructor<T>): T {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // biome-ignore lint/style/noNonNullAssertion:
     const instance = JsonTransformer.deserialize<T>(record.value!, recordClass)
     instance.id = record.id
 

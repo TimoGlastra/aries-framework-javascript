@@ -1,5 +1,5 @@
-import type { AnonCredsCredentialDefinition, AnonCredsSchema } from '../../../../../anoncreds/src'
 import type { CredDef, Schema } from 'indy-sdk'
+import type { AnonCredsCredentialDefinition, AnonCredsSchema } from '../../../../../anoncreds/src'
 
 import {
   anonCredsCredentialDefinitionFromIndySdk,

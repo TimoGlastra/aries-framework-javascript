@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-import type { JsonObject, DocumentLoader } from '@aries-framework/core'
+import type { DocumentLoader, JsonObject } from '@aries-framework/core'
 
 /**
  * Options for signing using a signature suite

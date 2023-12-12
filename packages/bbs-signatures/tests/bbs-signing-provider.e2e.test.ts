@@ -3,9 +3,9 @@ import type { Wallet, WalletConfig } from '@aries-framework/core'
 import {
   KeyDerivationMethod,
   KeyType,
-  WalletError,
-  TypedArrayEncoder,
   SigningProviderRegistry,
+  TypedArrayEncoder,
+  WalletError,
 } from '@aries-framework/core'
 import { BBS_SIGNATURE_LENGTH } from '@mattrglobal/bbs-signatures'
 

@@ -1,13 +1,13 @@
-import type { AnonCredsTestsAgent } from './anoncredsSetup'
-import type { EventReplaySubject } from '../../core/tests'
 import type { AnonCredsHolderService, AnonCredsProposeCredentialFormat } from '@aries-framework/anoncreds'
+import type { EventReplaySubject } from '../../core/tests'
+import type { AnonCredsTestsAgent } from './anoncredsSetup'
 
 import { AnonCredsHolderServiceSymbol } from '@aries-framework/anoncreds'
 import {
+  CredentialExchangeRecord,
+  CredentialState,
   DidCommMessageRepository,
   JsonTransformer,
-  CredentialState,
-  CredentialExchangeRecord,
   V2CredentialPreview,
   V2IssueCredentialMessage,
   V2OfferCredentialMessage,

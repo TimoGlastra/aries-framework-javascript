@@ -1,13 +1,13 @@
 import { DidsModule, utils } from '@aries-framework/core'
 import indySdk from 'indy-sdk'
 
-import { genesisPath, taaVersion, taaAcceptanceMechanism } from '../../core/tests/helpers'
+import { genesisPath, taaAcceptanceMechanism, taaVersion } from '../../core/tests/helpers'
 import {
+  IndySdkIndyDidRegistrar,
+  IndySdkIndyDidResolver,
   IndySdkModule,
   IndySdkModuleConfig,
-  IndySdkIndyDidRegistrar,
   IndySdkSovDidResolver,
-  IndySdkIndyDidResolver,
 } from '../src'
 
 export { indySdk }

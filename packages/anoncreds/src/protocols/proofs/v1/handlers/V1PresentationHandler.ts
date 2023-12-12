@@ -1,5 +1,5 @@
-import type { V1ProofProtocol } from '../V1ProofProtocol'
 import type { MessageHandler, MessageHandlerInboundMessage, ProofExchangeRecord } from '@aries-framework/core'
+import type { V1ProofProtocol } from '../V1ProofProtocol'
 
 import { AriesFrameworkError, getOutboundMessageContext } from '@aries-framework/core'
 
@@ -30,7 +30,7 @@ export class V1PresentationHandler implements MessageHandler {
     proofRecord: ProofExchangeRecord,
     messageContext: MessageHandlerInboundMessage<V1PresentationHandler>
   ) {
-    messageContext.agentContext.config.logger.info(`Automatically sending acknowledgement with autoAccept`)
+    messageContext.agentContext.config.logger.info('Automatically sending acknowledgement with autoAccept')
 
     const requestMessage = await this.proofProtocol.findRequestMessage(messageContext.agentContext, proofRecord.id)
     if (!requestMessage) {

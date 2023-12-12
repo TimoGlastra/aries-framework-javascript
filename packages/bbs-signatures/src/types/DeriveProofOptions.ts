@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-import type { JsonObject, DocumentLoader, Proof } from '@aries-framework/core'
+import type { DocumentLoader, JsonObject, Proof } from '@aries-framework/core'
 
 /**
  * Options for creating a proof

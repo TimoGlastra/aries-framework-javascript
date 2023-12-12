@@ -1,18 +1,18 @@
 import type { WalletConfig, WalletConfigRekey, WalletExportImportConfig } from '@aries-framework/core'
 
 import {
-  WalletExportPathExistsError,
-  WalletInvalidKeyError,
-  WalletDuplicateError,
   AriesFrameworkError,
-  Logger,
-  WalletError,
-  InjectionSymbols,
-  SigningProviderRegistry,
   FileSystem,
-  WalletNotFoundError,
+  InjectionSymbols,
   KeyDerivationMethod,
+  Logger,
+  SigningProviderRegistry,
+  WalletDuplicateError,
+  WalletError,
+  WalletExportPathExistsError,
   WalletImportPathExistsError,
+  WalletInvalidKeyError,
+  WalletNotFoundError,
 } from '@aries-framework/core'
 // eslint-disable-next-line import/order
 import { Store } from '@hyperledger/aries-askar-shared'
@@ -227,7 +227,8 @@ export class AskarWallet extends AskarBaseWallet {
           walletType: 'AskarWallet',
           cause: error,
         })
-      } else if (isAskarError(error) && error.code === AskarErrorCode.Encryption) {
+      }
+      if (isAskarError(error) && error.code === AskarErrorCode.Encryption) {
         const errorMessage = `Incorrect key for wallet '${walletConfig.id}'`
         this.logger.debug(errorMessage)
         throw new WalletInvalidKeyError(errorMessage, {

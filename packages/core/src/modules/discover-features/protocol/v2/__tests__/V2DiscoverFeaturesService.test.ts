@@ -10,7 +10,7 @@ import { agentDependencies, getAgentContext, getMockConnection } from '../../../
 import { EventEmitter } from '../../../../../agent/EventEmitter'
 import { FeatureRegistry } from '../../../../../agent/FeatureRegistry'
 import { MessageHandlerRegistry } from '../../../../../agent/MessageHandlerRegistry'
-import { InboundMessageContext, Protocol, GoalCode } from '../../../../../agent/models'
+import { GoalCode, InboundMessageContext, Protocol } from '../../../../../agent/models'
 import { ConsoleLogger } from '../../../../../logger/ConsoleLogger'
 import { DidExchangeState } from '../../../../connections'
 import { DiscoverFeaturesEventTypes } from '../../../DiscoverFeaturesEvents'

@@ -3,7 +3,7 @@ import type { DidDoc, PublicKey } from '../models'
 
 import { Key, KeyType } from '../../../crypto'
 import { AriesFrameworkError } from '../../../error'
-import { IndyAgentService, DidCommV1Service, DidDocumentBuilder, getEd25519VerificationKey2018 } from '../../dids'
+import { DidCommV1Service, DidDocumentBuilder, IndyAgentService, getEd25519VerificationKey2018 } from '../../dids'
 import { didDocumentJsonToNumAlgo1Did } from '../../dids/methods/peer/peerDidNumAlgo1'
 import { EmbeddedAuthentication } from '../models'
 

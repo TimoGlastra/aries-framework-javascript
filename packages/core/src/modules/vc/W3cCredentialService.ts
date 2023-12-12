@@ -1,3 +1,5 @@
+import type { AgentContext } from '../../agent/context'
+import type { Query } from '../../storage/StorageService'
 import type {
   StoreCredentialOptions,
   W3cCreatePresentationOptions,
@@ -16,8 +18,6 @@ import type {
   W3cVerifyCredentialResult,
   W3cVerifyPresentationResult,
 } from './models'
-import type { AgentContext } from '../../agent/context'
-import type { Query } from '../../storage/StorageService'
 
 import { AriesFrameworkError } from '../../error'
 import { injectable } from '../../plugins'
@@ -60,11 +60,11 @@ export class W3cCredentialService {
   ): Promise<W3cVerifiableCredential<W3cSignCredentialOptions['format']>> {
     if (options.format === ClaimFormat.JwtVc) {
       return this.w3cJwtCredentialService.signCredential(agentContext, options)
-    } else if (options.format === ClaimFormat.LdpVc) {
-      return this.w3cJsonLdCredentialService.signCredential(agentContext, options)
-    } else {
-      throw new AriesFrameworkError(`Unsupported format in options. Format must be either 'jwt_vc' or 'ldp_vc'`)
     }
+    if (options.format === ClaimFormat.LdpVc) {
+      return this.w3cJsonLdCredentialService.signCredential(agentContext, options)
+    }
+    throw new AriesFrameworkError(`Unsupported format in options. Format must be either 'jwt_vc' or 'ldp_vc'`)
   }
 
   /**
@@ -76,13 +76,13 @@ export class W3cCredentialService {
   ): Promise<W3cVerifyCredentialResult> {
     if (options.credential instanceof W3cJsonLdVerifiableCredential) {
       return this.w3cJsonLdCredentialService.verifyCredential(agentContext, options as W3cJsonLdVerifyCredentialOptions)
-    } else if (options.credential instanceof W3cJwtVerifiableCredential || typeof options.credential === 'string') {
-      return this.w3cJwtCredentialService.verifyCredential(agentContext, options as W3cJwtVerifyCredentialOptions)
-    } else {
-      throw new AriesFrameworkError(
-        `Unsupported credential type in options. Credential must be either a W3cJsonLdVerifiableCredential or a W3cJwtVerifiableCredential`
-      )
     }
+    if (options.credential instanceof W3cJwtVerifiableCredential || typeof options.credential === 'string') {
+      return this.w3cJwtCredentialService.verifyCredential(agentContext, options as W3cJwtVerifyCredentialOptions)
+    }
+    throw new AriesFrameworkError(
+      'Unsupported credential type in options. Credential must be either a W3cJsonLdVerifiableCredential or a W3cJwtVerifiableCredential'
+    )
   }
 
   /**
@@ -116,11 +116,11 @@ export class W3cCredentialService {
   ): Promise<W3cVerifiablePresentation<W3cSignPresentationOptions['format']>> {
     if (options.format === ClaimFormat.JwtVp) {
       return this.w3cJwtCredentialService.signPresentation(agentContext, options)
-    } else if (options.format === ClaimFormat.LdpVp) {
-      return this.w3cJsonLdCredentialService.signPresentation(agentContext, options)
-    } else {
-      throw new AriesFrameworkError(`Unsupported format in options. Format must be either 'jwt_vp' or 'ldp_vp'`)
     }
+    if (options.format === ClaimFormat.LdpVp) {
+      return this.w3cJsonLdCredentialService.signPresentation(agentContext, options)
+    }
+    throw new AriesFrameworkError(`Unsupported format in options. Format must be either 'jwt_vp' or 'ldp_vp'`)
   }
 
   /**
@@ -138,16 +138,13 @@ export class W3cCredentialService {
         agentContext,
         options as W3cJsonLdVerifyPresentationOptions
       )
-    } else if (
-      options.presentation instanceof W3cJwtVerifiablePresentation ||
-      typeof options.presentation === 'string'
-    ) {
-      return this.w3cJwtCredentialService.verifyPresentation(agentContext, options as W3cJwtVerifyPresentationOptions)
-    } else {
-      throw new AriesFrameworkError(
-        'Unsupported credential type in options. Presentation must be either a W3cJsonLdVerifiablePresentation or a W3cJwtVerifiablePresentation'
-      )
     }
+    if (options.presentation instanceof W3cJwtVerifiablePresentation || typeof options.presentation === 'string') {
+      return this.w3cJwtCredentialService.verifyPresentation(agentContext, options as W3cJwtVerifyPresentationOptions)
+    }
+    throw new AriesFrameworkError(
+      'Unsupported credential type in options. Presentation must be either a W3cJsonLdVerifiablePresentation or a W3cJwtVerifiablePresentation'
+    )
   }
 
   /**

@@ -1,11 +1,11 @@
 import type { InitConfig } from '@aries-framework/core'
 
-import { ConnectionsModule, OutOfBandRecord, Agent } from '@aries-framework/core'
+import { Agent, ConnectionsModule, OutOfBandRecord } from '@aries-framework/core'
 import { agentDependencies } from '@aries-framework/node'
 
 import { SubjectInboundTransport } from '../../../tests/transport/SubjectInboundTransport'
 import { SubjectOutboundTransport } from '../../../tests/transport/SubjectOutboundTransport'
-import { testLogger, indySdk } from '../../core/tests'
+import { indySdk, testLogger } from '../../core/tests'
 import { IndySdkModule } from '../../indy-sdk/src'
 
 import { TenantsModule } from '@aries-framework/tenants'

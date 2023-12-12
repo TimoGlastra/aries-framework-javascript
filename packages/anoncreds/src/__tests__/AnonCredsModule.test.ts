@@ -1,16 +1,16 @@
-import type { AnonCredsRegistry } from '../services'
 import type { DependencyManager } from '@aries-framework/core'
+import type { AnonCredsRegistry } from '../services'
 
 import { AnonCredsModule } from '../AnonCredsModule'
 import { AnonCredsModuleConfig } from '../AnonCredsModuleConfig'
 import {
-  AnonCredsSchemaRepository,
-  AnonCredsCredentialDefinitionRepository,
   AnonCredsCredentialDefinitionPrivateRepository,
+  AnonCredsCredentialDefinitionRepository,
   AnonCredsKeyCorrectnessProofRepository,
   AnonCredsLinkSecretRepository,
   AnonCredsRevocationRegistryDefinitionPrivateRepository,
   AnonCredsRevocationRegistryDefinitionRepository,
+  AnonCredsSchemaRepository,
 } from '../repository'
 import { AnonCredsRegistryService } from '../services/registry/AnonCredsRegistryService'
 

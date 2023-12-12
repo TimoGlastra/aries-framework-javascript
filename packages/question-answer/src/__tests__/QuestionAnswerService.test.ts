@@ -1,7 +1,7 @@
 import type { AgentConfig, AgentContext, Repository, Wallet } from '@aries-framework/core'
 import type { QuestionAnswerStateChangedEvent, ValidResponse } from '@aries-framework/question-answer'
 
-import { EventEmitter, SigningProviderRegistry, InboundMessageContext, DidExchangeState } from '@aries-framework/core'
+import { DidExchangeState, EventEmitter, InboundMessageContext, SigningProviderRegistry } from '@aries-framework/core'
 import { agentDependencies } from '@aries-framework/node'
 import { Subject } from 'rxjs'
 
@@ -10,14 +10,14 @@ import { IndySdkWallet } from '../../../indy-sdk/src'
 import { indySdk } from '../../../indy-sdk/tests/setupIndySdkModule'
 
 import {
+  AnswerMessage,
+  QuestionAnswerEventTypes,
   QuestionAnswerRecord,
   QuestionAnswerRepository,
-  QuestionAnswerEventTypes,
   QuestionAnswerRole,
   QuestionAnswerService,
   QuestionAnswerState,
   QuestionMessage,
-  AnswerMessage,
 } from '@aries-framework/question-answer'
 
 jest.mock('../repository/QuestionAnswerRepository')
@@ -63,7 +63,7 @@ describe('QuestionAnswerService', () => {
     agentConfig = getAgentConfig('QuestionAnswerServiceTest')
     wallet = new IndySdkWallet(indySdk, agentConfig.logger, new SigningProviderRegistry([]))
     agentContext = getAgentContext()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // biome-ignore lint/style/noNonNullAssertion:
     await wallet.createAndOpen(agentConfig.walletConfig!)
   })
 
@@ -78,7 +78,7 @@ describe('QuestionAnswerService', () => {
   })
 
   describe('create question', () => {
-    it(`emits a question with question text, valid responses, and question answer record`, async () => {
+    it('emits a question with question text, valid responses, and question answer record', async () => {
       const eventListenerMock = jest.fn()
       eventEmitter.on<QuestionAnswerStateChangedEvent>(
         QuestionAnswerEventTypes.QuestionAnswerStateChanged,
@@ -129,13 +129,13 @@ describe('QuestionAnswerService', () => {
       })
     })
 
-    it(`throws an error when invalid response is provided`, async () => {
+    it('throws an error when invalid response is provided', async () => {
       expect(questionAnswerService.createAnswer(agentContext, mockRecord, 'Maybe')).rejects.toThrowError(
-        `Response does not match valid responses`
+        'Response does not match valid responses'
       )
     })
 
-    it(`emits an answer with a valid response and question answer record`, async () => {
+    it('emits an answer with a valid response and question answer record', async () => {
       const eventListenerMock = jest.fn()
       eventEmitter.on<QuestionAnswerStateChangedEvent>(
         QuestionAnswerEventTypes.QuestionAnswerStateChanged,
@@ -203,7 +203,7 @@ describe('QuestionAnswerService', () => {
       )
     })
 
-    it(`throws an error when question from the same thread exists `, async () => {
+    it('throws an error when question from the same thread exists ', async () => {
       mockFunction(questionAnswerRepository.findSingleByQuery).mockReturnValue(Promise.resolve(mockRecord))
 
       const questionMessage = new QuestionMessage({
@@ -267,7 +267,7 @@ describe('QuestionAnswerService', () => {
       jest.resetAllMocks()
     })
 
-    it(`throws an error when no existing question is found`, async () => {
+    it('throws an error when no existing question is found', async () => {
       const answerMessage = new AnswerMessage({
         response: 'Yes',
         threadId: '123',
@@ -283,7 +283,7 @@ describe('QuestionAnswerService', () => {
       )
     })
 
-    it(`throws an error when record is in invalid state`, async () => {
+    it('throws an error when record is in invalid state', async () => {
       mockRecord.state = QuestionAnswerState.AnswerReceived
       mockFunction(questionAnswerRepository.findSingleByQuery).mockReturnValue(Promise.resolve(mockRecord))
 
@@ -303,7 +303,7 @@ describe('QuestionAnswerService', () => {
       jest.resetAllMocks()
     })
 
-    it(`throws an error when record is in invalid role`, async () => {
+    it('throws an error when record is in invalid role', async () => {
       mockRecord.state = QuestionAnswerState.QuestionSent
       mockRecord.role = QuestionAnswerRole.Responder
       mockFunction(questionAnswerRepository.findSingleByQuery).mockReturnValue(Promise.resolve(mockRecord))

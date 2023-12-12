@@ -75,9 +75,8 @@ export function parseIndyDid(did: string) {
   if (match) {
     const [, namespace, namespaceIdentifier] = match
     return { namespace, namespaceIdentifier }
-  } else {
-    throw new AriesFrameworkError(`${did} is not a valid did:indy did`)
   }
+  throw new AriesFrameworkError(`${did} is not a valid did:indy did`)
 }
 
 interface ParsedIndySchemaId {

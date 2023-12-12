@@ -7,13 +7,13 @@ import type {
   AnonCredsCredential,
   AnonCredsCredentialOffer,
   AnonCredsCredentialRequest,
-  AnonCredsProofRequest,
   AnonCredsNonRevokedInterval,
+  AnonCredsProofRequest,
 } from '../models/exchange'
 import type {
   AnonCredsCredentialDefinition,
-  AnonCredsRevocationStatusList,
   AnonCredsRevocationRegistryDefinition,
+  AnonCredsRevocationStatusList,
   AnonCredsSchema,
 } from '../models/registry'
 

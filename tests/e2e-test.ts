@@ -3,19 +3,19 @@ import type { AnonCredsTestsAgent } from '../packages/anoncreds/tests/legacyAnon
 import { V1CredentialPreview } from '../packages/anoncreds/src/protocols/credentials/v1'
 import {
   issueLegacyAnonCredsCredential,
-  presentLegacyAnonCredsProof,
   prepareForAnonCredsIssuance,
+  presentLegacyAnonCredsProof,
 } from '../packages/anoncreds/tests/legacyAnonCredsSetup'
 import { sleep } from '../packages/core/src/utils/sleep'
 import { setupEventReplaySubjects } from '../packages/core/tests'
 import { makeConnection } from '../packages/core/tests/helpers'
 
 import {
+  CredentialEventTypes,
   CredentialState,
   MediationState,
-  ProofState,
-  CredentialEventTypes,
   ProofEventTypes,
+  ProofState,
 } from '@aries-framework/core'
 
 export async function e2eTest({

@@ -1,5 +1,5 @@
+import type { CredentialFormat, CredentialPreviewAttributeOptions, LinkedAttachment } from '@aries-framework/core'
 import type { AnonCredsCredential, AnonCredsCredentialOffer, AnonCredsCredentialRequest } from '../models'
-import type { CredentialPreviewAttributeOptions, CredentialFormat, LinkedAttachment } from '@aries-framework/core'
 
 export interface AnonCredsCredentialProposalFormat {
   schema_issuer_id?: string

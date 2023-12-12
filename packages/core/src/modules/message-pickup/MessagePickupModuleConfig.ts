@@ -1,5 +1,5 @@
-import type { MessagePickupProtocol } from './protocol/MessagePickupProtocol'
 import type { MessageRepository } from '../../storage/MessageRepository'
+import type { MessagePickupProtocol } from './protocol/MessagePickupProtocol'
 
 /**
  * MessagePickupModuleConfigOptions defines the interface for the options of the MessagePickupModuleConfig class.

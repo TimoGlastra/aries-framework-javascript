@@ -6,7 +6,7 @@ import type { DidResolutionResult } from '../../types'
 import { AriesFrameworkError } from '../../../../error'
 import { DidRepository } from '../../repository'
 
-import { getNumAlgoFromPeerDid, isValidPeerDid, PeerDidNumAlgo } from './didPeer'
+import { PeerDidNumAlgo, getNumAlgoFromPeerDid, isValidPeerDid } from './didPeer'
 import { didToNumAlgo0DidDocument } from './peerDidNumAlgo0'
 import { didToNumAlgo2DidDocument } from './peerDidNumAlgo2'
 

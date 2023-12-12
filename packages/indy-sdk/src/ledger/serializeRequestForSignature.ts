@@ -7,7 +7,7 @@ const GET_ATTR_TYPE = '104'
 export function serializeRequestForSignature(v: any): string {
   const type = v?.operation?.type
 
-  return _serializeRequestForSignature(v, true, type != undefined ? `${type}` : undefined)
+  return _serializeRequestForSignature(v, true, type !== undefined ? `${type}` : undefined)
 }
 
 /**
@@ -34,7 +34,7 @@ function _serializeRequestForSignature(v: any, isTopLevel: boolean, _type?: stri
 
     for (const vKey of Object.keys(v).sort()) {
       // Skip signature field at top level as in python code
-      if (isTopLevel && (vKey == 'signature' || vKey == 'fees' || vKey == 'signatures')) {
+      if (isTopLevel && (vKey === 'signature' || vKey === 'fees' || vKey === 'signatures')) {
         continue
       }
 
@@ -43,7 +43,7 @@ function _serializeRequestForSignature(v: any, isTopLevel: boolean, _type?: stri
       }
 
       let value = v[vKey]
-      if ((_type == ATTRIB_TYPE || _type == GET_ATTR_TYPE) && (vKey == 'raw' || vKey == 'hash' || vKey == 'enc')) {
+      if ((_type === ATTRIB_TYPE || _type === GET_ATTR_TYPE) && (vKey === 'raw' || vKey === 'hash' || vKey === 'enc')) {
         // do it only for attribute related request
         if (typeof value !== 'string') throw new Error('Value must be a string for hash')
         const hash = Hasher.hash(TypedArrayEncoder.fromString(value), 'sha2-256')

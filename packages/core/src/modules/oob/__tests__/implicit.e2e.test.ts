@@ -78,11 +78,11 @@ describe('out of band implicit', () => {
     // Wait for a connection event in faber agent and accept the request
     let faberAliceConnection = await waitForConnectionRecord(faberAgent, { state: DidExchangeState.RequestReceived })
     await faberAgent.connections.acceptRequest(faberAliceConnection.id)
-    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection!.id)
+    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection?.id)
     expect(faberAliceConnection.state).toBe(DidExchangeState.Completed)
 
     // Alice should now be connected
-    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection!.id)
+    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection?.id)
     expect(aliceFaberConnection.state).toBe(DidExchangeState.Completed)
 
     expect(aliceFaberConnection).toBeConnectedWith(faberAliceConnection)
@@ -110,11 +110,11 @@ describe('out of band implicit', () => {
     // Wait for a connection event in faber agent and accept the request
     let faberAliceConnection = await waitForConnectionRecord(faberAgent, { state: DidExchangeState.RequestReceived })
     await faberAgent.connections.acceptRequest(faberAliceConnection.id)
-    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection!.id)
+    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection?.id)
     expect(faberAliceConnection.state).toBe(DidExchangeState.Completed)
 
     // Alice should now be connected
-    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection!.id)
+    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection?.id)
     expect(aliceFaberConnection.state).toBe(DidExchangeState.Completed)
 
     expect(aliceFaberConnection).toBeConnectedWith(faberAliceConnection)
@@ -141,11 +141,11 @@ describe('out of band implicit', () => {
     // Wait for a connection event in faber agent and accept the request
     let faberAliceConnection = await waitForConnectionRecord(faberAgent, { state: DidExchangeState.RequestReceived })
     await faberAgent.connections.acceptRequest(faberAliceConnection.id)
-    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection!.id)
+    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection?.id)
     expect(faberAliceConnection.state).toBe(DidExchangeState.Completed)
 
     // Alice should now be connected
-    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection!.id)
+    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection?.id)
     expect(aliceFaberConnection.state).toBe(DidExchangeState.Completed)
 
     expect(aliceFaberConnection).toBeConnectedWith(faberAliceConnection)
@@ -158,7 +158,7 @@ describe('out of band implicit', () => {
     expect(await aliceAgent.connections.findByInvitationDid(publicDid.did!)).toEqual([aliceFaberConnection])
   })
 
-  test(`receive an implicit invitation using an unresolvable did`, async () => {
+  test('receive an implicit invitation using an unresolvable did', async () => {
     await expect(
       aliceAgent.oob.receiveImplicitInvitation({
         did: 'did:sov:ZSEqSci581BDZCFPa29ScB',
@@ -169,7 +169,7 @@ describe('out of band implicit', () => {
     ).rejects.toThrowError(/Unable to resolve did/)
   })
 
-  test(`create two connections using the same implicit invitation`, async () => {
+  test('create two connections using the same implicit invitation', async () => {
     const publicDid = await createPublicDid(faberAgent, unqualifiedSubmitterDid, 'rxjs:faber')
     expect(publicDid).toBeDefined()
 
@@ -183,11 +183,11 @@ describe('out of band implicit', () => {
     // Wait for a connection event in faber agent and accept the request
     let faberAliceConnection = await waitForConnectionRecord(faberAgent, { state: DidExchangeState.RequestReceived })
     await faberAgent.connections.acceptRequest(faberAliceConnection.id)
-    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection!.id)
+    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection?.id)
     expect(faberAliceConnection.state).toBe(DidExchangeState.Completed)
 
     // Alice should now be connected
-    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection!.id)
+    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection?.id)
     expect(aliceFaberConnection.state).toBe(DidExchangeState.Completed)
 
     expect(aliceFaberConnection).toBeConnectedWith(faberAliceConnection)
@@ -207,11 +207,11 @@ describe('out of band implicit', () => {
     // Wait for a connection event in faber agent
     let faberAliceNewConnection = await waitForConnectionRecord(faberAgent, { state: DidExchangeState.RequestReceived })
     await faberAgent.connections.acceptRequest(faberAliceNewConnection.id)
-    faberAliceNewConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceNewConnection!.id)
+    faberAliceNewConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceNewConnection?.id)
     expect(faberAliceNewConnection.state).toBe(DidExchangeState.Completed)
 
     // Alice should now be connected
-    aliceFaberNewConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberNewConnection!.id)
+    aliceFaberNewConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberNewConnection?.id)
     expect(aliceFaberNewConnection.state).toBe(DidExchangeState.Completed)
 
     expect(aliceFaberNewConnection).toBeConnectedWith(faberAliceNewConnection)

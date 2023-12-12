@@ -1,44 +1,44 @@
-import type { AnonCredsCredentialFormat, AnonCredsCredentialProposalFormat } from './AnonCredsCredentialFormat'
+import type {
+  AgentContext,
+  CredentialExchangeRecord,
+  CredentialFormatAcceptOfferOptions,
+  CredentialFormatAcceptProposalOptions,
+  CredentialFormatAcceptRequestOptions,
+  CredentialFormatAutoRespondCredentialOptions,
+  CredentialFormatAutoRespondOfferOptions,
+  CredentialFormatAutoRespondProposalOptions,
+  CredentialFormatAutoRespondRequestOptions,
+  CredentialFormatCreateOfferOptions,
+  CredentialFormatCreateOfferReturn,
+  CredentialFormatCreateProposalOptions,
+  CredentialFormatCreateProposalReturn,
+  CredentialFormatCreateReturn,
+  CredentialFormatProcessCredentialOptions,
+  CredentialFormatProcessOptions,
+  CredentialFormatService,
+  CredentialPreviewAttributeOptions,
+  LinkedAttachment,
+} from '@aries-framework/core'
 import type {
   AnonCredsCredential,
   AnonCredsCredentialOffer,
   AnonCredsCredentialRequest,
   AnonCredsCredentialRequestMetadata,
 } from '../models'
-import type { AnonCredsIssuerService, AnonCredsHolderService, GetRevocationRegistryDefinitionReturn } from '../services'
+import type { AnonCredsHolderService, AnonCredsIssuerService, GetRevocationRegistryDefinitionReturn } from '../services'
 import type { AnonCredsCredentialMetadata } from '../utils/metadata'
-import type {
-  CredentialFormatService,
-  AgentContext,
-  CredentialFormatCreateProposalOptions,
-  CredentialFormatCreateProposalReturn,
-  CredentialFormatProcessOptions,
-  CredentialFormatAcceptProposalOptions,
-  CredentialFormatCreateOfferReturn,
-  CredentialFormatCreateOfferOptions,
-  CredentialFormatAcceptOfferOptions,
-  CredentialFormatCreateReturn,
-  CredentialFormatAcceptRequestOptions,
-  CredentialFormatProcessCredentialOptions,
-  CredentialFormatAutoRespondProposalOptions,
-  CredentialFormatAutoRespondOfferOptions,
-  CredentialFormatAutoRespondRequestOptions,
-  CredentialFormatAutoRespondCredentialOptions,
-  CredentialExchangeRecord,
-  CredentialPreviewAttributeOptions,
-  LinkedAttachment,
-} from '@aries-framework/core'
+import type { AnonCredsCredentialFormat, AnonCredsCredentialProposalFormat } from './AnonCredsCredentialFormat'
 
 import {
-  ProblemReportError,
-  MessageValidator,
-  CredentialFormatSpec,
   AriesFrameworkError,
   Attachment,
-  JsonEncoder,
-  utils,
+  CredentialFormatSpec,
   CredentialProblemReportReason,
+  JsonEncoder,
   JsonTransformer,
+  MessageValidator,
+  ProblemReportError,
+  utils,
 } from '@aries-framework/core'
 
 import { AnonCredsError } from '../error'
@@ -48,14 +48,14 @@ import {
   AnonCredsRevocationRegistryDefinitionPrivateRepository,
   AnonCredsRevocationRegistryState,
 } from '../repository'
-import { AnonCredsIssuerServiceSymbol, AnonCredsHolderServiceSymbol } from '../services'
+import { AnonCredsHolderServiceSymbol, AnonCredsIssuerServiceSymbol } from '../services'
 import { AnonCredsRegistryService } from '../services/registry/AnonCredsRegistryService'
 import { dateToTimestamp } from '../utils'
 import {
-  convertAttributesToCredentialValues,
+  assertAttributesMatch,
   assertCredentialValuesMatch,
   checkCredentialValuesMatch,
-  assertAttributesMatch,
+  convertAttributesToCredentialValues,
   createAndLinkAttachmentsToPreview,
 } from '../utils/credential'
 import { AnonCredsCredentialMetadataKey, AnonCredsCredentialRequestMetadataKey } from '../utils/metadata'

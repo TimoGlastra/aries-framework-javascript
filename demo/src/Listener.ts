@@ -1,7 +1,3 @@
-import type { Alice } from './Alice'
-import type { AliceInquirer } from './AliceInquirer'
-import type { Faber } from './Faber'
-import type { FaberInquirer } from './FaberInquirer'
 import type {
   Agent,
   BasicMessageStateChangedEvent,
@@ -11,6 +7,10 @@ import type {
   ProofStateChangedEvent,
 } from '@aries-framework/core'
 import type BottomBar from 'inquirer/lib/ui/bottom-bar'
+import type { Alice } from './Alice'
+import type { AliceInquirer } from './AliceInquirer'
+import type { Faber } from './Faber'
+import type { FaberInquirer } from './FaberInquirer'
 
 import {
   BasicMessageEventTypes,

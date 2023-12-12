@@ -1,13 +1,13 @@
 import type { WalletConfig } from '@aries-framework/core'
 
 import {
+  KeyDerivationMethod,
   SigningProviderRegistry,
   WalletDuplicateError,
   WalletNotFoundError,
-  KeyDerivationMethod,
 } from '@aries-framework/core'
 
-import { testLogger, agentDependencies } from '../../../../core/tests'
+import { agentDependencies, testLogger } from '../../../../core/tests'
 import { AskarProfileWallet } from '../AskarProfileWallet'
 import { AskarWallet } from '../AskarWallet'
 

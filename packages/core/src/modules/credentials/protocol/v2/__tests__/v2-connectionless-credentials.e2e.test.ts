@@ -11,7 +11,7 @@ import {
   getLegacyAnonCredsModules,
   prepareForAnonCredsIssuance,
 } from '../../../../../../../anoncreds/tests/legacyAnonCredsSetup'
-import { waitForCredentialRecordSubject, getAgentOptions } from '../../../../../../tests/helpers'
+import { getAgentOptions, waitForCredentialRecordSubject } from '../../../../../../tests/helpers'
 import testLogger from '../../../../../../tests/logger'
 import { Agent } from '../../../../../agent/Agent'
 import { CredentialEventTypes } from '../../../CredentialEvents'

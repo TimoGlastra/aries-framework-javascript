@@ -1,11 +1,11 @@
 import type { WalletConfig } from '@aries-framework/core'
 
 import {
-  JsonTransformer,
   BasicMessage,
+  JsonTransformer,
+  KeyDerivationMethod,
   KeyType,
   SigningProviderRegistry,
-  KeyDerivationMethod,
 } from '@aries-framework/core'
 
 import { agentDependencies } from '../../../../core/tests/helpers'

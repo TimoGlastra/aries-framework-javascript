@@ -155,8 +155,8 @@ export interface ProofOfPossessionRequirements {
  * @internal
  */
 export enum AuthFlowType {
-  AuthorizationCodeFlow,
-  PreAuthorizedCodeFlow,
+  AuthorizationCodeFlow = 0,
+  PreAuthorizedCodeFlow = 1,
 }
 
 type WithFlowType<FlowType extends AuthFlowType, Options> = Options & { flowType: FlowType }

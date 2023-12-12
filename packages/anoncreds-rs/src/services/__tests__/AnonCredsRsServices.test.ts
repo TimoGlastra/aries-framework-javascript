@@ -1,24 +1,24 @@
 import type { AnonCredsProofRequest } from '@aries-framework/anoncreds'
 
 import {
-  getUnqualifiedSchemaId,
-  parseIndySchemaId,
-  getUnqualifiedCredentialDefinitionId,
-  parseIndyCredentialDefinitionId,
-  AnonCredsModuleConfig,
-  AnonCredsHolderServiceSymbol,
-  AnonCredsIssuerServiceSymbol,
-  AnonCredsVerifierServiceSymbol,
-  AnonCredsSchemaRepository,
-  AnonCredsSchemaRecord,
-  AnonCredsCredentialDefinitionRecord,
-  AnonCredsCredentialDefinitionRepository,
   AnonCredsCredentialDefinitionPrivateRecord,
   AnonCredsCredentialDefinitionPrivateRepository,
-  AnonCredsKeyCorrectnessProofRepository,
+  AnonCredsCredentialDefinitionRecord,
+  AnonCredsCredentialDefinitionRepository,
+  AnonCredsHolderServiceSymbol,
+  AnonCredsIssuerServiceSymbol,
   AnonCredsKeyCorrectnessProofRecord,
-  AnonCredsLinkSecretRepository,
+  AnonCredsKeyCorrectnessProofRepository,
   AnonCredsLinkSecretRecord,
+  AnonCredsLinkSecretRepository,
+  AnonCredsModuleConfig,
+  AnonCredsSchemaRecord,
+  AnonCredsSchemaRepository,
+  AnonCredsVerifierServiceSymbol,
+  getUnqualifiedCredentialDefinitionId,
+  getUnqualifiedSchemaId,
+  parseIndyCredentialDefinitionId,
+  parseIndySchemaId,
 } from '@aries-framework/anoncreds'
 import { InjectionSymbols } from '@aries-framework/core'
 import { anoncreds } from '@hyperledger/anoncreds-nodejs'

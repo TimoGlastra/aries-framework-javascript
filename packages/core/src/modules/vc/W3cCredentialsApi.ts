@@ -1,7 +1,7 @@
+import type { Query } from '../../storage/StorageService'
 import type { StoreCredentialOptions } from './W3cCredentialServiceOptions'
 import type { W3cVerifiableCredential } from './models'
 import type { W3cCredentialRecord } from './repository'
-import type { Query } from '../../storage/StorageService'
 
 import { AgentContext } from '../../agent'
 import { injectable } from '../../plugins'

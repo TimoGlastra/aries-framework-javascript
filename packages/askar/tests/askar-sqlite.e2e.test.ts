@@ -1,3 +1,5 @@
+import { tmpdir } from 'os'
+import path from 'path'
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   Agent,
@@ -6,14 +8,12 @@ import {
   BasicMessageRole,
   KeyDerivationMethod,
   TypedArrayEncoder,
-  utils,
   WalletDuplicateError,
   WalletInvalidKeyError,
   WalletNotFoundError,
+  utils,
 } from '@aries-framework/core'
 import { Store } from '@hyperledger/aries-askar-shared'
-import { tmpdir } from 'os'
-import path from 'path'
 
 import { getSqliteAgentOptions } from './helpers'
 
@@ -124,7 +124,7 @@ describe('Askar SQLite agents', () => {
 
     // Initialize the wallet again and assert record does not exist
     // This should create a new wallet
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // biome-ignore lint/style/noNonNullAssertion:
     await bobAgent.wallet.initialize(bobAgent.config.walletConfig!)
     expect(await bobBasicMessageRepository.findById(bobAgent.context, basicMessageRecord.id)).toBeNull()
     await bobAgent.wallet.delete()

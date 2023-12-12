@@ -1,5 +1,5 @@
-import type { AnonCredsRsModuleConfigOptions } from './AnonCredsRsModuleConfig'
 import type { DependencyManager, Module } from '@aries-framework/core'
+import type { AnonCredsRsModuleConfigOptions } from './AnonCredsRsModuleConfig'
 
 import {
   AnonCredsHolderServiceSymbol,

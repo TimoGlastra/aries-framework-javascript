@@ -1,5 +1,5 @@
-import type { TenantAgentContextMapping } from '../TenantSessionCoordinator'
 import type { DependencyManager } from '@aries-framework/core'
+import type { TenantAgentContextMapping } from '../TenantSessionCoordinator'
 
 import { AgentConfig, AgentContext, WalletApi } from '@aries-framework/core'
 import { Mutex, withTimeout } from 'async-mutex'

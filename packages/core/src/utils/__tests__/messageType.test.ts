@@ -106,7 +106,7 @@ describe('messageType', () => {
         protocolMajorVersion: 1,
         protocolMinorVersion: 0,
         messageName: 'request',
-        protocolUri: `https://didcomm.org/connections/1.0`,
+        protocolUri: 'https://didcomm.org/connections/1.0',
         messageTypeUri: 'https://didcomm.org/connections/1.0/request',
       })
 
@@ -117,7 +117,7 @@ describe('messageType', () => {
         protocolMajorVersion: 4,
         protocolMinorVersion: 5,
         messageName: 'propose-credential',
-        protocolUri: `https://didcomm.org/issue-credential/4.5`,
+        protocolUri: 'https://didcomm.org/issue-credential/4.5',
         messageTypeUri: 'https://didcomm.org/issue-credential/4.5/propose-credential',
       })
     })

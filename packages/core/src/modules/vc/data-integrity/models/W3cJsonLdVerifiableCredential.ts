@@ -1,14 +1,14 @@
-import type { LinkedDataProofOptions } from './LinkedDataProof'
 import type { W3cCredentialOptions } from '../../models/credential/W3cCredential'
+import type { LinkedDataProofOptions } from './LinkedDataProof'
 
 import { ValidateNested } from 'class-validator'
 
 import {
   IsInstanceOrArrayOfInstances,
+  JsonTransformer,
   SingleOrArray,
   asArray,
   mapSingleOrArray,
-  JsonTransformer,
 } from '../../../../utils'
 import { ClaimFormat } from '../../models/ClaimFormat'
 import { W3cCredential } from '../../models/credential/W3cCredential'

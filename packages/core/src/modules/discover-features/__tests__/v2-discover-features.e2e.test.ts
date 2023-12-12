@@ -10,7 +10,7 @@ import { getIndySdkModules } from '../../../../../indy-sdk/tests/setupIndySdkMod
 import { setupSubjectTransports } from '../../../../tests'
 import { getAgentOptions, makeConnection } from '../../../../tests/helpers'
 import { Agent } from '../../../agent/Agent'
-import { GoalCode, Feature } from '../../../agent/models'
+import { Feature, GoalCode } from '../../../agent/models'
 import { DiscoverFeaturesEventTypes } from '../DiscoverFeaturesEvents'
 
 import { waitForDisclosureSubject, waitForQuerySubject } from './helpers'

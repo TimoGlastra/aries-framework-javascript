@@ -1,11 +1,11 @@
-import type { IndySdk } from '../types'
 import type { FileSystem, Logger } from '@aries-framework/core'
 import type { LedgerReadReplyResponse, LedgerRequest, LedgerWriteReplyResponse } from 'indy-sdk'
 import type { Subject } from 'rxjs'
+import type { IndySdk } from '../types'
 
 import { AriesFrameworkError } from '@aries-framework/core'
 
-import { isIndyError, IndySdkError } from '../error'
+import { IndySdkError, isIndyError } from '../error'
 
 import { IndySdkPoolError } from './error'
 import { isLedgerRejectResponse, isLedgerReqnackResponse } from './util'
@@ -101,12 +101,11 @@ export class IndySdkPool {
       this.poolConnected.catch((error) => {
         // Set poolConnected to undefined so we can retry connection upon failure
         this.poolConnected = undefined
-        this.logger.error('Connection to pool: ' + this.poolConfig.genesisPath + ' failed.', { error })
+        this.logger.error(`Connection to pool: ${this.poolConfig.genesisPath} failed.`, { error })
       })
       return this.poolConnected
-    } else {
-      throw new AriesFrameworkError('Cannot attempt connection to ledger, already connecting.')
     }
+    throw new AriesFrameworkError('Cannot attempt connection to ledger, already connecting.')
   }
 
   private async connectToLedger() {
@@ -175,7 +174,7 @@ export class IndySdkPool {
       try {
         await this.poolConnected
       } catch (error) {
-        this.logger.error('Connection to pool: ' + this.poolConfig.genesisPath + ' failed.', { error })
+        this.logger.error(`Connection to pool: ${this.poolConfig.genesisPath} failed.`, { error })
       }
     }
 

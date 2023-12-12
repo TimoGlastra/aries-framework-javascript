@@ -1,5 +1,5 @@
-import type { DummyModuleConfigOptions } from './DummyModuleConfig'
 import type { DependencyManager, FeatureRegistry, Module } from '@aries-framework/core'
+import type { DummyModuleConfigOptions } from './DummyModuleConfig'
 
 import { Protocol } from '@aries-framework/core'
 

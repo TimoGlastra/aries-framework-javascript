@@ -1,13 +1,13 @@
+import type { Feature } from '../../agent/models'
 import type {
   DiscloseFeaturesOptions,
-  QueryFeaturesOptions,
   DiscoverFeaturesServiceMap,
+  QueryFeaturesOptions,
 } from './DiscoverFeaturesApiOptions'
 import type { DiscoverFeaturesDisclosureReceivedEvent } from './DiscoverFeaturesEvents'
 import type { DiscoverFeaturesService } from './services'
-import type { Feature } from '../../agent/models'
 
-import { firstValueFrom, of, ReplaySubject, Subject } from 'rxjs'
+import { ReplaySubject, Subject, firstValueFrom, of } from 'rxjs'
 import { catchError, filter, map, takeUntil, timeout } from 'rxjs/operators'
 
 import { AgentContext } from '../../agent'

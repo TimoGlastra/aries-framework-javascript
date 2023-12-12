@@ -1,17 +1,17 @@
-import type { AnonCredsTestsAgent } from './anoncredsSetup'
-import type { EventReplaySubject } from '../../core/tests'
 import type { AnonCredsRequestProofFormat } from '@aries-framework/anoncreds'
 import type { CredentialExchangeRecord } from '@aries-framework/core'
+import type { EventReplaySubject } from '../../core/tests'
+import type { AnonCredsTestsAgent } from './anoncredsSetup'
 
 import {
   Attachment,
   AttachmentData,
   LinkedAttachment,
-  ProofState,
   ProofExchangeRecord,
+  ProofState,
+  V2PresentationMessage,
   V2ProposePresentationMessage,
   V2RequestPresentationMessage,
-  V2PresentationMessage,
 } from '@aries-framework/core'
 
 import { dateToTimestamp } from '../../anoncreds/src/utils/timestamp'

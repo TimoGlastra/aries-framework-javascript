@@ -1,12 +1,12 @@
 import type { AgentContext } from '@aries-framework/core'
 
 import {
-  getKeyFromVerificationMethod,
   AriesFrameworkError,
-  convertPublicKeyToX25519,
   DidDocumentBuilder,
   DidsApi,
   TypedArrayEncoder,
+  convertPublicKeyToX25519,
+  getKeyFromVerificationMethod,
 } from '@aries-framework/core'
 
 // Create a base DIDDoc template according to https://hyperledger.github.io/indy-did-method/#base-diddoc-template

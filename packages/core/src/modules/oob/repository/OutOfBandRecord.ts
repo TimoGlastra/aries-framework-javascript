@@ -1,7 +1,7 @@
-import type { OutOfBandRecordMetadata } from './outOfBandRecordMetadataTypes'
 import type { TagsBase } from '../../../storage/BaseRecord'
 import type { OutOfBandRole } from '../domain/OutOfBandRole'
 import type { OutOfBandState } from '../domain/OutOfBandState'
+import type { OutOfBandRecordMetadata } from './outOfBandRecordMetadataTypes'
 
 import { Type } from 'class-transformer'
 

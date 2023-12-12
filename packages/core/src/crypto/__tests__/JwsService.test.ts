@@ -1,5 +1,5 @@
-import type { AgentContext } from '../../agent'
 import type { Key, Wallet } from '@aries-framework/core'
+import type { AgentContext } from '../../agent'
 
 import { RegisteredAskarTestWallet } from '../../../../askar/tests/helpers'
 import { agentDependencies, getAgentConfig, getAgentContext } from '../../../tests/helpers'

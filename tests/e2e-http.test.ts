@@ -6,12 +6,12 @@ import { getAgentOptions } from '../packages/core/tests/helpers'
 import { e2eTest } from './e2e-test'
 
 import {
-  HttpOutboundTransport,
   Agent,
   AutoAcceptCredential,
-  MediatorPickupStrategy,
+  HttpOutboundTransport,
   MediationRecipientModule,
   MediatorModule,
+  MediatorPickupStrategy,
 } from '@aries-framework/core'
 import { HttpInboundTransport } from '@aries-framework/node'
 

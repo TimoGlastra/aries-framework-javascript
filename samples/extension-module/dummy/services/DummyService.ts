@@ -1,7 +1,7 @@
+import type { AgentContext, ConnectionRecord, InboundMessageContext, Query } from '@aries-framework/core'
 import type { DummyStateChangedEvent } from './DummyEvents'
-import type { Query, AgentContext, ConnectionRecord, InboundMessageContext } from '@aries-framework/core'
 
-import { injectable, EventEmitter } from '@aries-framework/core'
+import { EventEmitter, injectable } from '@aries-framework/core'
 
 import { DummyModuleConfig } from '../DummyModuleConfig'
 import { DummyRequestMessage, DummyResponseMessage } from '../messages'

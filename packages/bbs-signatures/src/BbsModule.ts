@@ -3,9 +3,9 @@ import type { DependencyManager, Module } from '@aries-framework/core'
 import {
   AgentConfig,
   KeyType,
+  SignatureSuiteToken,
   SigningProviderToken,
   VERIFICATION_METHOD_TYPE_BLS12381G2_KEY_2020,
-  SignatureSuiteToken,
 } from '@aries-framework/core'
 
 import { Bls12381g2SigningProvider } from './Bls12381g2SigningProvider'

@@ -1,22 +1,22 @@
-import type { CustomProofTags, AgentConfig, AgentContext, ProofStateChangedEvent } from '../../../../../../core/src'
+import type { AgentConfig, AgentContext, CustomProofTags, ProofStateChangedEvent } from '../../../../../../core/src'
 
 import { Subject } from 'rxjs'
 
 import {
-  DidExchangeState,
   Attachment,
   AttachmentData,
-  ProofState,
-  ProofExchangeRecord,
-  InboundMessageContext,
-  ProofEventTypes,
-  PresentationProblemReportReason,
+  DidExchangeState,
   EventEmitter,
+  InboundMessageContext,
+  PresentationProblemReportReason,
+  ProofEventTypes,
+  ProofExchangeRecord,
+  ProofState,
 } from '../../../../../../core/src'
 import { ConnectionService } from '../../../../../../core/src/modules/connections/services/ConnectionService'
 import { ProofRepository } from '../../../../../../core/src/modules/proofs/repository/ProofRepository'
 import { DidCommMessageRepository } from '../../../../../../core/src/storage/didcomm/DidCommMessageRepository'
-import { getMockConnection, getAgentConfig, getAgentContext, mockFunction } from '../../../../../../core/tests'
+import { getAgentConfig, getAgentContext, getMockConnection, mockFunction } from '../../../../../../core/tests'
 import { LegacyIndyProofFormatService } from '../../../../formats/LegacyIndyProofFormatService'
 import { V1ProofProtocol } from '../V1ProofProtocol'
 import { INDY_PROOF_REQUEST_ATTACHMENT_ID, V1RequestPresentationMessage } from '../messages'
@@ -226,7 +226,7 @@ describe('V1ProofProtocol', () => {
       })
     })
 
-    test(`updates problem report error message and returns proof record`, async () => {
+    test('updates problem report error message and returns proof record', async () => {
       const repositoryUpdateSpy = jest.spyOn(proofRepository, 'update')
 
       // given

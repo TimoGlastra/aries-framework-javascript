@@ -1,5 +1,5 @@
-import type { IndySdk } from '../../types'
 import type { TagsBase } from '@aries-framework/core'
+import type { IndySdk } from '../../types'
 
 import { RecordDuplicateError, RecordNotFoundError, SigningProviderRegistry } from '@aries-framework/core'
 import * as indySdk from 'indy-sdk'
@@ -22,7 +22,7 @@ const startDate = Date.now()
 
 describe('IndySdkStorageService', () => {
   beforeEach(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // biome-ignore lint/style/noNonNullAssertion:
     await wallet.createAndOpen(agentConfig.walletConfig!)
   })
 

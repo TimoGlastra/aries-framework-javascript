@@ -1,7 +1,7 @@
 import type { ConnectionRecord, CredentialExchangeRecord, ProofExchangeRecord } from '@aries-framework/core'
 
 import { BaseAgent } from './BaseAgent'
-import { greenText, Output, redText } from './OutputClass'
+import { Output, greenText, redText } from './OutputClass'
 
 export class Alice extends BaseAgent {
   public connected: boolean
@@ -34,7 +34,7 @@ export class Alice extends BaseAgent {
   }
 
   private async waitForConnection(connectionRecord: ConnectionRecord) {
-    connectionRecord = await this.agent.connections.returnWhenIsConnected(connectionRecord.id)
+    await this.agent.connections.returnWhenIsConnected(connectionRecord.id)
     this.connected = true
     console.log(greenText(Output.ConnectionEstablished))
     return connectionRecord.id

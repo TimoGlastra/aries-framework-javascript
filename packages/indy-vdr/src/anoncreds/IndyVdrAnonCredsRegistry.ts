@@ -1,24 +1,24 @@
 import type {
+  AnonCredsCredentialDefinition,
   AnonCredsRegistry,
-  GetCredentialDefinitionReturn,
-  GetSchemaReturn,
-  RegisterSchemaReturn,
-  RegisterCredentialDefinitionReturn,
-  GetRevocationStatusListReturn,
-  GetRevocationRegistryDefinitionReturn,
   AnonCredsRevocationRegistryDefinition,
+  AnonCredsSchema,
+  GetCredentialDefinitionReturn,
+  GetRevocationRegistryDefinitionReturn,
+  GetRevocationStatusListReturn,
+  GetSchemaReturn,
+  RegisterCredentialDefinitionReturn,
+  RegisterCredentialDefinitionReturnStateAction,
+  RegisterCredentialDefinitionReturnStateFailed,
+  RegisterCredentialDefinitionReturnStateFinished,
+  RegisterCredentialDefinitionReturnStateWait,
   RegisterRevocationRegistryDefinitionReturn,
   RegisterRevocationStatusListReturn,
-  AnonCredsSchema,
-  AnonCredsCredentialDefinition,
+  RegisterSchemaReturn,
+  RegisterSchemaReturnStateAction,
   RegisterSchemaReturnStateFailed,
   RegisterSchemaReturnStateFinished,
-  RegisterSchemaReturnStateAction,
   RegisterSchemaReturnStateWait,
-  RegisterCredentialDefinitionReturnStateAction,
-  RegisterCredentialDefinitionReturnStateWait,
-  RegisterCredentialDefinitionReturnStateFinished,
-  RegisterCredentialDefinitionReturnStateFailed,
 } from '@aries-framework/anoncreds'
 import type { AgentContext } from '@aries-framework/core'
 import type { SchemaResponse } from '@hyperledger/indy-vdr-shared'
@@ -34,14 +34,14 @@ import {
 } from '@aries-framework/anoncreds'
 import { AriesFrameworkError } from '@aries-framework/core'
 import {
-  GetSchemaRequest,
-  SchemaRequest,
-  GetCredentialDefinitionRequest,
   CredentialDefinitionRequest,
-  GetTransactionRequest,
-  GetRevocationRegistryDeltaRequest,
-  GetRevocationRegistryDefinitionRequest,
   CustomRequest,
+  GetCredentialDefinitionRequest,
+  GetRevocationRegistryDefinitionRequest,
+  GetRevocationRegistryDeltaRequest,
+  GetSchemaRequest,
+  GetTransactionRequest,
+  SchemaRequest,
 } from '@hyperledger/indy-vdr-shared'
 
 import { verificationKeyForIndyDid } from '../dids/didIndyUtil'
@@ -49,9 +49,9 @@ import { IndyVdrPoolService } from '../pool'
 import { multiSignRequest } from '../utils/sign'
 
 import {
-  indyVdrAnonCredsRegistryIdentifierRegex,
-  getDidIndySchemaId,
   getDidIndyCredentialDefinitionId,
+  getDidIndySchemaId,
+  indyVdrAnonCredsRegistryIdentifierRegex,
 } from './utils/identifiers'
 import { anonCredsRevocationStatusListFromIndyVdr } from './utils/transform'
 
@@ -483,7 +483,7 @@ export class IndyVdrAnonCredsRegistry implements AnonCredsRegistry {
         return {
           resolutionMetadata: {
             error: 'notFound',
-            message: `unable to resolve revocation registry definition`,
+            message: 'unable to resolve revocation registry definition',
           },
           revocationRegistryDefinitionId,
           revocationRegistryDefinitionMetadata: {},

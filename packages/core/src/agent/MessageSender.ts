@@ -1,14 +1,14 @@
-import type { AgentMessage } from './AgentMessage'
-import type { EnvelopeKeys } from './EnvelopeService'
-import type { AgentMessageSentEvent } from './Events'
-import type { TransportSession } from './TransportService'
-import type { AgentContext } from './context'
 import type { ConnectionRecord } from '../modules/connections'
 import type { ResolvedDidCommService } from '../modules/didcomm'
 import type { DidDocument } from '../modules/dids'
 import type { OutOfBandRecord } from '../modules/oob/repository'
 import type { OutboundTransport } from '../transport/OutboundTransport'
-import type { OutboundPackage, EncryptedMessage } from '../types'
+import type { EncryptedMessage, OutboundPackage } from '../types'
+import type { AgentMessage } from './AgentMessage'
+import type { EnvelopeKeys } from './EnvelopeService'
+import type { AgentMessageSentEvent } from './Events'
+import type { TransportSession } from './TransportService'
+import type { AgentContext } from './context'
 
 import { DID_COMM_TRANSPORT_QUEUE, InjectionSymbols } from '../constants'
 import { ReturnRouteTypes } from '../decorators/transport/TransportDecorator'
@@ -147,7 +147,7 @@ export class MessageSender {
 
     // Loop trough all available services and try to send the message
     for await (const service of services) {
-      this.logger.debug(`Sending outbound message to service:`, { service })
+      this.logger.debug('Sending outbound message to service:', { service })
       try {
         const protocolScheme = getProtocolScheme(service.serviceEndpoint)
         for (const transport of this.outboundTransports) {
@@ -398,7 +398,7 @@ export class MessageSender {
       throw new AriesFrameworkError('Agent has no outbound transport!')
     }
 
-    this.logger.debug(`Sending outbound message to service:`, {
+    this.logger.debug('Sending outbound message to service:', {
       messageId: message.id,
       service: { ...service, recipientKeys: 'omitted...', routingKeys: 'omitted...' },
     })
@@ -461,7 +461,7 @@ export class MessageSender {
       session = this.transportService.findSessionByConnectionId(outboundContext.connection.id)
     }
 
-    return session && session.inboundMessage?.hasAnyReturnRoute() ? session : null
+    return session?.inboundMessage?.hasAnyReturnRoute() ? session : null
   }
 
   private async retrieveServicesByConnection(
@@ -515,7 +515,7 @@ export class MessageSender {
 
     // If transport priority is set we will sort services by our priority
     if (transportPriority?.schemes) {
-      services = services.sort(function (a, b) {
+      services = services.sort((a, b) => {
         const aScheme = getProtocolScheme(a.serviceEndpoint)
         const bScheme = getProtocolScheme(b.serviceEndpoint)
         return transportPriority?.schemes.indexOf(aScheme) - transportPriority?.schemes.indexOf(bScheme)

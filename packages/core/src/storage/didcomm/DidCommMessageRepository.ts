@@ -1,6 +1,6 @@
-import type { DidCommMessageRole } from './DidCommMessageRole'
 import type { AgentContext } from '../../agent'
 import type { AgentMessage, ConstructableAgentMessage } from '../../agent/AgentMessage'
+import type { DidCommMessageRole } from './DidCommMessageRole'
 
 import { EventEmitter } from '../../agent/EventEmitter'
 import { InjectionSymbols } from '../../constants'

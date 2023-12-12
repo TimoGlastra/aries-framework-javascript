@@ -1,5 +1,5 @@
-import type { IndySdkPoolConfig } from '../IndySdkPool'
 import type * as Indy from 'indy-sdk'
+import type { IndySdkPoolConfig } from '../IndySdkPool'
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

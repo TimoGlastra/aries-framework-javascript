@@ -11,7 +11,7 @@ import { Attachment, AttachmentData } from '../../../../../decorators/attachment
 import { LinkedAttachment } from '../../../../../utils/LinkedAttachment'
 import { ProofState } from '../../../models'
 import { ProofExchangeRecord } from '../../../repository'
-import { V2ProposePresentationMessage, V2RequestPresentationMessage, V2PresentationMessage } from '../messages'
+import { V2PresentationMessage, V2ProposePresentationMessage, V2RequestPresentationMessage } from '../messages'
 
 describe('Present Proof', () => {
   let faberAgent: AnonCredsTestsAgent

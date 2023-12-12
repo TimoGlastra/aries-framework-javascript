@@ -2,7 +2,7 @@ import { ClassValidationError } from '../../error/ClassValidationError'
 import { JsonTransformer } from '../../utils/JsonTransformer'
 import { MessageValidator } from '../../utils/MessageValidator'
 
-import { TransportDecorator, ReturnRouteTypes } from './TransportDecorator'
+import { ReturnRouteTypes, TransportDecorator } from './TransportDecorator'
 
 const validTransport = (transportJson: Record<string, unknown>) =>
   MessageValidator.validateSync(JsonTransformer.fromJSON(transportJson, TransportDecorator))

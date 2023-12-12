@@ -1,6 +1,6 @@
+import type { AgentConfig, AgentContext, Repository } from '@aries-framework/core'
 import type { ActionMenuStateChangedEvent } from '../../ActionMenuEvents'
 import type { ActionMenuSelection } from '../../models'
-import type { AgentContext, AgentConfig, Repository } from '@aries-framework/core'
 
 import { DidExchangeState, EventEmitter, InboundMessageContext } from '@aries-framework/core'
 import { Subject } from 'rxjs'
@@ -78,7 +78,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`throws an error when duplicated options are specified`, async () => {
+    it('throws an error when duplicated options are specified', async () => {
       expect(
         actionMenuService.createMenu(agentContext, {
           connection: mockConnectionRecord,
@@ -96,7 +96,7 @@ describe('ActionMenuService', () => {
       ).rejects.toThrowError('Action Menu contains duplicated options')
     })
 
-    it(`no previous menu: emits a menu with title, description and options`, async () => {
+    it('no previous menu: emits a menu with title, description and options', async () => {
       // No previous menu
       mockFunction(actionMenuRepository.findSingleByQuery).mockReturnValue(Promise.resolve(null))
 
@@ -129,7 +129,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`existing menu: emits a menu with title, description, options and thread`, async () => {
+    it('existing menu: emits a menu with title, description, options and thread', async () => {
       // Previous menu is in Done state
       const previousMenuDone = mockActionMenuRecord({
         connectionId: mockConnectionRecord.id,
@@ -170,7 +170,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`existing menu, cleared: emits a menu with title, description, options and new thread`, async () => {
+    it('existing menu, cleared: emits a menu with title, description, options and new thread', async () => {
       // Previous menu is in Done state
       const previousMenuClear = mockActionMenuRecord({
         connectionId: mockConnectionRecord.id,
@@ -234,7 +234,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`throws an error when invalid selection is provided`, async () => {
+    it('throws an error when invalid selection is provided', async () => {
       expect(
         actionMenuService.createPerform(agentContext, {
           actionMenuRecord: mockRecord,
@@ -243,7 +243,7 @@ describe('ActionMenuService', () => {
       ).rejects.toThrowError('Selection does not match valid actions')
     })
 
-    it(`throws an error when state is not preparing-selection`, async () => {
+    it('throws an error when state is not preparing-selection', async () => {
       for (const state of Object.values(ActionMenuState).filter(
         (state) => state !== ActionMenuState.PreparingSelection
       )) {
@@ -259,7 +259,7 @@ describe('ActionMenuService', () => {
       }
     })
 
-    it(`emits a menu with a valid selection and action menu record`, async () => {
+    it('emits a menu with a valid selection and action menu record', async () => {
       const eventListenerMock = jest.fn()
       eventEmitter.on<ActionMenuStateChangedEvent>(ActionMenuEventTypes.ActionMenuStateChanged, eventListenerMock)
 
@@ -310,7 +310,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`no existing record: emits event and creates new request and record`, async () => {
+    it('no existing record: emits event and creates new request and record', async () => {
       mockFunction(actionMenuRepository.findSingleByQuery).mockReturnValue(Promise.resolve(null))
 
       const eventListenerMock = jest.fn()
@@ -346,7 +346,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`already existing record: emits event, creates new request and updates record`, async () => {
+    it('already existing record: emits event, creates new request and updates record', async () => {
       mockFunction(actionMenuRepository.findSingleByQuery).mockReturnValue(Promise.resolve(mockRecord))
 
       const previousState = mockRecord.state
@@ -408,7 +408,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`requester role: emits a cleared menu`, async () => {
+    it('requester role: emits a cleared menu', async () => {
       const eventListenerMock = jest.fn()
       eventEmitter.on<ActionMenuStateChangedEvent>(ActionMenuEventTypes.ActionMenuStateChanged, eventListenerMock)
 
@@ -437,7 +437,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`responder role: emits a cleared menu`, async () => {
+    it('responder role: emits a cleared menu', async () => {
       const eventListenerMock = jest.fn()
       eventEmitter.on<ActionMenuStateChangedEvent>(ActionMenuEventTypes.ActionMenuStateChanged, eventListenerMock)
 
@@ -502,7 +502,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`emits event and creates record when no previous record`, async () => {
+    it('emits event and creates record when no previous record', async () => {
       const messageContext = new InboundMessageContext(mockMenuMessage, {
         agentContext,
         connection: mockConnectionRecord,
@@ -549,7 +549,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`emits event and updates record when existing record`, async () => {
+    it('emits event and updates record when existing record', async () => {
       const messageContext = new InboundMessageContext(mockMenuMessage, {
         agentContext,
         connection: mockConnectionRecord,
@@ -622,7 +622,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`emits event and saves record when valid selection and thread Id`, async () => {
+    it('emits event and saves record when valid selection and thread Id', async () => {
       const mockPerformMessage = new PerformMessage({
         name: 'opt1',
         threadId: '123',
@@ -679,7 +679,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`throws error when invalid selection`, async () => {
+    it('throws error when invalid selection', async () => {
       const mockPerformMessage = new PerformMessage({
         name: 'fake',
         threadId: '123',
@@ -704,7 +704,7 @@ describe('ActionMenuService', () => {
       expect(eventListenerMock).not.toHaveBeenCalled()
     })
 
-    it(`throws error when record not found`, async () => {
+    it('throws error when record not found', async () => {
       const mockPerformMessage = new PerformMessage({
         name: 'opt1',
         threadId: '122',
@@ -729,7 +729,7 @@ describe('ActionMenuService', () => {
       expect(eventListenerMock).not.toHaveBeenCalled()
     })
 
-    it(`throws error when invalid state`, async () => {
+    it('throws error when invalid state', async () => {
       const mockPerformMessage = new PerformMessage({
         name: 'opt1',
         threadId: '123',
@@ -755,7 +755,7 @@ describe('ActionMenuService', () => {
       expect(eventListenerMock).not.toHaveBeenCalled()
     })
 
-    it(`throws problem report error when menu has been cleared`, async () => {
+    it('throws problem report error when menu has been cleared', async () => {
       const mockPerformMessage = new PerformMessage({
         name: 'opt1',
         threadId: '123',
@@ -808,7 +808,7 @@ describe('ActionMenuService', () => {
       mockMenuRequestMessage = new MenuRequestMessage({})
     })
 
-    it(`emits event and creates record when no previous record`, async () => {
+    it('emits event and creates record when no previous record', async () => {
       const messageContext = new InboundMessageContext(mockMenuRequestMessage, {
         agentContext,
         connection: mockConnectionRecord,
@@ -845,7 +845,7 @@ describe('ActionMenuService', () => {
       })
     })
 
-    it(`emits event and updates record when existing record`, async () => {
+    it('emits event and updates record when existing record', async () => {
       const messageContext = new InboundMessageContext(mockMenuRequestMessage, {
         agentContext,
         connection: mockConnectionRecord,

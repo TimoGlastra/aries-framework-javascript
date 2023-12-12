@@ -1,7 +1,7 @@
+import type { Observable } from 'rxjs'
+import type { ConnectionRecord } from '../modules/connections'
 import type { AgentMessage } from './AgentMessage'
 import type { OutboundMessageContext, OutboundMessageSendStatus } from './models'
-import type { ConnectionRecord } from '../modules/connections'
-import type { Observable } from 'rxjs'
 
 import { filter } from 'rxjs'
 

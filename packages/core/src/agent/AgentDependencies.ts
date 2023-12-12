@@ -1,6 +1,6 @@
-import type { FileSystem } from '../storage/FileSystem'
 import type { EventEmitter } from 'events'
 import type WebSocket from 'ws'
+import type { FileSystem } from '../storage/FileSystem'
 
 export interface AgentDependencies {
   FileSystem: {

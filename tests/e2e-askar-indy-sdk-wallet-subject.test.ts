@@ -1,5 +1,5 @@
-import type { SubjectMessage } from './transport/SubjectInboundTransport'
 import type { AnonCredsTestsAgent } from '../packages/anoncreds/tests/legacyAnonCredsSetup'
+import type { SubjectMessage } from './transport/SubjectInboundTransport'
 
 import { Subject } from 'rxjs'
 
@@ -16,9 +16,9 @@ import { SubjectOutboundTransport } from './transport/SubjectOutboundTransport'
 import {
   Agent,
   AutoAcceptCredential,
+  MediationRecipientModule,
   MediatorModule,
   MediatorPickupStrategy,
-  MediationRecipientModule,
 } from '@aries-framework/core'
 
 const recipientAgentOptions = getAgentOptions(

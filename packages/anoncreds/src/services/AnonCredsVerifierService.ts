@@ -1,5 +1,5 @@
-import type { VerifyProofOptions } from './AnonCredsVerifierServiceOptions'
 import type { AgentContext } from '@aries-framework/core'
+import type { VerifyProofOptions } from './AnonCredsVerifierServiceOptions'
 
 export const AnonCredsVerifierServiceSymbol = Symbol('AnonCredsVerifierService')
 

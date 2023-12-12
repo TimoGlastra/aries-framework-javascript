@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { InboundMessageContext } from './InboundMessageContext'
 import type { Key } from '../../crypto'
 import type { ConnectionRecord } from '../../modules/connections'
 import type { ResolvedDidCommService } from '../../modules/didcomm'
@@ -7,6 +5,8 @@ import type { OutOfBandRecord } from '../../modules/oob'
 import type { BaseRecord } from '../../storage/BaseRecord'
 import type { AgentMessage } from '../AgentMessage'
 import type { AgentContext } from '../context'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { InboundMessageContext } from './InboundMessageContext'
 
 import { AriesFrameworkError } from '../../error'
 

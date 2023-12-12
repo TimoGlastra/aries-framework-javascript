@@ -1,5 +1,5 @@
-import type { BaseName } from './MultiBaseEncoder'
 import type { Attachment } from '../decorators/attachment/Attachment'
+import type { BaseName } from './MultiBaseEncoder'
 
 import { AriesFrameworkError } from '../error/AriesFrameworkError'
 
@@ -21,15 +21,16 @@ export function encodeAttachment(
 ) {
   if (attachment.data.sha256) {
     return `hl:${attachment.data.sha256}`
-  } else if (attachment.data.base64) {
+  }
+  if (attachment.data.base64) {
     return HashlinkEncoder.encode(TypedArrayEncoder.fromBase64(attachment.data.base64), hashAlgorithm, baseName)
-  } else if (attachment.data.json) {
+  }
+  if (attachment.data.json) {
     throw new AriesFrameworkError(
       `Attachment: (${attachment.id}) has json encoded data. This is currently not supported`
     )
-  } else {
-    throw new AriesFrameworkError(`Attachment: (${attachment.id}) has no data to create a link with`)
   }
+  throw new AriesFrameworkError(`Attachment: (${attachment.id}) has no data to create a link with`)
 }
 
 /**

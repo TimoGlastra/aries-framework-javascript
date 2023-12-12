@@ -1,7 +1,7 @@
 import type { ValidationOptions } from 'class-validator'
 
 import { Transform, TransformationType } from 'class-transformer'
-import { isString, ValidateBy, buildMessage } from 'class-validator'
+import { ValidateBy, buildMessage, isString } from 'class-validator'
 import { DateTime } from 'luxon'
 
 import { Metadata } from '../storage/Metadata'
@@ -51,7 +51,7 @@ export function DateTransformer() {
 
 export function DateParser(value: string): Date {
   const parsedDate = new Date(value)
-  if (parsedDate instanceof Date && !isNaN(parsedDate.getTime())) {
+  if (parsedDate instanceof Date && !Number.isNaN(parsedDate.getTime())) {
     return parsedDate
   }
   const luxonDate = DateTime.fromSQL(value)
@@ -70,7 +70,7 @@ export function IsMap(validationOptions?: ValidationOptions): PropertyDecorator 
       name: 'isMap',
       validator: {
         validate: (value: unknown): boolean => value instanceof Map,
-        defaultMessage: buildMessage((eachPrefix) => eachPrefix + '$property must be a Map', validationOptions),
+        defaultMessage: buildMessage((eachPrefix) => `${eachPrefix}$property must be a Map`, validationOptions),
       },
     },
     validationOptions
@@ -87,7 +87,7 @@ export function IsStringOrStringArray(validationOptions?: Omit<ValidationOptions
       validator: {
         validate: (value): boolean => isString(value) || (Array.isArray(value) && value.every((v) => isString(v))),
         defaultMessage: buildMessage(
-          (eachPrefix) => eachPrefix + '$property must be a string or string array',
+          (eachPrefix) => `${eachPrefix}$property must be a string or string array`,
           validationOptions
         ),
       },

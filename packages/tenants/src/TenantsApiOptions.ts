@@ -1,6 +1,6 @@
+import type { ModulesMap } from '@aries-framework/core'
 import type { TenantAgent } from './TenantAgent'
 import type { TenantConfig } from './models/TenantConfig'
-import type { ModulesMap } from '@aries-framework/core'
 
 export interface GetTenantAgentOptions {
   tenantId: string

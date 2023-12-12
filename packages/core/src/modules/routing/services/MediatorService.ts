@@ -11,17 +11,17 @@ import { InjectionSymbols } from '../../../constants'
 import { KeyType } from '../../../crypto'
 import { AriesFrameworkError, RecordDuplicateError } from '../../../error'
 import { Logger } from '../../../logger'
-import { injectable, inject } from '../../../plugins'
+import { inject, injectable } from '../../../plugins'
 import { ConnectionService } from '../../connections'
 import { ConnectionMetadataKeys } from '../../connections/repository/ConnectionMetadataTypes'
 import { didKeyToVerkey, isDidKey, verkeyToDidKey } from '../../dids/helpers'
 import { RoutingEventTypes } from '../RoutingEvents'
 import {
-  KeylistUpdateMessage,
   KeylistUpdateAction,
-  KeylistUpdated,
+  KeylistUpdateMessage,
   KeylistUpdateResponseMessage,
   KeylistUpdateResult,
+  KeylistUpdated,
   MediationGrantMessage,
 } from '../messages'
 import { MediationRole } from '../models/MediationRole'
@@ -61,7 +61,7 @@ export class MediatorService {
       this.logger.debug(`Returning mediator routing keys ${mediatorRoutingRecord.routingKeys}`)
       return mediatorRoutingRecord.routingKeys
     }
-    throw new AriesFrameworkError(`Mediator has not been initialized yet.`)
+    throw new AriesFrameworkError('Mediator has not been initialized yet.')
   }
 
   public async processForwardMessage(
@@ -231,9 +231,8 @@ export class MediatorService {
           agentContext,
           this.mediatorRoutingRepository.MEDIATOR_ROUTING_RECORD_ID
         )
-      } else {
-        throw error
       }
+      throw error
     }
 
     return routingRecord

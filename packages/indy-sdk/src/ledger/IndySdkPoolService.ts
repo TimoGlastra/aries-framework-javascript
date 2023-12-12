@@ -1,17 +1,17 @@
-import type { AcceptanceMechanisms, AuthorAgreement } from './IndySdkPool'
-import type { IndySdk } from '../types'
 import type { AgentContext, Key } from '@aries-framework/core'
 import type { GetNymResponse, LedgerReadReplyResponse, LedgerRequest, LedgerWriteReplyResponse } from 'indy-sdk'
+import type { IndySdk } from '../types'
+import type { AcceptanceMechanisms, AuthorAgreement } from './IndySdkPool'
 
 import { didIndyRegex } from '@aries-framework/anoncreds'
 import {
-  TypedArrayEncoder,
   CacheModuleConfig,
+  FileSystem,
   InjectionSymbols,
   Logger,
-  injectable,
+  TypedArrayEncoder,
   inject,
-  FileSystem,
+  injectable,
 } from '@aries-framework/core'
 import { Subject } from 'rxjs'
 
@@ -81,9 +81,8 @@ export class IndySdkPoolService {
       if (pool) return { pool }
 
       throw new IndySdkPoolError(`Pool for indy namespace '${namespace}' not found`)
-    } else {
-      return await this.getPoolForLegacyDid(agentContext, did)
     }
+    return await this.getPoolForLegacyDid(agentContext, did)
   }
 
   private async getPoolForLegacyDid(
@@ -343,9 +342,8 @@ export class IndySdkPoolService {
       })
       if (isIndyError(error, 'LedgerNotFound')) {
         throw new IndySdkPoolNotFoundError(`Did '${did}' not found on ledger ${pool.didIndyNamespace}`)
-      } else {
-        throw isIndyError(error) ? new IndySdkError(error) : error
       }
+      throw isIndyError(error) ? new IndySdkError(error) : error
     }
   }
 }

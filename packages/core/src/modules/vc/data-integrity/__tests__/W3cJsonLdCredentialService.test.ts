@@ -6,7 +6,7 @@ import { indySdk } from '../../../../../../indy-sdk/tests/setupIndySdkModule'
 import { getAgentConfig, getAgentContext } from '../../../../../tests/helpers'
 import { KeyType } from '../../../../crypto'
 import { SigningProviderRegistry } from '../../../../crypto/signing-provider'
-import { asArray, TypedArrayEncoder } from '../../../../utils'
+import { TypedArrayEncoder, asArray } from '../../../../utils'
 import { JsonTransformer } from '../../../../utils/JsonTransformer'
 import { WalletError } from '../../../../wallet/error'
 import {
@@ -291,7 +291,7 @@ describe('W3cJsonLdCredentialsService', () => {
             ...Ed25519Signature2018Fixtures.TEST_VP_DOCUMENT_SIGNED,
             proof: {
               ...Ed25519Signature2018Fixtures.TEST_VP_DOCUMENT_SIGNED.proof,
-              jws: Ed25519Signature2018Fixtures.TEST_VP_DOCUMENT_SIGNED.proof.jws + 'a',
+              jws: `${Ed25519Signature2018Fixtures.TEST_VP_DOCUMENT_SIGNED.proof.jws}a`,
             },
           },
           W3cJsonLdVerifiablePresentation

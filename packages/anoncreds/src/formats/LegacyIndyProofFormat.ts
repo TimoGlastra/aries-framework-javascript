@@ -1,11 +1,11 @@
+import type { ProofFormat } from '@aries-framework/core'
+import type { AnonCredsProof, AnonCredsProofRequest, AnonCredsSelectedCredentials } from '../models'
 import type {
+  AnonCredsCredentialsForProofRequest,
+  AnonCredsGetCredentialsForProofRequestOptions,
   AnonCredsProposeProofFormat,
   AnonCredsRequestProofFormat,
-  AnonCredsGetCredentialsForProofRequestOptions,
-  AnonCredsCredentialsForProofRequest,
 } from './AnonCredsProofFormat'
-import type { AnonCredsProof, AnonCredsProofRequest, AnonCredsSelectedCredentials } from '../models'
-import type { ProofFormat } from '@aries-framework/core'
 
 // TODO: Custom restrictions to remove `_id` from restrictions?
 export type LegacyIndyProofRequest = AnonCredsProofRequest

@@ -1,6 +1,6 @@
-import type { TailsFileService } from './TailsFileService'
-import type { AnonCredsRevocationRegistryDefinition } from '../../models'
 import type { AgentContext, FileSystem } from '@aries-framework/core'
+import type { AnonCredsRevocationRegistryDefinition } from '../../models'
+import type { TailsFileService } from './TailsFileService'
 
 import { AriesFrameworkError, InjectionSymbols, TypedArrayEncoder } from '@aries-framework/core'
 

@@ -2,6 +2,7 @@ import type { InitConfig } from '@aries-framework/core'
 import type { IndySdkPoolConfig } from '@aries-framework/indy-sdk'
 import type { IndyVdrPoolConfig } from '@aries-framework/indy-vdr'
 
+import { randomUUID } from 'crypto'
 import {
   AnonCredsCredentialFormatService,
   AnonCredsModule,
@@ -21,24 +22,23 @@ import {
   CheqdModuleConfig,
 } from '@aries-framework/cheqd'
 import {
-  ConnectionsModule,
-  DidsModule,
-  V2ProofProtocol,
-  V2CredentialProtocol,
-  ProofsModule,
-  AutoAcceptProof,
-  AutoAcceptCredential,
-  CredentialsModule,
   Agent,
+  AutoAcceptCredential,
+  AutoAcceptProof,
+  ConnectionsModule,
+  CredentialsModule,
+  DidsModule,
   HttpOutboundTransport,
+  ProofsModule,
+  V2CredentialProtocol,
+  V2ProofProtocol,
 } from '@aries-framework/core'
 import { IndySdkAnonCredsRegistry, IndySdkModule, IndySdkSovDidResolver } from '@aries-framework/indy-sdk'
-import { IndyVdrIndyDidResolver, IndyVdrAnonCredsRegistry, IndyVdrModule } from '@aries-framework/indy-vdr'
-import { agentDependencies, HttpInboundTransport } from '@aries-framework/node'
+import { IndyVdrAnonCredsRegistry, IndyVdrIndyDidResolver, IndyVdrModule } from '@aries-framework/indy-vdr'
+import { HttpInboundTransport, agentDependencies } from '@aries-framework/node'
 import { anoncreds } from '@hyperledger/anoncreds-nodejs'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 import { indyVdr } from '@hyperledger/indy-vdr-nodejs'
-import { randomUUID } from 'crypto'
 import indySdk from 'indy-sdk'
 
 import { greenText } from './OutputClass'

@@ -68,7 +68,7 @@ export interface IndyError {
   indyName?: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny:
 export function isIndyError(error: any, errorName?: IndyErrorValues): error is IndyError {
   if (typeof error !== 'object' || error === null) return false
 
@@ -86,7 +86,7 @@ export function isIndyError(error: any, errorName?: IndyErrorValues): error is I
   // See: https://github.com/hyperledger/indy-sdk/pull/2283
   if (!error.indyName) {
     const errorCode = Number(error.message)
-    if (!isNaN(errorCode) && Object.prototype.hasOwnProperty.call(indyErrors, errorCode)) {
+    if (!Number.isNaN(errorCode) && Object.prototype.hasOwnProperty.call(indyErrors, errorCode)) {
       // We already check if the property is set. We can safely ignore this typescript error
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore

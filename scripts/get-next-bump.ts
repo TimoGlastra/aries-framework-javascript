@@ -8,13 +8,13 @@ const currentVersion = lerna.version
 const currentMajor = Number(currentVersion.split('.')[0])
 
 // eslint-disable-next-line no-restricted-syntax
-const enum VersionBump {
+enum VersionBump {
   Major = 0,
   Minor = 1,
   Patch = 2,
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny:
 const whatBump = (commits: any[]) => {
   let versionBump = VersionBump.Patch
   let breaking = 0
@@ -37,7 +37,7 @@ const whatBump = (commits: any[]) => {
   }
 
   let reason = `There is ${breaking} BREAKING CHANGE and ${features} features`
-  if (currentMajor < 1) reason += ` in a pre-major release`
+  if (currentMajor < 1) reason += ' in a pre-major release'
 
   return {
     level: versionBump,
@@ -47,7 +47,7 @@ const whatBump = (commits: any[]) => {
 
 conventionalRecommendedBump(
   {
-    preset: `conventionalcommits`,
+    preset: 'conventionalcommits',
     whatBump,
     skipUnstable: true,
   },

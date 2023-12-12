@@ -1,11 +1,11 @@
-import type { ConnectionRecord } from './repository'
-import type { Routing } from './services/ConnectionService'
 import type { AgentContext } from '../../agent'
 import type { InboundMessageContext } from '../../agent/models/InboundMessageContext'
 import type { ParsedMessageType } from '../../utils/messageType'
 import type { ResolvedDidCommService } from '../didcomm'
 import type { PeerDidCreateOptions } from '../dids'
 import type { OutOfBandRecord } from '../oob/repository'
+import type { ConnectionRecord } from './repository'
+import type { Routing } from './services/ConnectionService'
 
 import { InjectionSymbols } from '../../constants'
 import { Key, KeyType } from '../../crypto'
@@ -22,12 +22,12 @@ import { JsonTransformer } from '../../utils/JsonTransformer'
 import { base64ToBase64URL } from '../../utils/base64'
 import {
   DidDocument,
-  DidRegistrarService,
   DidDocumentRole,
-  createPeerDidDocumentFromServices,
   DidKey,
-  getNumAlgoFromPeerDid,
+  DidRegistrarService,
   PeerDidNumAlgo,
+  createPeerDidDocumentFromServices,
+  getNumAlgoFromPeerDid,
 } from '../dids'
 import { getKeyFromVerificationMethod } from '../dids/domain/key-type'
 import { tryParseDid } from '../dids/domain/parse'
@@ -428,7 +428,7 @@ export class DidExchangeProtocol {
     messageType: ParsedMessageType,
     connectionRecord: ConnectionRecord
   ) {
-    this.logger.debug(`Updating state`, { connectionRecord })
+    this.logger.debug('Updating state', { connectionRecord })
     const nextState = DidExchangeStateMachine.nextState(messageType, connectionRecord)
     return this.connectionService.updateState(agentContext, connectionRecord, nextState)
   }

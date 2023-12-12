@@ -1,11 +1,11 @@
-import type { ConnectionRecord } from './repository'
 import type { ParsedMessageType } from '../../utils/messageType'
+import type { ConnectionRecord } from './repository'
 
 import { AriesFrameworkError } from '../../error'
 import { canHandleMessageType } from '../../utils/messageType'
 
-import { DidExchangeRequestMessage, DidExchangeResponseMessage, DidExchangeCompleteMessage } from './messages'
-import { DidExchangeState, DidExchangeRole } from './models'
+import { DidExchangeCompleteMessage, DidExchangeRequestMessage, DidExchangeResponseMessage } from './messages'
+import { DidExchangeRole, DidExchangeState } from './models'
 
 export class DidExchangeStateMachine {
   private static createMessageStateRules = [
@@ -51,7 +51,9 @@ export class DidExchangeStateMachine {
   ]
 
   public static assertCreateMessageState(messageType: ParsedMessageType, record: ConnectionRecord) {
-    const rule = this.createMessageStateRules.find((r) => canHandleMessageType(r.message, messageType))
+    const rule = DidExchangeStateMachine.createMessageStateRules.find((r) =>
+      canHandleMessageType(r.message, messageType)
+    )
     if (!rule) {
       throw new AriesFrameworkError(`Could not find create message rule for ${messageType}`)
     }
@@ -63,7 +65,9 @@ export class DidExchangeStateMachine {
   }
 
   public static assertProcessMessageState(messageType: ParsedMessageType, record: ConnectionRecord) {
-    const rule = this.processMessageStateRules.find((r) => canHandleMessageType(r.message, messageType))
+    const rule = DidExchangeStateMachine.processMessageStateRules.find((r) =>
+      canHandleMessageType(r.message, messageType)
+    )
     if (!rule) {
       throw new AriesFrameworkError(`Could not find create message rule for ${messageType}`)
     }
@@ -75,8 +79,8 @@ export class DidExchangeStateMachine {
   }
 
   public static nextState(messageType: ParsedMessageType, record: ConnectionRecord) {
-    const rule = this.createMessageStateRules
-      .concat(this.processMessageStateRules)
+    const rule = DidExchangeStateMachine.createMessageStateRules
+      .concat(DidExchangeStateMachine.processMessageStateRules)
       .find((r) => canHandleMessageType(r.message, messageType) && r.role === record.role)
     if (!rule) {
       throw new AriesFrameworkError(

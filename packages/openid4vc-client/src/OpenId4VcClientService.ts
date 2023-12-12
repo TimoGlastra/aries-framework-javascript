@@ -1,42 +1,42 @@
 import type {
-  GenerateAuthorizationUrlOptions,
-  RequestCredentialOptions,
-  ProofOfPossessionVerificationMethodResolver,
-  SupportedCredentialFormats,
-  ProofOfPossessionRequirements,
-} from './OpenId4VcClientServiceOptions'
-import type {
   AgentContext,
-  W3cVerifiableCredential,
-  VerificationMethod,
   JwaSignatureAlgorithm,
+  VerificationMethod,
   W3cCredentialRecord,
+  W3cVerifiableCredential,
   W3cVerifyCredentialResult,
 } from '@aries-framework/core'
 import type { CredentialMetadata, CredentialResponse, Jwt, OpenIDResponse } from '@sphereon/openid4vci-client'
+import type {
+  GenerateAuthorizationUrlOptions,
+  ProofOfPossessionRequirements,
+  ProofOfPossessionVerificationMethodResolver,
+  RequestCredentialOptions,
+  SupportedCredentialFormats,
+} from './OpenId4VcClientServiceOptions'
 
 import {
-  ClaimFormat,
-  getJwkClassFromJwaSignatureAlgorithm,
-  W3cJwtVerifiableCredential,
   AriesFrameworkError,
-  getKeyFromVerificationMethod,
+  ClaimFormat,
   Hasher,
-  inject,
-  injectable,
   InjectionSymbols,
   JsonEncoder,
   JsonTransformer,
   JwsService,
   Logger,
+  SignatureSuiteRegistry,
   TypedArrayEncoder,
   W3cCredentialService,
   W3cJsonLdVerifiableCredential,
-  getJwkFromKey,
-  getSupportedVerificationMethodTypesFromKeyType,
+  W3cJwtVerifiableCredential,
+  getJwkClassFromJwaSignatureAlgorithm,
   getJwkClassFromKeyType,
+  getJwkFromKey,
+  getKeyFromVerificationMethod,
+  getSupportedVerificationMethodTypesFromKeyType,
+  inject,
+  injectable,
   parseDid,
-  SignatureSuiteRegistry,
 } from '@aries-framework/core'
 import {
   AuthzFlowType,
@@ -47,7 +47,7 @@ import {
 } from '@sphereon/openid4vci-client'
 import { randomStringForEntropy } from '@stablelib/random'
 
-import { supportedCredentialFormats, AuthFlowType } from './OpenId4VcClientServiceOptions'
+import { AuthFlowType, supportedCredentialFormats } from './OpenId4VcClientServiceOptions'
 
 const flowTypeMapping = {
   [AuthFlowType.AuthorizationCodeFlow]: AuthzFlowType.AUTHORIZATION_CODE_FLOW,

@@ -1,12 +1,12 @@
-import type { DummyStateChangedEvent } from './dummy'
 import type { Socket } from 'net'
+import type { DummyStateChangedEvent } from './dummy'
 
 import { Agent, ConnectionsModule, ConsoleLogger, LogLevel } from '@aries-framework/core'
-import { agentDependencies, HttpInboundTransport, WsInboundTransport } from '@aries-framework/node'
+import { HttpInboundTransport, WsInboundTransport, agentDependencies } from '@aries-framework/node'
 import express from 'express'
 import { Server } from 'ws'
 
-import { DummyModule, DummyEventTypes, DummyState } from './dummy'
+import { DummyEventTypes, DummyModule, DummyState } from './dummy'
 
 const run = async () => {
   // Create transports

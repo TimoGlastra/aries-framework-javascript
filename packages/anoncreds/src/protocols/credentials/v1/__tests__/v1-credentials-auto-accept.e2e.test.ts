@@ -1,9 +1,9 @@
 import type { EventReplaySubject } from '../../../../../../core/tests'
 import type { AnonCredsTestsAgent } from '../../../../../tests/legacyAnonCredsSetup'
 
-import { AutoAcceptCredential, CredentialState, CredentialExchangeRecord, JsonTransformer } from '@aries-framework/core'
+import { AutoAcceptCredential, CredentialExchangeRecord, CredentialState, JsonTransformer } from '@aries-framework/core'
 
-import { waitForCredentialRecord, waitForCredentialRecordSubject, testLogger } from '../../../../../../core/tests'
+import { testLogger, waitForCredentialRecord, waitForCredentialRecordSubject } from '../../../../../../core/tests'
 import { setupAnonCredsTests } from '../../../../../tests/legacyAnonCredsSetup'
 import { V1CredentialPreview } from '../messages'
 

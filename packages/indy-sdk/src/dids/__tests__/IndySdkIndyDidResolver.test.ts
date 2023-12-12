@@ -1,11 +1,11 @@
+import type { GetNymResponse } from 'indy-sdk'
 import type { IndySdkPool } from '../../ledger'
 import type { IndyEndpointAttrib } from '../didSovUtil'
-import type { GetNymResponse } from 'indy-sdk'
 
-import { SigningProviderRegistry, JsonTransformer } from '@aries-framework/core'
+import { JsonTransformer, SigningProviderRegistry } from '@aries-framework/core'
 import indySdk from 'indy-sdk'
 
-import { mockFunction, getAgentConfig, getAgentContext } from '../../../../core/tests/helpers'
+import { getAgentConfig, getAgentContext, mockFunction } from '../../../../core/tests/helpers'
 import { IndySdkPoolService } from '../../ledger/IndySdkPoolService'
 import { IndySdkSymbol } from '../../types'
 import { IndySdkWallet } from '../../wallet'

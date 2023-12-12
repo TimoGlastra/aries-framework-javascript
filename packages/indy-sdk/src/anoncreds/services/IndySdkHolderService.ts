@@ -1,36 +1,36 @@
 import type {
+  AnonCredsCredentialInfo,
   AnonCredsHolderService,
   AnonCredsProof,
+  AnonCredsSelectedCredentials,
   CreateCredentialRequestOptions,
   CreateCredentialRequestReturn,
-  CreateProofOptions,
-  AnonCredsCredentialInfo,
-  GetCredentialOptions,
-  StoreCredentialOptions,
-  GetCredentialsForProofRequestOptions,
-  GetCredentialsForProofRequestReturn,
-  AnonCredsSelectedCredentials,
   CreateLinkSecretOptions,
   CreateLinkSecretReturn,
+  CreateProofOptions,
+  GetCredentialOptions,
+  GetCredentialsForProofRequestOptions,
+  GetCredentialsForProofRequestReturn,
   GetCredentialsOptions,
+  StoreCredentialOptions,
 } from '@aries-framework/anoncreds'
 import type { AgentContext } from '@aries-framework/core'
 import type {
   CredentialDefs,
+  IndyCredential as IndySdkCredential,
+  IndyProofRequest,
   IndyRequestedCredentials,
   RevStates,
   Schemas,
-  IndyCredential as IndySdkCredential,
-  IndyProofRequest,
 } from 'indy-sdk'
 
 import {
-  parseIndyCredentialDefinitionId,
   AnonCredsLinkSecretRepository,
   generateLegacyProverDidLikeString,
+  parseIndyCredentialDefinitionId,
   storeLinkSecret,
 } from '@aries-framework/anoncreds'
-import { AriesFrameworkError, injectable, inject, utils } from '@aries-framework/core'
+import { AriesFrameworkError, inject, injectable, utils } from '@aries-framework/core'
 
 import { IndySdkModuleConfig } from '../../IndySdkModuleConfig'
 import { IndySdkError, isIndyError } from '../../error'
@@ -77,7 +77,7 @@ export class IndySdkHolderService implements AnonCredsHolderService {
         linkSecretId,
       }
     } catch (error) {
-      agentContext.config.logger.error(`Error creating link secret`, {
+      agentContext.config.logger.error('Error creating link secret', {
         error,
         linkSecretId,
       })
@@ -159,7 +159,7 @@ export class IndySdkHolderService implements AnonCredsHolderService {
       // FIXME IndyProof if badly typed in indy-sdk. It contains a `requested_predicates` property, which should be `predicates`.
       return indyProof as unknown as AnonCredsProof
     } catch (error) {
-      agentContext.config.logger.error(`Error creating Indy Proof`, {
+      agentContext.config.logger.error('Error creating Indy Proof', {
         error,
         proofRequest,
         selectedCredentials,
@@ -319,7 +319,7 @@ export class IndySdkHolderService implements AnonCredsHolderService {
         credentialRequestMetadata: anonCredsCredentialRequestMetadataFromIndySdk(result[1]),
       }
     } catch (error) {
-      agentContext.config.logger.error(`Error creating Indy Credential Request`, {
+      agentContext.config.logger.error('Error creating Indy Credential Request', {
         error,
         credentialOffer: options.credentialOffer,
       })
@@ -334,7 +334,7 @@ export class IndySdkHolderService implements AnonCredsHolderService {
     try {
       return await this.indySdk.proverDeleteCredential(agentContext.wallet.handle, credentialId)
     } catch (error) {
-      agentContext.config.logger.error(`Error deleting Indy Credential from Wallet`, {
+      agentContext.config.logger.error('Error deleting Indy Credential from Wallet', {
         error,
       })
 
@@ -426,7 +426,7 @@ export class IndySdkHolderService implements AnonCredsHolderService {
 
       return credentials
     } catch (error) {
-      agentContext.config.logger.error(`Error Fetching Indy Credentials For Referent`, {
+      agentContext.config.logger.error('Error Fetching Indy Credentials For Referent', {
         error,
       })
 

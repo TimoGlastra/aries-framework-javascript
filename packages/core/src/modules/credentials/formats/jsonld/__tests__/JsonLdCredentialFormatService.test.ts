@@ -2,7 +2,7 @@ import type { CredentialFormatService } from '../..'
 import type { AgentContext } from '../../../../../agent'
 import type { CredentialPreviewAttribute } from '../../../models/CredentialPreviewAttribute'
 import type { CustomCredentialTags } from '../../../repository/CredentialExchangeRecord'
-import type { JsonCredential, JsonLdCredentialFormat, JsonLdCredentialDetailFormat } from '../JsonLdCredentialFormat'
+import type { JsonCredential, JsonLdCredentialDetailFormat, JsonLdCredentialFormat } from '../JsonLdCredentialFormat'
 
 import { getAgentConfig, getAgentContext, mockFunction } from '../../../../../../tests/helpers'
 import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
@@ -133,7 +133,7 @@ const inputDocAsJson: JsonCredential = {
     alumniOf: 'oops',
   },
 }
-const verificationMethod = `8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K#8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K`
+const verificationMethod = '8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K#8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K'
 
 const signCredentialOptions: JsonLdCredentialDetailFormat = {
   credential: inputDocAsJson,
@@ -175,7 +175,7 @@ describe('JsonLd CredentialFormatService', () => {
   })
 
   describe('Create JsonLd Credential Proposal / Offer', () => {
-    test(`Creates JsonLd Credential Proposal`, async () => {
+    test('Creates JsonLd Credential Proposal', async () => {
       // when
       const { attachment, format } = await jsonLdFormatService.createProposal(agentContext, {
         credentialRecord: mockCredentialRecord(),
@@ -208,7 +208,7 @@ describe('JsonLd CredentialFormatService', () => {
       })
     })
 
-    test(`Creates JsonLd Credential Offer`, async () => {
+    test('Creates JsonLd Credential Offer', async () => {
       // when
       const { attachment, previewAttributes, format } = await jsonLdFormatService.createOffer(agentContext, {
         credentialFormats: {
@@ -296,7 +296,7 @@ describe('JsonLd CredentialFormatService', () => {
       const credentialRequest = requestAttachment.getDataAsJson<JsonLdCredentialDetailFormat>()
 
       // calls private method in the format service
-      const verificationMethod = await service['deriveVerificationMethod'](
+      const verificationMethod = await service.deriveVerificationMethod(
         agentContext,
         signCredentialOptions.credential,
         credentialRequest

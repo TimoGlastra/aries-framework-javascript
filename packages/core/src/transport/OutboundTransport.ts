@@ -6,7 +6,7 @@ export interface OutboundTransport {
 
   sendMessage(outboundPackage: OutboundPackage): Promise<void>
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny:
   start(agent: Agent<any>): Promise<void>
   stop(): Promise<void>
 }

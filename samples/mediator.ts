@@ -12,8 +12,8 @@
  * to the mediator, request mediation and set the mediator as default.
  */
 
-import type { InitConfig } from '@aries-framework/core'
 import type { Socket } from 'net'
+import type { InitConfig } from '@aries-framework/core'
 
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 import express from 'express'
@@ -23,15 +23,15 @@ import { TestLogger } from '../packages/core/tests/logger'
 
 import { AskarModule } from '@aries-framework/askar'
 import {
-  ConnectionsModule,
-  MediatorModule,
-  HttpOutboundTransport,
   Agent,
   ConnectionInvitationMessage,
+  ConnectionsModule,
+  HttpOutboundTransport,
   LogLevel,
+  MediatorModule,
   WsOutboundTransport,
 } from '@aries-framework/core'
-import { HttpInboundTransport, agentDependencies, WsInboundTransport } from '@aries-framework/node'
+import { HttpInboundTransport, WsInboundTransport, agentDependencies } from '@aries-framework/node'
 
 const port = process.env.AGENT_PORT ? Number(process.env.AGENT_PORT) : 3001
 
@@ -91,7 +91,7 @@ httpInboundTransport.app.get('/invitation', async (req, res) => {
   } else {
     const { outOfBandInvitation } = await agent.oob.createInvitation()
     const httpEndpoint = config.endpoints.find((e) => e.startsWith('http'))
-    res.send(outOfBandInvitation.toUrl({ domain: httpEndpoint + '/invitation' }))
+    res.send(outOfBandInvitation.toUrl({ domain: `${httpEndpoint}/invitation` }))
   }
 })
 

@@ -1,24 +1,24 @@
+import type { AgentContext } from '@aries-framework/core'
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type {
+  AnonCredsCredentialDefinition,
   AnonCredsRegistry,
-  GetSchemaReturn,
-  RegisterSchemaOptions,
-  RegisterSchemaReturn,
+  AnonCredsRevocationRegistryDefinition,
+  AnonCredsRevocationStatusList,
+  AnonCredsSchema,
   GetCredentialDefinitionReturn,
-  RegisterCredentialDefinitionOptions,
-  RegisterCredentialDefinitionReturn,
   GetRevocationRegistryDefinitionReturn,
   GetRevocationStatusListReturn,
-  AnonCredsRevocationStatusList,
-  AnonCredsRevocationRegistryDefinition,
-  AnonCredsSchema,
-  AnonCredsCredentialDefinition,
+  GetSchemaReturn,
+  RegisterCredentialDefinitionOptions,
+  RegisterCredentialDefinitionReturn,
   RegisterRevocationRegistryDefinitionOptions,
   RegisterRevocationRegistryDefinitionReturn,
-  RegisterRevocationStatusListReturn,
   RegisterRevocationStatusListOptions,
+  RegisterRevocationStatusListReturn,
+  RegisterSchemaOptions,
+  RegisterSchemaReturn,
 } from '../src'
-import type { AgentContext } from '@aries-framework/core'
 
 import { Hasher, TypedArrayEncoder } from '@aries-framework/core'
 import BigNumber from 'bn.js'
@@ -29,10 +29,10 @@ import {
   getDidIndySchemaId,
 } from '../../indy-sdk/src/anoncreds/utils/identifiers'
 import {
-  parseIndyCredentialDefinitionId,
-  getUnqualifiedRevocationRegistryId,
   getUnqualifiedCredentialDefinitionId,
+  getUnqualifiedRevocationRegistryId,
   getUnqualifiedSchemaId,
+  parseIndyCredentialDefinitionId,
   parseIndyDid,
   parseIndySchemaId,
 } from '../src'

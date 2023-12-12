@@ -1,10 +1,10 @@
 import type { AgentContext, TagsBase } from '@aries-framework/core'
 
 import {
-  TypedArrayEncoder,
-  SigningProviderRegistry,
   RecordDuplicateError,
   RecordNotFoundError,
+  SigningProviderRegistry,
+  TypedArrayEncoder,
 } from '@aries-framework/core'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 
@@ -66,7 +66,7 @@ describe('AskarStorageService', () => {
       const retrieveRecord = await ariesAskar.sessionFetch({
         category: record.type,
         name: record.id,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        // biome-ignore lint/style/noNonNullAssertion:
         sessionHandle: wallet.session.handle!,
         forUpdate: false,
       })
@@ -86,7 +86,7 @@ describe('AskarStorageService', () => {
       await ariesAskar.sessionUpdate({
         category: TestRecord.type,
         name: 'some-id',
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        // biome-ignore lint/style/noNonNullAssertion:
         sessionHandle: wallet.session.handle!,
         value: TypedArrayEncoder.fromString('{}'),
         tags: {

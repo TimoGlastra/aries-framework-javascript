@@ -20,12 +20,12 @@ import type {
   CreateProofProblemReportOptions,
   CreateProofProposalOptions,
   CreateProofRequestOptions,
-  ProofFormatDataMessagePayload,
   GetCredentialsForRequestOptions,
   GetCredentialsForRequestReturn,
   GetProofFormatDataReturn,
   NegotiateProofProposalOptions,
   NegotiateProofRequestOptions,
+  ProofFormatDataMessagePayload,
   ProofProtocolMsgReturnType,
   SelectCredentialsForRequestOptions,
   SelectCredentialsForRequestReturn,
@@ -113,7 +113,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
     const formatServices = this.getFormatServices(proofFormats)
     if (formatServices.length === 0) {
-      throw new AriesFrameworkError(`Unable to create proposal. No supported formats`)
+      throw new AriesFrameworkError('Unable to create proposal. No supported formats')
     }
 
     const proofRecord = new ProofExchangeRecord({
@@ -168,7 +168,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
     const formatServices = this.getFormatServicesFromMessage(proposalMessage.formats)
     if (formatServices.length === 0) {
-      throw new AriesFrameworkError(`Unable to process proposal. No supported formats`)
+      throw new AriesFrameworkError('Unable to process proposal. No supported formats')
     }
 
     // credential record already exists
@@ -199,31 +199,30 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
       await this.updateState(messageContext.agentContext, proofRecord, ProofState.ProposalReceived)
 
       return proofRecord
-    } else {
-      // Assert
-      await connectionService.assertConnectionOrOutOfBandExchange(messageContext)
-
-      // No proof record exists with thread id
-      proofRecord = new ProofExchangeRecord({
-        connectionId: connection?.id,
-        threadId: proposalMessage.threadId,
-        state: ProofState.ProposalReceived,
-        protocolVersion: 'v2',
-        parentThreadId: proposalMessage.thread?.parentThreadId,
-      })
-
-      await this.proofFormatCoordinator.processProposal(messageContext.agentContext, {
-        proofRecord,
-        formatServices,
-        message: proposalMessage,
-      })
-
-      // Save record and emit event
-      await proofRepository.save(messageContext.agentContext, proofRecord)
-      this.emitStateChangedEvent(messageContext.agentContext, proofRecord, null)
-
-      return proofRecord
     }
+    // Assert
+    await connectionService.assertConnectionOrOutOfBandExchange(messageContext)
+
+    // No proof record exists with thread id
+    proofRecord = new ProofExchangeRecord({
+      connectionId: connection?.id,
+      threadId: proposalMessage.threadId,
+      state: ProofState.ProposalReceived,
+      protocolVersion: 'v2',
+      parentThreadId: proposalMessage.thread?.parentThreadId,
+    })
+
+    await this.proofFormatCoordinator.processProposal(messageContext.agentContext, {
+      proofRecord,
+      formatServices,
+      message: proposalMessage,
+    })
+
+    // Save record and emit event
+    await proofRepository.save(messageContext.agentContext, proofRecord)
+    this.emitStateChangedEvent(messageContext.agentContext, proofRecord, null)
+
+    return proofRecord
   }
 
   public async acceptProposal(
@@ -254,7 +253,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
     // of the formats
     if (formatServices.length === 0) {
       throw new AriesFrameworkError(
-        `Unable to accept proposal. No supported formats provided as input or in proposal message`
+        'Unable to accept proposal. No supported formats provided as input or in proposal message'
       )
     }
 
@@ -299,7 +298,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
     const formatServices = this.getFormatServices(proofFormats)
     if (formatServices.length === 0) {
-      throw new AriesFrameworkError(`Unable to create request. No supported formats`)
+      throw new AriesFrameworkError('Unable to create request. No supported formats')
     }
 
     const requestMessage = await this.proofFormatCoordinator.createRequest(agentContext, {
@@ -340,7 +339,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
     const formatServices = this.getFormatServices(proofFormats)
     if (formatServices.length === 0) {
-      throw new AriesFrameworkError(`Unable to create request. No supported formats`)
+      throw new AriesFrameworkError('Unable to create request. No supported formats')
     }
 
     const proofRecord = new ProofExchangeRecord({
@@ -399,7 +398,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
     const formatServices = this.getFormatServicesFromMessage(requestMessage.formats)
     if (formatServices.length === 0) {
-      throw new AriesFrameworkError(`Unable to process request. No supported formats`)
+      throw new AriesFrameworkError('Unable to process request. No supported formats')
     }
 
     // proof record already exists
@@ -430,33 +429,32 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
       await this.updateState(messageContext.agentContext, proofRecord, ProofState.RequestReceived)
       return proofRecord
-    } else {
-      // Assert
-      await connectionService.assertConnectionOrOutOfBandExchange(messageContext)
-
-      // No proof record exists with thread id
-      agentContext.config.logger.debug('No proof record found for request, creating a new one')
-      proofRecord = new ProofExchangeRecord({
-        connectionId: connection?.id,
-        threadId: requestMessage.threadId,
-        state: ProofState.RequestReceived,
-        protocolVersion: 'v2',
-        parentThreadId: requestMessage.thread?.parentThreadId,
-      })
-
-      await this.proofFormatCoordinator.processRequest(messageContext.agentContext, {
-        proofRecord,
-        formatServices,
-        message: requestMessage,
-      })
-
-      // Save in repository
-      agentContext.config.logger.debug('Saving proof record and emit request-received event')
-      await proofRepository.save(messageContext.agentContext, proofRecord)
-
-      this.emitStateChangedEvent(messageContext.agentContext, proofRecord, null)
-      return proofRecord
     }
+    // Assert
+    await connectionService.assertConnectionOrOutOfBandExchange(messageContext)
+
+    // No proof record exists with thread id
+    agentContext.config.logger.debug('No proof record found for request, creating a new one')
+    proofRecord = new ProofExchangeRecord({
+      connectionId: connection?.id,
+      threadId: requestMessage.threadId,
+      state: ProofState.RequestReceived,
+      protocolVersion: 'v2',
+      parentThreadId: requestMessage.thread?.parentThreadId,
+    })
+
+    await this.proofFormatCoordinator.processRequest(messageContext.agentContext, {
+      proofRecord,
+      formatServices,
+      message: requestMessage,
+    })
+
+    // Save in repository
+    agentContext.config.logger.debug('Saving proof record and emit request-received event')
+    await proofRepository.save(messageContext.agentContext, proofRecord)
+
+    this.emitStateChangedEvent(messageContext.agentContext, proofRecord, null)
+    return proofRecord
   }
 
   public async acceptRequest(
@@ -487,7 +485,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
     // of the formats
     if (formatServices.length === 0) {
       throw new AriesFrameworkError(
-        `Unable to accept request. No supported formats provided as input or in request message`
+        'Unable to accept request. No supported formats provided as input or in request message'
       )
     }
     const message = await this.proofFormatCoordinator.acceptRequest(agentContext, {
@@ -530,7 +528,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
 
     const formatServices = this.getFormatServices(proofFormats)
     if (formatServices.length === 0) {
-      throw new AriesFrameworkError(`Unable to create proposal. No supported formats`)
+      throw new AriesFrameworkError('Unable to create proposal. No supported formats')
     }
 
     const proposalMessage = await this.proofFormatCoordinator.createProposal(agentContext, {
@@ -575,7 +573,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
     // of the formats
     if (formatServices.length === 0) {
       throw new AriesFrameworkError(
-        `Unable to get credentials for request. No supported formats provided as input or in request message`
+        'Unable to get credentials for request. No supported formats provided as input or in request message'
       )
     }
 
@@ -618,7 +616,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
     // of the formats
     if (formatServices.length === 0) {
       throw new AriesFrameworkError(
-        `Unable to get credentials for request. No supported formats provided as input or in request message`
+        'Unable to get credentials for request. No supported formats provided as input or in request message'
       )
     }
 
@@ -675,7 +673,7 @@ export class V2ProofProtocol<PFs extends ProofFormatService[] = ProofFormatServi
     const formatServices = this.getFormatServicesFromMessage(presentationMessage.formats)
     // Abandon if no supported formats
     if (formatServices.length === 0) {
-      proofRecord.errorMessage = `Unable to process presentation. No supported formats`
+      proofRecord.errorMessage = 'Unable to process presentation. No supported formats'
       await this.updateState(messageContext.agentContext, proofRecord, ProofState.Abandoned)
       throw new V2PresentationProblemReportError(proofRecord.errorMessage, {
         problemCode: PresentationProblemReportReason.Abandoned,

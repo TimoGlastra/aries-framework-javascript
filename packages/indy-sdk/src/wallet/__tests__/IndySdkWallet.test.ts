@@ -2,11 +2,11 @@ import type { SigningProvider, WalletConfig } from '@aries-framework/core'
 
 import {
   Key,
-  WalletKeyExistsError,
+  KeyDerivationMethod,
   KeyType,
   SigningProviderRegistry,
   TypedArrayEncoder,
-  KeyDerivationMethod,
+  WalletKeyExistsError,
 } from '@aries-framework/core'
 import indySdk from 'indy-sdk'
 

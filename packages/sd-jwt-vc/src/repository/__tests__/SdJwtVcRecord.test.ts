@@ -95,7 +95,7 @@ describe('SdJwtVcRecord', () => {
       sdJwtVc: {
         header: sdJwtVc.header,
         payload: sdJwtVc.payload,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        // biome-ignore lint/style/noNonNullAssertion:
         signature: sdJwtVc.signature!,
         disclosures: sdJwtVc.disclosures?.map((d) => d.decoded),
         holderDidUrl,

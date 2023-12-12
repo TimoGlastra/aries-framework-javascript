@@ -1,5 +1,5 @@
-import type { V1CredentialProtocol } from '../V1CredentialProtocol'
 import type { CredentialExchangeRecord, MessageHandler, MessageHandlerInboundMessage } from '@aries-framework/core'
+import type { V1CredentialProtocol } from '../V1CredentialProtocol'
 
 import { AriesFrameworkError, getOutboundMessageContext } from '@aries-framework/core'
 
@@ -30,7 +30,7 @@ export class V1RequestCredentialHandler implements MessageHandler {
     credentialRecord: CredentialExchangeRecord,
     messageContext: MessageHandlerInboundMessage<V1RequestCredentialHandler>
   ) {
-    messageContext.agentContext.config.logger.info(`Automatically sending credential with autoAccept`)
+    messageContext.agentContext.config.logger.info('Automatically sending credential with autoAccept')
 
     const offerMessage = await this.credentialProtocol.findOfferMessage(
       messageContext.agentContext,

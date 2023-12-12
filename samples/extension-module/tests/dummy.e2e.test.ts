@@ -1,5 +1,5 @@
-import type { SubjectMessage } from '../../../tests/transport/SubjectInboundTransport'
 import type { ConnectionRecord } from '@aries-framework/core'
+import type { SubjectMessage } from '../../../tests/transport/SubjectInboundTransport'
 
 import { Agent } from '@aries-framework/core'
 import { Subject } from 'rxjs'

@@ -7,11 +7,11 @@ import { e2eTest } from './e2e-test'
 
 import {
   Agent,
-  WsOutboundTransport,
   AutoAcceptCredential,
-  MediatorPickupStrategy,
   MediationRecipientModule,
   MediatorModule,
+  MediatorPickupStrategy,
+  WsOutboundTransport,
 } from '@aries-framework/core'
 import { WsInboundTransport } from '@aries-framework/node'
 

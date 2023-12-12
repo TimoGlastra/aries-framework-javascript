@@ -1,12 +1,12 @@
-import type { ConnectionMetadata } from './ConnectionMetadataTypes'
 import type { TagsBase } from '../../../storage/BaseRecord'
 import type { HandshakeProtocol } from '../models'
 import type { ConnectionType } from '../models/ConnectionType'
+import type { ConnectionMetadata } from './ConnectionMetadataTypes'
 
 import { AriesFrameworkError } from '../../../error'
 import { BaseRecord } from '../../../storage/BaseRecord'
 import { uuid } from '../../../utils/uuid'
-import { rfc0160StateFromDidExchangeState, DidExchangeRole, DidExchangeState } from '../models'
+import { DidExchangeRole, DidExchangeState, rfc0160StateFromDidExchangeState } from '../models'
 
 export interface ConnectionRecordProps {
   id?: string

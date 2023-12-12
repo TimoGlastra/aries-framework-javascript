@@ -7,7 +7,7 @@ import { CredentialState } from '../../core/src/modules/credentials/models'
 import { CredentialExchangeRecord } from '../../core/src/modules/credentials/repository/CredentialExchangeRecord'
 import { CREDENTIALS_CONTEXT_V1_URL, SECURITY_CONTEXT_BBS_URL } from '../../core/src/modules/vc'
 import { JsonTransformer } from '../../core/src/utils/JsonTransformer'
-import { waitForCredentialRecordSubject, setupJsonLdTests, testLogger } from '../../core/tests'
+import { setupJsonLdTests, testLogger, waitForCredentialRecordSubject } from '../../core/tests'
 
 import { describeSkipNode17And18 } from './util'
 

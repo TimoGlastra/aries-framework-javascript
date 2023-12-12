@@ -1,25 +1,25 @@
+import type { DidRecord, RecordSavedEvent } from '@aries-framework/core'
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { IndySdkPool } from '../../ledger/IndySdkPool'
-import type { DidRecord, RecordSavedEvent } from '@aries-framework/core'
 
 import {
-  SigningProviderRegistry,
-  DidsApi,
   DidDocument,
-  VerificationMethod,
-  KeyType,
-  Key,
-  TypedArrayEncoder,
-  DidRepository,
-  JsonTransformer,
   DidDocumentRole,
+  DidRepository,
+  DidsApi,
   EventEmitter,
+  JsonTransformer,
+  Key,
+  KeyType,
   RepositoryEventTypes,
+  SigningProviderRegistry,
+  TypedArrayEncoder,
+  VerificationMethod,
 } from '@aries-framework/core'
 import { Subject } from 'rxjs'
 
 import { InMemoryStorageService } from '../../../../../tests/InMemoryStorageService'
-import { mockFunction, getAgentConfig, getAgentContext, agentDependencies, indySdk } from '../../../../core/tests'
+import { agentDependencies, getAgentConfig, getAgentContext, indySdk, mockFunction } from '../../../../core/tests'
 import { IndySdkPoolService } from '../../ledger/IndySdkPoolService'
 import { IndySdkWallet } from '../../wallet'
 import { IndySdkIndyDidRegistrar } from '../IndySdkIndyDidRegistrar'
@@ -481,7 +481,7 @@ describe('IndySdkIndyDidRegistrar', () => {
       didRegistrationMetadata: {},
       didState: {
         state: 'failed',
-        reason: `notImplemented: updating did:indy not implemented yet`,
+        reason: 'notImplemented: updating did:indy not implemented yet',
       },
     })
   })
@@ -494,7 +494,7 @@ describe('IndySdkIndyDidRegistrar', () => {
       didRegistrationMetadata: {},
       didState: {
         state: 'failed',
-        reason: `notImplemented: deactivating did:indy not implemented yet`,
+        reason: 'notImplemented: deactivating did:indy not implemented yet',
       },
     })
   })

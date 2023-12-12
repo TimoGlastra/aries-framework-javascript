@@ -1,22 +1,22 @@
 import type {
-  AnonCredsCredentialDefinition,
-  AnonCredsProofRequest,
-  AnonCredsRevocationStatusList,
   AnonCredsCredential,
+  AnonCredsCredentialDefinition,
+  AnonCredsCredentialRequestMetadata,
+  AnonCredsProofRequest,
+  AnonCredsRevocationRegistryDefinition,
+  AnonCredsRevocationStatusList,
   AnonCredsSchema,
   AnonCredsSelectedCredentials,
-  AnonCredsRevocationRegistryDefinition,
-  AnonCredsCredentialRequestMetadata,
 } from '@aries-framework/anoncreds'
 import type { JsonObject } from '@hyperledger/anoncreds-nodejs'
 
 import {
-  AnonCredsModuleConfig,
+  AnonCredsCredentialRecord,
   AnonCredsHolderServiceSymbol,
   AnonCredsLinkSecretRecord,
-  AnonCredsCredentialRecord,
+  AnonCredsModuleConfig,
 } from '@aries-framework/anoncreds'
-import { anoncreds, RevocationRegistryDefinition } from '@hyperledger/anoncreds-nodejs'
+import { RevocationRegistryDefinition, anoncreds } from '@hyperledger/anoncreds-nodejs'
 
 import { AnonCredsCredentialDefinitionRepository } from '../../../../anoncreds/src/repository/AnonCredsCredentialDefinitionRepository'
 import { AnonCredsCredentialRepository } from '../../../../anoncreds/src/repository/AnonCredsCredentialRepository'

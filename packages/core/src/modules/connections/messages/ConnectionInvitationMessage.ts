@@ -133,15 +133,14 @@ export class ConnectionInvitationMessage extends AgentMessage {
    */
   public static fromUrl(invitationUrl: string) {
     const parsedUrl = parseUrl(invitationUrl).query
-    const encodedInvitation = parsedUrl['c_i'] ?? parsedUrl['d_m']
+    const encodedInvitation = parsedUrl.c_i ?? parsedUrl.d_m
     if (typeof encodedInvitation === 'string') {
       const invitationJson = JsonEncoder.fromBase64(encodedInvitation)
       const invitation = JsonTransformer.fromJSON(invitationJson, ConnectionInvitationMessage)
 
       return invitation
-    } else {
-      throw new AriesFrameworkError('InvitationUrl is invalid. Needs to be encoded with either c_i, d_m, or oob')
     }
+    throw new AriesFrameworkError('InvitationUrl is invalid. Needs to be encoded with either c_i, d_m, or oob')
   }
 }
 

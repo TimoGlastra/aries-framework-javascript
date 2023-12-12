@@ -1,46 +1,46 @@
 import type {
+  AnonCredsCredential,
+  AnonCredsCredentialDefinition,
+  AnonCredsCredentialOffer,
   AnonCredsIssuerService,
+  AnonCredsRevocationRegistryDefinition,
+  AnonCredsRevocationStatusList,
+  AnonCredsSchema,
   CreateCredentialDefinitionOptions,
+  CreateCredentialDefinitionReturn,
   CreateCredentialOfferOptions,
   CreateCredentialOptions,
   CreateCredentialReturn,
-  CreateSchemaOptions,
-  AnonCredsCredentialOffer,
-  AnonCredsSchema,
-  AnonCredsCredentialDefinition,
-  CreateCredentialDefinitionReturn,
-  AnonCredsCredential,
   CreateRevocationRegistryDefinitionOptions,
   CreateRevocationRegistryDefinitionReturn,
-  AnonCredsRevocationRegistryDefinition,
   CreateRevocationStatusListOptions,
-  AnonCredsRevocationStatusList,
+  CreateSchemaOptions,
   UpdateRevocationStatusListOptions,
 } from '@aries-framework/anoncreds'
 import type { AgentContext } from '@aries-framework/core'
 import type { CredentialDefinitionPrivate, JsonObject, KeyCorrectnessProof } from '@hyperledger/anoncreds-shared'
 
 import {
-  parseIndyDid,
-  getUnqualifiedSchemaId,
-  parseIndySchemaId,
-  isUnqualifiedCredentialDefinitionId,
-  AnonCredsKeyCorrectnessProofRepository,
   AnonCredsCredentialDefinitionPrivateRepository,
   AnonCredsCredentialDefinitionRepository,
-  AnonCredsRevocationRegistryDefinitionRepository,
+  AnonCredsKeyCorrectnessProofRepository,
   AnonCredsRevocationRegistryDefinitionPrivateRepository,
+  AnonCredsRevocationRegistryDefinitionRepository,
   AnonCredsRevocationRegistryState,
+  getUnqualifiedSchemaId,
+  isUnqualifiedCredentialDefinitionId,
+  parseIndyDid,
+  parseIndySchemaId,
 } from '@aries-framework/anoncreds'
-import { injectable, AriesFrameworkError } from '@aries-framework/core'
+import { AriesFrameworkError, injectable } from '@aries-framework/core'
 import {
-  RevocationStatusList,
-  RevocationRegistryDefinitionPrivate,
-  RevocationRegistryDefinition,
-  CredentialRevocationConfig,
   Credential,
   CredentialDefinition,
   CredentialOffer,
+  CredentialRevocationConfig,
+  RevocationRegistryDefinition,
+  RevocationRegistryDefinitionPrivate,
+  RevocationStatusList,
   Schema,
 } from '@hyperledger/anoncreds-shared'
 

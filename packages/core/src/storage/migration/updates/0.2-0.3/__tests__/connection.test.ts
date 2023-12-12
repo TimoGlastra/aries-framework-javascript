@@ -10,7 +10,7 @@ import {
   DidExchangeRole,
   DidExchangeState,
 } from '../../../../../modules/connections'
-import { MediationRecord, MediationState, MediationRepository, MediationRole } from '../../../../../modules/routing'
+import { MediationRecord, MediationRepository, MediationRole, MediationState } from '../../../../../modules/routing'
 import { JsonTransformer } from '../../../../../utils'
 import * as testModule from '../connection'
 

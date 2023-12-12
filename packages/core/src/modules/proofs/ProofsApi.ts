@@ -1,8 +1,11 @@
+import type { AgentMessage } from '../../agent/AgentMessage'
+import type { Query } from '../../storage/StorageService'
 import type {
   AcceptProofOptions,
   AcceptProofProposalOptions,
   AcceptProofRequestOptions,
   CreateProofRequestOptions,
+  DeclineProofRequestOptions,
   DeleteProofOptions,
   FindProofPresentationMessageReturn,
   FindProofProposalMessageReturn,
@@ -17,13 +20,10 @@ import type {
   SelectCredentialsForProofRequestOptions,
   SelectCredentialsForProofRequestReturn,
   SendProofProblemReportOptions,
-  DeclineProofRequestOptions,
 } from './ProofsApiOptions'
 import type { ProofProtocol } from './protocol/ProofProtocol'
 import type { ProofFormatsFromProtocols } from './protocol/ProofProtocolOptions'
 import type { ProofExchangeRecord } from './repository/ProofExchangeRecord'
-import type { AgentMessage } from '../../agent/AgentMessage'
-import type { Query } from '../../storage/StorageService'
 
 import { injectable } from 'tsyringe'
 

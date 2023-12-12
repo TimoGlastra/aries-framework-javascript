@@ -1,50 +1,50 @@
+import type { Observable } from 'rxjs'
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type {
+  Agent,
   AgentDependencies,
   BaseEvent,
   BasicMessage,
   BasicMessageStateChangedEvent,
+  Buffer,
   ConnectionRecordProps,
+  ConnectionStateChangedEvent,
+  CredentialState,
   CredentialStateChangedEvent,
   InitConfig,
   InjectionToken,
   ProofStateChangedEvent,
-  Wallet,
-  Agent,
-  CredentialState,
-  ConnectionStateChangedEvent,
-  Buffer,
   RevocationNotificationReceivedEvent,
+  Wallet,
 } from '../src'
 import type { AgentModulesInput, EmptyModuleMap } from '../src/agent/AgentModules'
 import type { TrustPingReceivedEvent, TrustPingResponseReceivedEvent } from '../src/modules/connections/TrustPingEvents'
 import type { ProofState } from '../src/modules/proofs/models/ProofState'
 import type { WalletConfig } from '../src/types'
-import type { Observable } from 'rxjs'
 
 import { readFileSync } from 'fs'
 import path from 'path'
-import { lastValueFrom, firstValueFrom, ReplaySubject } from 'rxjs'
+import { ReplaySubject, firstValueFrom, lastValueFrom } from 'rxjs'
 import { catchError, filter, map, take, timeout } from 'rxjs/operators'
 
-import { agentDependencies, IndySdkPostgresWalletScheme } from '../../node/src'
+import { IndySdkPostgresWalletScheme, agentDependencies } from '../../node/src'
 import {
-  OutOfBandDidCommService,
-  ConnectionsModule,
-  ConnectionEventTypes,
-  TypedArrayEncoder,
   AgentConfig,
   AgentContext,
   BasicMessageEventTypes,
+  ConnectionEventTypes,
   ConnectionRecord,
+  ConnectionsModule,
   CredentialEventTypes,
   DependencyManager,
   DidExchangeRole,
   DidExchangeState,
   HandshakeProtocol,
   InjectionSymbols,
+  OutOfBandDidCommService,
   ProofEventTypes,
   TrustPingEventTypes,
+  TypedArrayEncoder,
 } from '../src'
 import { Key, KeyType } from '../src/crypto'
 import { DidKey } from '../src/modules/dids/methods/key'
@@ -549,7 +549,7 @@ export function getMockOutOfBand({
     handshakeProtocols: [HandshakeProtocol.DidExchange],
     services: [
       new OutOfBandDidCommService({
-        id: `#inline-0`,
+        id: '#inline-0',
         serviceEndpoint: serviceEndpoint ?? 'http://example.com',
         recipientKeys,
         routingKeys: [],
@@ -578,9 +578,9 @@ export async function makeConnection(agentA: Agent, agentB: Agent) {
 
   let { connectionRecord: agentBConnection } = await agentB.oob.receiveInvitation(agentAOutOfBand.outOfBandInvitation)
 
-  agentBConnection = await agentB.connections.returnWhenIsConnected(agentBConnection!.id)
+  agentBConnection = await agentB.connections.returnWhenIsConnected(agentBConnection?.id)
   let [agentAConnection] = await agentA.connections.findAllByOutOfBandId(agentAOutOfBand.id)
-  agentAConnection = await agentA.connections.returnWhenIsConnected(agentAConnection!.id)
+  agentAConnection = await agentA.connections.returnWhenIsConnected(agentAConnection?.id)
 
   return [agentAConnection, agentBConnection]
 }
@@ -592,7 +592,7 @@ export async function makeConnection(agentA: Agent, agentB: Agent) {
  * @param fn function you want to mock
  * @returns mock function with type annotations
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny:
 export function mockFunction<T extends (...args: any[]) => any>(fn: T): jest.MockedFunction<T> {
   return fn as jest.MockedFunction<T>
 }

@@ -17,12 +17,12 @@ import { MessagePickupApi } from '../../modules/message-pickup'
 import { ProofRepository } from '../../modules/proofs'
 import { ProofsApi } from '../../modules/proofs/ProofsApi'
 import {
+  MediationRecipientApi,
+  MediationRecipientModule,
   MediationRecipientService,
   MediationRepository,
   MediatorApi,
   MediatorService,
-  MediationRecipientApi,
-  MediationRecipientModule,
 } from '../../modules/routing'
 import { InMemoryMessageRepository } from '../../storage/InMemoryMessageRepository'
 import { WalletError } from '../../wallet/error'
@@ -138,7 +138,7 @@ describe('Agent', () => {
       expect(agent.isInitialized).toBe(false)
       expect(agent.wallet.isInitialized).toBe(false)
 
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // biome-ignore lint/style/noNonNullAssertion:
       await agent.wallet.initialize(walletConfig!)
       expect(agent.isInitialized).toBe(false)
       expect(agent.wallet.isInitialized).toBe(true)

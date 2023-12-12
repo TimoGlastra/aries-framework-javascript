@@ -1,3 +1,4 @@
+import type { ProofFormat } from '@aries-framework/core'
 import type {
   AnonCredsNonRevokedInterval,
   AnonCredsPredicateType,
@@ -9,7 +10,6 @@ import type {
   AnonCredsRequestedPredicateMatch,
   AnonCredsSelectedCredentials,
 } from '../models'
-import type { ProofFormat } from '@aries-framework/core'
 
 export interface AnonCredsPresentationPreviewAttribute {
   name: string

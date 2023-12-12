@@ -1,14 +1,14 @@
-import type { OutboundTransport } from './OutboundTransport'
 import type { Agent } from '../agent/Agent'
 import type { AgentMessageReceivedEvent } from '../agent/Events'
 import type { Logger } from '../logger'
 import type { OutboundPackage } from '../types'
+import type { OutboundTransport } from './OutboundTransport'
 
 import { AbortController } from 'abort-controller'
 
 import { AgentEventTypes } from '../agent/Events'
 import { AriesFrameworkError } from '../error/AriesFrameworkError'
-import { isValidJweStructure, JsonEncoder } from '../utils'
+import { JsonEncoder, isValidJweStructure } from '../utils'
 
 export class HttpOutboundTransport implements OutboundTransport {
   private agent!: Agent
@@ -60,7 +60,7 @@ export class HttpOutboundTransport implements OutboundTransport {
         // Request is aborted after 15 seconds, but that doesn't necessarily mean the request
         // went wrong. ACA-Py keeps the socket alive until it has a response message. So we assume
         // that if the error was aborted and we had return routing enabled, we should ignore the error.
-        if (error.name == 'AbortError' && outboundPackage.responseRequested) {
+        if (error.name === 'AbortError' && outboundPackage.responseRequested) {
           this.logger.debug(
             'Request was aborted due to timeout. Not throwing error due to return routing on sent message'
           )
@@ -72,7 +72,7 @@ export class HttpOutboundTransport implements OutboundTransport {
       // TODO: do we just want to ignore messages that were returned if we didn't request it?
       // TODO: check response header type (and also update inbound transports to use the correct headers types)
       if (response && responseMessage) {
-        this.logger.debug(`Response received`, { responseMessage, status: response.status })
+        this.logger.debug('Response received', { responseMessage, status: response.status })
 
         try {
           const encryptedMessage = JsonEncoder.fromString(responseMessage)
@@ -93,7 +93,7 @@ export class HttpOutboundTransport implements OutboundTransport {
           this.logger.debug('Unable to parse response message')
         }
       } else {
-        this.logger.debug(`No response received.`)
+        this.logger.debug('No response received.')
       }
     } catch (error) {
       this.logger.error(`Error sending message to ${endpoint}: ${error.message}`, {

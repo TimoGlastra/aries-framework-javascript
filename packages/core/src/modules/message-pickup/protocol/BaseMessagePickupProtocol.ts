@@ -1,9 +1,9 @@
-import type { MessagePickupProtocol } from './MessagePickupProtocol'
-import type { PickupMessagesProtocolOptions, PickupMessagesProtocolReturnType } from './MessagePickupProtocolOptions'
 import type { AgentContext } from '../../../agent'
 import type { AgentMessage } from '../../../agent/AgentMessage'
 import type { FeatureRegistry } from '../../../agent/FeatureRegistry'
 import type { DependencyManager } from '../../../plugins'
+import type { MessagePickupProtocol } from './MessagePickupProtocol'
+import type { PickupMessagesProtocolOptions, PickupMessagesProtocolReturnType } from './MessagePickupProtocolOptions'
 
 /**
  * Base implementation of the MessagePickupProtocol that can be used as a foundation for implementing

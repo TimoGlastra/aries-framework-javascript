@@ -1,5 +1,5 @@
-import type { V1ProofProtocol } from '../V1ProofProtocol'
 import type { MessageHandler, MessageHandlerInboundMessage } from '@aries-framework/core'
+import type { V1ProofProtocol } from '../V1ProofProtocol'
 
 import { V1PresentationAckMessage } from '../messages'
 

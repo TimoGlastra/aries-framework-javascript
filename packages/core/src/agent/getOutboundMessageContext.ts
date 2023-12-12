@@ -1,9 +1,9 @@
-import type { AgentMessage } from './AgentMessage'
-import type { AgentContext } from './context'
 import type { ConnectionRecord, Routing } from '../modules/connections'
 import type { ResolvedDidCommService } from '../modules/didcomm'
 import type { OutOfBandRecord } from '../modules/oob'
 import type { BaseRecordAny } from '../storage/BaseRecord'
+import type { AgentMessage } from './AgentMessage'
+import type { AgentContext } from './context'
 
 import { Key } from '../crypto'
 import { ServiceDecorator } from '../decorators/service/ServiceDecorator'
@@ -189,7 +189,7 @@ async function getServicesForMessage(
 
     if (!recipientService) {
       throw new AriesFrameworkError(
-        `Could not find a service to send the message to. Please make sure the connection has a service or provide a service to send the message to.`
+        'Could not find a service to send the message to. Please make sure the connection has a service or provide a service to send the message to.'
       )
     }
 
@@ -208,7 +208,7 @@ async function getServicesForMessage(
 
     if (lastSentMessage && !ourService) {
       throw new AriesFrameworkError(
-        `Could not find a service to send the message to. Please make sure the connection has a service or provide a service to send the message to.`
+        'Could not find a service to send the message to. Please make sure the connection has a service or provide a service to send the message to.'
       )
     }
   }

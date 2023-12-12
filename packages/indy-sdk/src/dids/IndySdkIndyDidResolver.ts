@@ -1,11 +1,11 @@
-import type { IndyEndpointAttrib } from './didSovUtil'
+import type { AgentContext, DidResolutionResult, DidResolver } from '@aries-framework/core'
 import type { IndySdkPool } from '../ledger'
 import type { IndySdk } from '../types'
-import type { DidResolutionResult, DidResolver, AgentContext } from '@aries-framework/core'
+import type { IndyEndpointAttrib } from './didSovUtil'
 
 import { parseIndyDid } from '@aries-framework/anoncreds'
 
-import { isIndyError, IndySdkError } from '../error'
+import { IndySdkError, isIndyError } from '../error'
 import { IndySdkPoolService } from '../ledger/IndySdkPoolService'
 import { IndySdkSymbol } from '../types'
 import { getFullVerkey } from '../utils/did'

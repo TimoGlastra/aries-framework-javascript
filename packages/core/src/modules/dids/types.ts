@@ -1,5 +1,5 @@
-import type { DidDocument } from './domain'
 import type { DIDDocumentMetadata, DIDResolutionMetadata, DIDResolutionOptions, ParsedDID } from 'did-resolver'
+import type { DidDocument } from './domain'
 
 export type ParsedDid = ParsedDID
 export type DidResolutionOptions = DIDResolutionOptions

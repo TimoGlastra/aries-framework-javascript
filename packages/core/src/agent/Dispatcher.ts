@@ -5,7 +5,7 @@ import type { InboundMessageContext } from './models/InboundMessageContext'
 import { InjectionSymbols } from '../constants'
 import { AriesFrameworkError } from '../error/AriesFrameworkError'
 import { Logger } from '../logger'
-import { injectable, inject } from '../plugins'
+import { inject, injectable } from '../plugins'
 import { parseMessageType } from '../utils/messageType'
 
 import { ProblemReportMessage } from './../modules/problem-reports/messages/ProblemReportMessage'

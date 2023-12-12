@@ -1,13 +1,13 @@
 import type {
   Agent,
+  AgentContext,
+  EncryptedMessage,
   InboundTransport,
   Logger,
   TransportSession,
-  EncryptedMessage,
-  AgentContext,
 } from '@aries-framework/core'
 
-import { AriesFrameworkError, TransportService, utils, MessageReceiver } from '@aries-framework/core'
+import { AriesFrameworkError, MessageReceiver, TransportService, utils } from '@aries-framework/core'
 import WebSocket, { Server } from 'ws'
 
 export class WsInboundTransport implements InboundTransport {
@@ -27,7 +27,7 @@ export class WsInboundTransport implements InboundTransport {
     this.logger = agent.config.logger
 
     const wsEndpoint = agent.config.endpoints.find((e) => e.startsWith('ws'))
-    this.logger.debug(`Starting WS inbound transport`, {
+    this.logger.debug('Starting WS inbound transport', {
       endpoint: wsEndpoint,
     })
 
@@ -66,7 +66,7 @@ export class WsInboundTransport implements InboundTransport {
   private listenOnWebSocketMessages(agent: Agent, socket: WebSocket, session: TransportSession) {
     const messageReceiver = agent.dependencyManager.resolve(MessageReceiver)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny:
     socket.addEventListener('message', async (event: any) => {
       this.logger.debug('WebSocket message event received.', { url: event.target.url })
       try {
@@ -95,12 +95,11 @@ export class WebSocketTransportSession implements TransportSession {
       throw new AriesFrameworkError(`${this.type} transport session has been closed.`)
     }
     this.socket.send(JSON.stringify(encryptedMessage), (error?) => {
-      if (error != undefined) {
+      if (error !== undefined) {
         this.logger.debug(`Error sending message: ${error}`)
         throw new AriesFrameworkError(`${this.type} send message failed.`, { cause: error })
-      } else {
-        this.logger.debug(`${this.type} sent message successfully.`)
       }
+      this.logger.debug(`${this.type} sent message successfully.`)
     })
   }
 

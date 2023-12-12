@@ -1,7 +1,7 @@
 import { JsonTransformer } from '../../../../../utils'
 import { OutOfBandDidCommService } from '../../../../oob/domain/OutOfBandDidCommService'
 import { DidDocument } from '../../../domain'
-import { didToNumAlgo2DidDocument, didDocumentToNumAlgo2Did, outOfBandServiceToNumAlgo2Did } from '../peerDidNumAlgo2'
+import { didDocumentToNumAlgo2Did, didToNumAlgo2DidDocument, outOfBandServiceToNumAlgo2Did } from '../peerDidNumAlgo2'
 
 import didPeer2Ez6L from './__fixtures__/didPeer2Ez6L.json'
 import didPeer2Ez6LMoreServices from './__fixtures__/didPeer2Ez6LMoreServices.json'

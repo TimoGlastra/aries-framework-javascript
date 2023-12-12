@@ -1,16 +1,16 @@
-import type { KeyDidMapping } from './keyDidMapping'
 import type { VerificationMethod } from '../verificationMethod'
+import type { KeyDidMapping } from './keyDidMapping'
 
 import { KeyType } from '../../../../crypto/KeyType'
 import { AriesFrameworkError } from '../../../../error'
 import {
-  getKeyFromX25519KeyAgreementKey2019,
-  VERIFICATION_METHOD_TYPE_X25519_KEY_AGREEMENT_KEY_2019,
-  getX25519KeyAgreementKey2019,
-  isX25519KeyAgreementKey2019,
-  getKeyFromJsonWebKey2020,
-  isJsonWebKey2020,
   VERIFICATION_METHOD_TYPE_JSON_WEB_KEY_2020,
+  VERIFICATION_METHOD_TYPE_X25519_KEY_AGREEMENT_KEY_2019,
+  getKeyFromJsonWebKey2020,
+  getKeyFromX25519KeyAgreementKey2019,
+  getX25519KeyAgreementKey2019,
+  isJsonWebKey2020,
+  isX25519KeyAgreementKey2019,
 } from '../verificationMethod'
 
 export const keyDidX25519: KeyDidMapping = {

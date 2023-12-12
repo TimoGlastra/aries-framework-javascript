@@ -1,6 +1,6 @@
-import type { V0_1ToV0_2UpdateConfig } from './index'
 import type { BaseAgent } from '../../../../agent/BaseAgent'
 import type { MediationRecord } from '../../../../modules/routing'
+import type { V0_1ToV0_2UpdateConfig } from './index'
 
 import { MediationRepository, MediationRole } from '../../../../modules/routing'
 
@@ -19,7 +19,7 @@ export async function migrateMediationRecordToV0_2<Agent extends BaseAgent>(
   agent.config.logger.info('Migrating mediation records to storage version 0.2')
   const mediationRepository = agent.dependencyManager.resolve(MediationRepository)
 
-  agent.config.logger.debug(`Fetching all mediation records from storage`)
+  agent.config.logger.debug('Fetching all mediation records from storage')
   const allMediationRecords = await mediationRepository.getAll(agent.context)
 
   agent.config.logger.debug(`Found a total of ${allMediationRecords.length} mediation records to update.`)

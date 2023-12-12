@@ -1,11 +1,11 @@
+import type { TagsBase } from '@aries-framework/core'
 import type { ActionMenuRole } from '../ActionMenuRole'
 import type { ActionMenuState } from '../ActionMenuState'
-import type { TagsBase } from '@aries-framework/core'
 
 import { AriesFrameworkError, BaseRecord, utils } from '@aries-framework/core'
 import { Type } from 'class-transformer'
 
-import { ActionMenuSelection, ActionMenu } from '../models'
+import { ActionMenu, ActionMenuSelection } from '../models'
 
 /**
  * @public

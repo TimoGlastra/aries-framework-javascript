@@ -1,9 +1,12 @@
+import type { AgentMessage } from '../../agent/AgentMessage'
+import type { Query } from '../../storage/StorageService'
 import type {
-  AcceptCredentialOptions,
   AcceptCredentialOfferOptions,
+  AcceptCredentialOptions,
   AcceptCredentialProposalOptions,
   AcceptCredentialRequestOptions,
   CreateCredentialOfferOptions,
+  DeleteCredentialOptions,
   FindCredentialMessageReturn,
   FindCredentialOfferMessageReturn,
   FindCredentialProposalMessageReturn,
@@ -14,14 +17,11 @@ import type {
   OfferCredentialOptions,
   ProposeCredentialOptions,
   SendCredentialProblemReportOptions,
-  DeleteCredentialOptions,
   SendRevocationNotificationOptions,
 } from './CredentialsApiOptions'
 import type { CredentialProtocol } from './protocol/CredentialProtocol'
 import type { CredentialFormatsFromProtocols } from './protocol/CredentialProtocolOptions'
 import type { CredentialExchangeRecord } from './repository/CredentialExchangeRecord'
-import type { AgentMessage } from '../../agent/AgentMessage'
-import type { Query } from '../../storage/StorageService'
 
 import { AgentContext } from '../../agent'
 import { MessageSender } from '../../agent/MessageSender'

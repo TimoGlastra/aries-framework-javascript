@@ -1,9 +1,9 @@
+import type { W3cCredentialRecord } from '@aries-framework/core'
 import type {
+  AuthCodeFlowOptions,
   GenerateAuthorizationUrlOptions,
   PreAuthCodeFlowOptions,
-  AuthCodeFlowOptions,
 } from './OpenId4VcClientServiceOptions'
-import type { W3cCredentialRecord } from '@aries-framework/core'
 
 import { AgentContext, injectable } from '@aries-framework/core'
 

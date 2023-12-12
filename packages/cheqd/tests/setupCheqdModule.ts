@@ -4,7 +4,7 @@ import { DidsModule } from '@aries-framework/core'
 import { IndySdkModule, IndySdkModuleConfig } from '@aries-framework/indy-sdk'
 import indySdk from 'indy-sdk'
 
-import { CheqdModule, CheqdDidRegistrar, CheqdDidResolver } from '../src'
+import { CheqdDidRegistrar, CheqdDidResolver, CheqdModule } from '../src'
 
 export const getIndySdkModuleConfig = () =>
   new IndySdkModuleConfig({

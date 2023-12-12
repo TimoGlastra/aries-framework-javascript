@@ -1,9 +1,9 @@
-import { DependencyManager, InjectionSymbols, Agent, UpdateAssistant, utils } from '@aries-framework/core'
 import { readFileSync } from 'fs'
 import path from 'path'
+import { Agent, DependencyManager, InjectionSymbols, UpdateAssistant, utils } from '@aries-framework/core'
 
 import { InMemoryStorageService } from '../../../../../tests/InMemoryStorageService'
-import { indySdk, agentDependencies } from '../../../../core/tests'
+import { agentDependencies, indySdk } from '../../../../core/tests'
 import { IndySdkWallet } from '../../../../indy-sdk/src'
 import { IndySdkSymbol } from '../../../../indy-sdk/src/types'
 import { InMemoryAnonCredsRegistry } from '../../../tests/InMemoryAnonCredsRegistry'
@@ -19,7 +19,7 @@ const backupDate = new Date('2023-03-19T22:50:20.522Z')
 jest.useFakeTimers().setSystemTime(backupDate)
 
 describe('UpdateAssistant | AnonCreds | v0.3.1 - v0.4', () => {
-  it(`should correctly update the credential exchange records for holders`, async () => {
+  it('should correctly update the credential exchange records for holders', async () => {
     // We need to mock the uuid generation to make sure we generate consistent uuids for the new records created.
     let uuidCounter = 1
     const uuidSpy = jest.spyOn(utils, 'uuid').mockImplementation(() => `${uuidCounter++}-4e4f-41d9-94c4-f49351b811f1`)
@@ -44,8 +44,8 @@ describe('UpdateAssistant | AnonCreds | v0.3.1 - v0.4', () => {
         config: {
           label: 'Test Agent',
           walletConfig: {
-            id: `Wallet: 0.3 Update AnonCreds - Holder`,
-            key: `Key: 0.3 Update AnonCreds - Holder`,
+            id: 'Wallet: 0.3 Update AnonCreds - Holder',
+            key: 'Key: 0.3 Update AnonCreds - Holder',
           },
         },
         dependencies: agentDependencies,
@@ -86,7 +86,7 @@ describe('UpdateAssistant | AnonCreds | v0.3.1 - v0.4', () => {
     expect(await updateAssistant.getNeededUpdates()).toEqual([])
 
     // MEDIATOR_ROUTING_RECORD recipientKeys will be different every time, and is not what we're testing here
-    delete storageService.records.MEDIATOR_ROUTING_RECORD
+    storageService.records.MEDIATOR_ROUTING_RECORD = undefined
     expect(storageService.records).toMatchSnapshot()
 
     await agent.shutdown()
@@ -95,7 +95,7 @@ describe('UpdateAssistant | AnonCreds | v0.3.1 - v0.4', () => {
     uuidSpy.mockReset()
   })
 
-  it(`should correctly update the schema and credential definition, and create link secret records for issuers`, async () => {
+  it('should correctly update the schema and credential definition, and create link secret records for issuers', async () => {
     // We need to mock the uuid generation to make sure we generate consistent uuids for the new records created.
     let uuidCounter = 1
     const uuidSpy = jest.spyOn(utils, 'uuid').mockImplementation(() => `${uuidCounter++}-4e4f-41d9-94c4-f49351b811f1`)
@@ -120,8 +120,8 @@ describe('UpdateAssistant | AnonCreds | v0.3.1 - v0.4', () => {
         config: {
           label: 'Test Agent',
           walletConfig: {
-            id: `Wallet: 0.3 Update AnonCreds - Issuer`,
-            key: `Key: 0.3 Update AnonCreds - Issuer`,
+            id: 'Wallet: 0.3 Update AnonCreds - Issuer',
+            key: 'Key: 0.3 Update AnonCreds - Issuer',
           },
         },
         dependencies: agentDependencies,
@@ -228,7 +228,7 @@ describe('UpdateAssistant | AnonCreds | v0.3.1 - v0.4', () => {
     expect(await updateAssistant.getNeededUpdates()).toEqual([])
 
     // MEDIATOR_ROUTING_RECORD recipientKeys will be different every time, and is not what we're testing here
-    delete storageService.records.MEDIATOR_ROUTING_RECORD
+    storageService.records.MEDIATOR_ROUTING_RECORD = undefined
     expect(storageService.records).toMatchSnapshot()
 
     await agent.shutdown()

@@ -1,9 +1,9 @@
-import type { V2CreateRevocationNotificationMessageOptions } from './RevocationNotificationServiceOptions'
 import type { AgentContext } from '../../../../../agent'
 import type { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
 import type { ConnectionRecord } from '../../../../connections'
 import type { RevocationNotificationReceivedEvent } from '../../../CredentialEvents'
 import type { V1RevocationNotificationMessage } from '../messages/V1RevocationNotificationMessage'
+import type { V2CreateRevocationNotificationMessageOptions } from './RevocationNotificationServiceOptions'
 
 import { EventEmitter } from '../../../../../agent/EventEmitter'
 import { MessageHandlerRegistry } from '../../../../../agent/MessageHandlerRegistry'
@@ -53,7 +53,7 @@ export class RevocationNotificationService {
     // TODO: can we extract support for this revocation notification handler to the anoncreds module?
     const query = { anonCredsRevocationRegistryId, anonCredsCredentialRevocationId, connectionId: connection.id }
 
-    this.logger.trace(`Getting record by query for revocation notification:`, query)
+    this.logger.trace('Getting record by query for revocation notification:', query)
     const credentialRecord = await this.credentialRepository.getSingleByQuery(agentContext, query)
 
     credentialRecord.revocationNotification = new RevocationNotification(comment)

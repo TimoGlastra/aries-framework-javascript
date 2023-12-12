@@ -506,11 +506,10 @@ export class ProofFormatCoordinator<PFs extends ProofFormatService[]> {
         isValid,
         message: undefined,
       }
-    } else {
-      return {
-        isValid,
-        message: 'Not all presentations are valid',
-      }
+    }
+    return {
+      isValid,
+      message: 'Not all presentations are valid',
     }
   }
 

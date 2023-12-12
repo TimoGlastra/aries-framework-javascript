@@ -1,11 +1,11 @@
-import type { BaseRecordConstructor, AgentContext, BaseRecord, Query, StorageService } from '@aries-framework/core'
+import type { AgentContext, BaseRecord, BaseRecordConstructor, Query, StorageService } from '@aries-framework/core'
 
 import {
-  RecordDuplicateError,
-  WalletError,
-  RecordNotFoundError,
-  injectable,
   JsonTransformer,
+  RecordDuplicateError,
+  RecordNotFoundError,
+  WalletError,
+  injectable,
 } from '@aries-framework/core'
 import { Scan } from '@hyperledger/aries-askar-shared'
 
@@ -116,7 +116,7 @@ export class AskarStorageService<T extends BaseRecord> implements StorageService
       return recordToInstance(record, recordClass)
     } catch (error) {
       if (error instanceof RecordNotFoundError) throw error
-      throw new WalletError(`Error getting record`, { cause: error })
+      throw new WalletError('Error getting record', { cause: error })
     }
   }
 

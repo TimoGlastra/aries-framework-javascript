@@ -1,4 +1,4 @@
-import { TypedArrayEncoder, Buffer } from '../../../../utils'
+import { Buffer, TypedArrayEncoder } from '../../../../utils'
 import { KeyType } from '../../../KeyType'
 import { P256Jwk } from '../P256Jwk'
 import { compress } from '../ecCompression'

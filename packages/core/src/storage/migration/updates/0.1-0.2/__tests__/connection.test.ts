@@ -47,9 +47,11 @@ jest.mock('../../../../../agent/Agent', () => {
         resolve: jest.fn((cls) => {
           if (cls === ConnectionRepository) {
             return connectionRepository
-          } else if (cls === DidRepository) {
+          }
+          if (cls === DidRepository) {
             return didRepository
-          } else if (cls === OutOfBandRepository) {
+          }
+          if (cls === OutOfBandRepository) {
             return outOfBandRepository
           }
 

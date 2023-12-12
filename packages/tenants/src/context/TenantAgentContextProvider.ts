@@ -1,19 +1,19 @@
-import type { AgentContextProvider, RoutingCreatedEvent, EncryptedMessage } from '@aries-framework/core'
+import type { AgentContextProvider, EncryptedMessage, RoutingCreatedEvent } from '@aries-framework/core'
 
 import {
-  AriesFrameworkError,
-  injectable,
   AgentContext,
+  AriesFrameworkError,
   EventEmitter,
-  inject,
+  InjectionSymbols,
+  JsonEncoder,
+  Key,
+  KeyType,
   Logger,
   RoutingEventTypes,
-  InjectionSymbols,
-  KeyType,
-  Key,
-  isValidJweStructure,
-  JsonEncoder,
+  inject,
+  injectable,
   isJsonObject,
+  isValidJweStructure,
 } from '@aries-framework/core'
 
 import { TenantRecordService } from '../services'

@@ -13,14 +13,10 @@ import { MessagePickupModuleConfig } from '../../MessagePickupModuleConfig'
 import { BaseMessagePickupProtocol } from '../BaseMessagePickupProtocol'
 
 import { V1BatchHandler, V1BatchPickupHandler } from './handlers'
-import { V1BatchMessage, BatchMessageMessage, V1BatchPickupMessage } from './messages'
+import { BatchMessageMessage, V1BatchMessage, V1BatchPickupMessage } from './messages'
 
 @injectable()
 export class V1MessagePickupProtocol extends BaseMessagePickupProtocol {
-  public constructor() {
-    super()
-  }
-
   /**
    * The version of the message pickup protocol this class supports
    */

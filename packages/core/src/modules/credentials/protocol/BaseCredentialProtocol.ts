@@ -1,19 +1,3 @@
-import type { CredentialProtocol } from './CredentialProtocol'
-import type {
-  CreateCredentialProposalOptions,
-  CredentialProtocolMsgReturnType,
-  DeleteCredentialOptions,
-  AcceptCredentialProposalOptions,
-  NegotiateCredentialProposalOptions,
-  CreateCredentialOfferOptions,
-  NegotiateCredentialOfferOptions,
-  CreateCredentialRequestOptions,
-  AcceptCredentialOfferOptions,
-  AcceptCredentialRequestOptions,
-  AcceptCredentialOptions,
-  GetCredentialFormatDataReturn,
-  CreateCredentialProblemReportOptions,
-} from './CredentialProtocolOptions'
 import type { AgentContext } from '../../../agent'
 import type { AgentMessage } from '../../../agent/AgentMessage'
 import type { FeatureRegistry } from '../../../agent/FeatureRegistry'
@@ -24,6 +8,22 @@ import type { ProblemReportMessage } from '../../problem-reports'
 import type { CredentialStateChangedEvent } from '../CredentialEvents'
 import type { CredentialFormatService, ExtractCredentialFormats } from '../formats'
 import type { CredentialExchangeRecord } from '../repository'
+import type { CredentialProtocol } from './CredentialProtocol'
+import type {
+  AcceptCredentialOfferOptions,
+  AcceptCredentialOptions,
+  AcceptCredentialProposalOptions,
+  AcceptCredentialRequestOptions,
+  CreateCredentialOfferOptions,
+  CreateCredentialProblemReportOptions,
+  CreateCredentialProposalOptions,
+  CreateCredentialRequestOptions,
+  CredentialProtocolMsgReturnType,
+  DeleteCredentialOptions,
+  GetCredentialFormatDataReturn,
+  NegotiateCredentialOfferOptions,
+  NegotiateCredentialProposalOptions,
+} from './CredentialProtocolOptions'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { DidCommMessageRepository } from '../../../storage'

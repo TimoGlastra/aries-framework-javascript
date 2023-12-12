@@ -11,24 +11,24 @@
  * limitations under the License.
  */
 
+import type { DocumentLoader, JsonObject, Proof, VerificationMethod } from '@aries-framework/core'
 import type {
-  SignatureSuiteOptions,
-  CreateProofOptions,
-  VerifyProofOptions,
   CanonizeOptions,
+  CreateProofOptions,
   CreateVerifyDataOptions,
+  SignatureSuiteOptions,
   SuiteSignOptions,
+  VerifyProofOptions,
   VerifySignatureOptions,
 } from '../types'
-import type { VerificationMethod, JsonObject, DocumentLoader, Proof } from '@aries-framework/core'
 
 import {
   AriesFrameworkError,
-  TypedArrayEncoder,
   SECURITY_CONTEXT_BBS_URL,
   SECURITY_CONTEXT_URL,
-  w3cDate,
+  TypedArrayEncoder,
   vcLibraries,
+  w3cDate,
 } from '@aries-framework/core'
 
 const { jsonld, jsonldSignatures } = vcLibraries
@@ -87,7 +87,7 @@ export class BbsBlsSignature2020 extends LinkedDataProof {
     if (date) {
       this.date = new Date(date)
 
-      if (isNaN(this.date)) {
+      if (Number.isNaN(this.date)) {
         throw TypeError(`"date" "${date}" is not a valid date.`)
       }
     }
@@ -102,9 +102,7 @@ export class BbsBlsSignature2020 extends LinkedDataProof {
       // document already includes the required context
       return
     }
-    throw new TypeError(
-      `The document to be signed must contain this suite's @context, ` + `"${SECURITY_CONTEXT_BBS_URL}".`
-    )
+    throw new TypeError(`The document to be signed must contain this suite's @context, "${SECURITY_CONTEXT_BBS_URL}".`)
   }
 
   /**
@@ -181,7 +179,7 @@ export class BbsBlsSignature2020 extends LinkedDataProof {
       documentLoader,
       expansionMap,
     })
-    delete proof['@context']
+    proof['@context'] = undefined
 
     return proof
   }

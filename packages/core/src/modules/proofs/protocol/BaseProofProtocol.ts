@@ -1,21 +1,3 @@
-import type { ProofProtocol } from './ProofProtocol'
-import type {
-  CreateProofProposalOptions,
-  CreateProofRequestOptions,
-  DeleteProofOptions,
-  GetProofFormatDataReturn,
-  CreateProofProblemReportOptions,
-  ProofProtocolMsgReturnType,
-  AcceptPresentationOptions,
-  AcceptProofProposalOptions,
-  AcceptProofRequestOptions,
-  GetCredentialsForRequestOptions,
-  GetCredentialsForRequestReturn,
-  NegotiateProofProposalOptions,
-  NegotiateProofRequestOptions,
-  SelectCredentialsForRequestOptions,
-  SelectCredentialsForRequestReturn,
-} from './ProofProtocolOptions'
 import type { AgentMessage } from '../../../agent/AgentMessage'
 import type { FeatureRegistry } from '../../../agent/FeatureRegistry'
 import type { AgentContext } from '../../../agent/context/AgentContext'
@@ -26,6 +8,24 @@ import type { ProblemReportMessage } from '../../problem-reports'
 import type { ProofStateChangedEvent } from '../ProofEvents'
 import type { ExtractProofFormats, ProofFormatService } from '../formats'
 import type { ProofExchangeRecord } from '../repository'
+import type { ProofProtocol } from './ProofProtocol'
+import type {
+  AcceptPresentationOptions,
+  AcceptProofProposalOptions,
+  AcceptProofRequestOptions,
+  CreateProofProblemReportOptions,
+  CreateProofProposalOptions,
+  CreateProofRequestOptions,
+  DeleteProofOptions,
+  GetCredentialsForRequestOptions,
+  GetCredentialsForRequestReturn,
+  GetProofFormatDataReturn,
+  NegotiateProofProposalOptions,
+  NegotiateProofRequestOptions,
+  ProofProtocolMsgReturnType,
+  SelectCredentialsForRequestOptions,
+  SelectCredentialsForRequestReturn,
+} from './ProofProtocolOptions'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { DidCommMessageRepository } from '../../../storage'

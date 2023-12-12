@@ -1,6 +1,6 @@
 import type { AnonCredsProof, AnonCredsVerifierService, VerifyProofOptions } from '@aries-framework/anoncreds'
 import type { AgentContext } from '@aries-framework/core'
-import type { CredentialDefs, Schemas, RevocRegDefs, RevRegs, IndyProofRequest, IndyProof } from 'indy-sdk'
+import type { CredentialDefs, IndyProof, IndyProofRequest, RevRegs, RevocRegDefs, Schemas } from 'indy-sdk'
 
 import { parseIndyCredentialDefinitionId } from '@aries-framework/anoncreds'
 import { inject, injectable } from '@aries-framework/core'

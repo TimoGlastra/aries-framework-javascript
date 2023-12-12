@@ -1,9 +1,9 @@
 import {
-  TypedArrayEncoder,
-  DidDocumentService,
-  DidDocumentBuilder,
   DidCommV1Service,
   DidCommV2Service,
+  DidDocumentBuilder,
+  DidDocumentService,
+  TypedArrayEncoder,
   convertPublicKeyToX25519,
 } from '@aries-framework/core'
 

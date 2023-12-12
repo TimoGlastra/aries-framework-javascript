@@ -2,8 +2,8 @@ import type { AgentContext } from '../../../agent'
 import type { Wallet } from '../../../wallet'
 
 import { IndySdkWallet } from '../../../../../indy-sdk/src'
-import { getAgentConfig, indySdk, getAgentContext, mockFunction } from '../../../../tests'
-import { SigningProviderRegistry, JwsService } from '../../../crypto'
+import { getAgentConfig, getAgentContext, indySdk, mockFunction } from '../../../../tests'
+import { JwsService, SigningProviderRegistry } from '../../../crypto'
 import { JsonTransformer, asArray } from '../../../utils'
 import { W3cCredentialService } from '../W3cCredentialService'
 import { W3cCredentialsModuleConfig } from '../W3cCredentialsModuleConfig'
@@ -15,7 +15,7 @@ import { Ed25519Signature2018Fixtures } from '../data-integrity/__tests__/fixtur
 import jsonld from '../data-integrity/libraries/jsonld'
 import { W3cJwtCredentialService } from '../jwt-vc'
 import { W3cPresentation } from '../models'
-import { W3cCredentialRepository, W3cCredentialRecord } from '../repository'
+import { W3cCredentialRecord, W3cCredentialRepository } from '../repository'
 
 const signingProviderRegistry = new SigningProviderRegistry([])
 

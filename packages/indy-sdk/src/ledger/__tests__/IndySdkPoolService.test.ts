@@ -2,12 +2,12 @@ import type { IndySdkPoolConfig } from '../IndySdkPool'
 import type { CachedDidResponse } from '../IndySdkPoolService'
 
 import {
+  AriesFrameworkError,
   CacheModuleConfig,
   InMemoryLruCache,
-  SigningProviderRegistry,
-  AriesFrameworkError,
   Key,
   KeyType,
+  SigningProviderRegistry,
 } from '@aries-framework/core'
 import indySdk from 'indy-sdk'
 import { Subject } from 'rxjs'
@@ -69,7 +69,7 @@ const poolService = new IndySdkPoolService(config.logger, new Subject<boolean>()
 
 describe('IndySdkPoolService', () => {
   beforeAll(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // biome-ignore lint/style/noNonNullAssertion:
     await wallet.createAndOpen(config.walletConfig!)
   })
 

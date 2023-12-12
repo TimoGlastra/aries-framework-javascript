@@ -1,7 +1,7 @@
-import type { ResolvedDidCommService } from '../../didcomm'
 import type { ValidationOptions } from 'class-validator'
+import type { ResolvedDidCommService } from '../../didcomm'
 
-import { ArrayNotEmpty, buildMessage, IsOptional, isString, IsString, ValidateBy } from 'class-validator'
+import { ArrayNotEmpty, IsOptional, IsString, ValidateBy, buildMessage, isString } from 'class-validator'
 
 import { isDid } from '../../../utils'
 import { DidDocumentService, DidKey } from '../../dids'
@@ -66,7 +66,7 @@ function IsDidKeyString(validationOptions?: ValidationOptions): PropertyDecorato
       validator: {
         validate: (value): boolean => isString(value) && isDid(value, 'key'),
         defaultMessage: buildMessage(
-          (eachPrefix) => eachPrefix + '$property must be a did:key string',
+          (eachPrefix) => `${eachPrefix}$property must be a did:key string`,
           validationOptions
         ),
       },

@@ -7,7 +7,7 @@ import { SubjectInboundTransport } from '../../../../../../tests/transport/Subje
 import { SubjectOutboundTransport } from '../../../../../../tests/transport/SubjectOutboundTransport'
 import { getIndySdkModules } from '../../../../../indy-sdk/tests/setupIndySdkModule'
 import { getAgentOptions } from '../../../../tests/helpers'
-import { HandshakeProtocol, DidExchangeState } from '../../connections'
+import { DidExchangeState, HandshakeProtocol } from '../../connections'
 import { OutOfBandState } from '../domain/OutOfBandState'
 
 import { Agent } from '@aries-framework/core'
@@ -52,7 +52,7 @@ describe('out of band', () => {
         await faberAgent.oob.receiveInvitationFromUrl(urlMessage)
       expect(receivedOutOfBandRecord.state).toBe(OutOfBandState.PrepareResponse)
 
-      receiverSenderConnection = await faberAgent.connections.returnWhenIsConnected(receiverSenderConnection!.id)
+      receiverSenderConnection = await faberAgent.connections.returnWhenIsConnected(receiverSenderConnection?.id)
       expect(receiverSenderConnection.state).toBe(DidExchangeState.Completed)
 
       let [senderReceiverConnection] = await faberAgent.connections.findAllByOutOfBandId(outOfBandRecord.id)
@@ -76,7 +76,7 @@ describe('out of band', () => {
         await faberAgent.oob.receiveInvitationFromUrl(urlMessage)
       expect(receivedOutOfBandRecord.state).toBe(OutOfBandState.PrepareResponse)
 
-      receiverSenderConnection = await faberAgent.connections.returnWhenIsConnected(receiverSenderConnection!.id)
+      receiverSenderConnection = await faberAgent.connections.returnWhenIsConnected(receiverSenderConnection?.id)
       expect(receiverSenderConnection.state).toBe(DidExchangeState.Completed)
 
       let [senderReceiverConnection] = await faberAgent.connections.findAllByOutOfBandId(outOfBandRecord.id)

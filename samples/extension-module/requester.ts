@@ -1,18 +1,18 @@
 import type { DummyRecord, DummyStateChangedEvent } from './dummy'
 
 import {
-  HttpOutboundTransport,
   Agent,
   AriesFrameworkError,
+  ConnectionsModule,
   ConsoleLogger,
+  HttpOutboundTransport,
   LogLevel,
   WsOutboundTransport,
-  ConnectionsModule,
 } from '@aries-framework/core'
 import { agentDependencies } from '@aries-framework/node'
-import { filter, first, firstValueFrom, map, ReplaySubject, timeout } from 'rxjs'
+import { ReplaySubject, filter, first, firstValueFrom, map, timeout } from 'rxjs'
 
-import { DummyEventTypes, DummyState, DummyModule } from './dummy'
+import { DummyEventTypes, DummyModule, DummyState } from './dummy'
 
 const run = async () => {
   // Create transports

@@ -1,4 +1,4 @@
-import { DidsModule, Agent, TypedArrayEncoder, JsonTransformer } from '@aries-framework/core'
+import { Agent, DidsModule, JsonTransformer, TypedArrayEncoder } from '@aries-framework/core'
 import { indyVdr } from '@hyperledger/indy-vdr-nodejs'
 
 import { getAgentOptions, importExistingIndyDidFromPrivateKey } from '../../core/tests/helpers'

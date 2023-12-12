@@ -1,6 +1,6 @@
-import type { VersionString } from './version'
+import type { ValidationArguments, ValidationOptions } from 'class-validator'
 import type { PlaintextMessage } from '../types'
-import type { ValidationOptions, ValidationArguments } from 'class-validator'
+import type { VersionString } from './version'
 
 import { ValidateBy, buildMessage } from 'class-validator'
 
@@ -166,7 +166,7 @@ export function IsValidMessageType(
         },
         defaultMessage: buildMessage(
           (eachPrefix) =>
-            eachPrefix + '$property does not match the expected message type (only minor version may be lower)',
+            `${eachPrefix}$property does not match the expected message type (only minor version may be lower)`,
           validationOptions
         ),
       },

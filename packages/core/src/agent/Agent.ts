@@ -1,11 +1,11 @@
-import type { AgentDependencies } from './AgentDependencies'
-import type { AgentModulesInput } from './AgentModules'
-import type { AgentMessageReceivedEvent } from './Events'
+import type { Subscription } from 'rxjs'
 import type { Module } from '../plugins'
 import type { InboundTransport } from '../transport/InboundTransport'
 import type { OutboundTransport } from '../transport/OutboundTransport'
 import type { InitConfig } from '../types'
-import type { Subscription } from 'rxjs'
+import type { AgentDependencies } from './AgentDependencies'
+import type { AgentModulesInput } from './AgentModules'
+import type { AgentMessageReceivedEvent } from './Events'
 
 import { Subject } from 'rxjs'
 import { concatMap, takeUntil } from 'rxjs/operators'
@@ -39,7 +39,7 @@ interface AgentOptions<AgentModules extends AgentModulesInput> {
 }
 
 // Any makes sure you can use Agent as a type without always needing to specify the exact generics for the agent
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny:
 export class Agent<AgentModules extends AgentModulesInput = any> extends BaseAgent<AgentModules> {
   private messageSubscription?: Subscription
 
@@ -235,7 +235,7 @@ export class Agent<AgentModules extends AgentModulesInput = any> extends BaseAge
       const { connectionRecord: newConnection } = await this.oob.receiveInvitation(outOfBandInvitation, {
         routing,
       })
-      this.logger.debug(`Mediation invitation processed`, { outOfBandInvitation })
+      this.logger.debug('Mediation invitation processed', { outOfBandInvitation })
 
       if (!newConnection) {
         throw new AriesFrameworkError('No connection record to provision mediation.')

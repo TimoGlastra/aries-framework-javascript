@@ -1,12 +1,12 @@
+import type { ValidationOptions } from 'class-validator'
+import type { JsonObject } from '../../../../types'
 import type { W3cCredentialSubjectOptions } from './W3cCredentialSubject'
 import type { W3cIssuerOptions } from './W3cIssuer'
-import type { JsonObject } from '../../../../types'
-import type { ValidationOptions } from 'class-validator'
 
 import { Expose, Type } from 'class-transformer'
-import { IsInstance, buildMessage, IsOptional, IsRFC3339, ValidateBy, ValidateNested } from 'class-validator'
+import { IsInstance, IsOptional, IsRFC3339, ValidateBy, ValidateNested, buildMessage } from 'class-validator'
 
-import { asArray, JsonTransformer, mapSingleOrArray } from '../../../../utils'
+import { JsonTransformer, asArray, mapSingleOrArray } from '../../../../utils'
 import { SingleOrArray } from '../../../../utils/type'
 import { IsInstanceOrArrayOfInstances, IsUri } from '../../../../utils/validators'
 import { CREDENTIALS_CONTEXT_V1_URL, VERIFIABLE_CREDENTIAL_TYPE } from '../../constants'
@@ -15,7 +15,7 @@ import { IsCredentialJsonLdContext } from '../../validators'
 import { W3cCredentialSchema } from './W3cCredentialSchema'
 import { W3cCredentialStatus } from './W3cCredentialStatus'
 import { W3cCredentialSubject } from './W3cCredentialSubject'
-import { W3cIssuer, IsW3cIssuer, W3cIssuerTransformer } from './W3cIssuer'
+import { IsW3cIssuer, W3cIssuer, W3cIssuerTransformer } from './W3cIssuer'
 
 export interface W3cCredentialOptions {
   context?: Array<string | JsonObject>
@@ -139,7 +139,7 @@ export function IsCredentialType(validationOptions?: ValidationOptions): Propert
           return false
         },
         defaultMessage: buildMessage(
-          (eachPrefix) => eachPrefix + '$property must be an array of strings which includes "VerifiableCredential"',
+          (eachPrefix) => `${eachPrefix}$property must be an array of strings which includes "VerifiableCredential"`,
           validationOptions
         ),
       },

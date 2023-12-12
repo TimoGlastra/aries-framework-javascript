@@ -1,9 +1,9 @@
-import type { TenantConfig } from '../models/TenantConfig'
 import type { AgentContext, Key } from '@aries-framework/core'
+import type { TenantConfig } from '../models/TenantConfig'
 
-import { injectable, utils, KeyDerivationMethod } from '@aries-framework/core'
+import { KeyDerivationMethod, injectable, utils } from '@aries-framework/core'
 
-import { TenantRepository, TenantRecord, TenantRoutingRepository, TenantRoutingRecord } from '../repository'
+import { TenantRecord, TenantRepository, TenantRoutingRecord, TenantRoutingRepository } from '../repository'
 
 @injectable()
 export class TenantRecordService {

@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-import type { VerificationMethod, JsonObject, Proof, DocumentLoader } from '@aries-framework/core'
+import type { DocumentLoader, JsonObject, Proof, VerificationMethod } from '@aries-framework/core'
 
 /**
  * Options for verifying a signature

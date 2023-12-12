@@ -1,62 +1,62 @@
 import type {
-  AnonCredsCredentialsForProofRequest,
-  AnonCredsGetCredentialsForProofRequestOptions,
-} from './AnonCredsProofFormat'
-import type { LegacyIndyProofFormat } from './LegacyIndyProofFormat'
+  AgentContext,
+  FormatCreateRequestOptions,
+  ProofFormatAcceptProposalOptions,
+  ProofFormatAcceptRequestOptions,
+  ProofFormatAutoRespondPresentationOptions,
+  ProofFormatAutoRespondProposalOptions,
+  ProofFormatAutoRespondRequestOptions,
+  ProofFormatCreateProposalOptions,
+  ProofFormatCreateReturn,
+  ProofFormatGetCredentialsForRequestOptions,
+  ProofFormatGetCredentialsForRequestReturn,
+  ProofFormatProcessOptions,
+  ProofFormatProcessPresentationOptions,
+  ProofFormatSelectCredentialsForRequestOptions,
+  ProofFormatSelectCredentialsForRequestReturn,
+  ProofFormatService,
+} from '@aries-framework/core'
 import type {
   AnonCredsCredentialDefinition,
   AnonCredsCredentialInfo,
   AnonCredsProof,
+  AnonCredsProofRequest,
   AnonCredsRequestedAttribute,
   AnonCredsRequestedAttributeMatch,
   AnonCredsRequestedPredicate,
   AnonCredsRequestedPredicateMatch,
   AnonCredsSchema,
   AnonCredsSelectedCredentials,
-  AnonCredsProofRequest,
 } from '../models'
 import type { AnonCredsHolderService, AnonCredsVerifierService, GetCredentialsForProofRequestReturn } from '../services'
 import type {
-  ProofFormatService,
-  AgentContext,
-  ProofFormatCreateReturn,
-  FormatCreateRequestOptions,
-  ProofFormatCreateProposalOptions,
-  ProofFormatProcessOptions,
-  ProofFormatAcceptProposalOptions,
-  ProofFormatAcceptRequestOptions,
-  ProofFormatProcessPresentationOptions,
-  ProofFormatGetCredentialsForRequestOptions,
-  ProofFormatGetCredentialsForRequestReturn,
-  ProofFormatSelectCredentialsForRequestOptions,
-  ProofFormatSelectCredentialsForRequestReturn,
-  ProofFormatAutoRespondProposalOptions,
-  ProofFormatAutoRespondRequestOptions,
-  ProofFormatAutoRespondPresentationOptions,
-} from '@aries-framework/core'
+  AnonCredsCredentialsForProofRequest,
+  AnonCredsGetCredentialsForProofRequestOptions,
+} from './AnonCredsProofFormat'
+import type { LegacyIndyProofFormat } from './LegacyIndyProofFormat'
 
 import {
   AriesFrameworkError,
   Attachment,
   AttachmentData,
   JsonEncoder,
-  ProofFormatSpec,
   JsonTransformer,
+  ProofFormatSpec,
 } from '@aries-framework/core'
 
 import { AnonCredsProofRequest as AnonCredsProofRequestClass } from '../models/AnonCredsProofRequest'
-import { AnonCredsVerifierServiceSymbol, AnonCredsHolderServiceSymbol } from '../services'
+import { AnonCredsHolderServiceSymbol, AnonCredsVerifierServiceSymbol } from '../services'
 import { AnonCredsRegistryService } from '../services/registry/AnonCredsRegistryService'
 import {
-  sortRequestedCredentialsMatches,
-  createRequestFromPreview,
   areAnonCredsProofRequestsEqual,
   assertBestPracticeRevocationInterval,
-  checkValidCredentialValueEncoding,
-  encodeCredentialValue,
   assertNoDuplicateGroupsNamesInProofRequest,
-  getRevocationRegistriesForRequest,
+  checkValidCredentialValueEncoding,
+  createRequestFromPreview,
+  encodeCredentialValue,
   getRevocationRegistriesForProof,
+  getRevocationRegistriesForRequest,
+  sortRequestedCredentialsMatches,
 } from '../utils'
 import { isUnqualifiedCredentialDefinitionId, isUnqualifiedSchemaId } from '../utils/indyIdentifiers'
 import { dateToTimestamp } from '../utils/timestamp'
@@ -430,9 +430,8 @@ export class LegacyIndyProofFormatService implements ProofFormatService<LegacyIn
     Object.keys(credentialsForRequest.predicates).forEach((attributeName) => {
       if (credentialsForRequest.predicates[attributeName].length === 0) {
         throw new AriesFrameworkError('Unable to automatically select requested predicates.')
-      } else {
-        selectedCredentials.predicates[attributeName] = credentialsForRequest.predicates[attributeName][0]
       }
+      selectedCredentials.predicates[attributeName] = credentialsForRequest.predicates[attributeName][0]
     })
 
     return selectedCredentials

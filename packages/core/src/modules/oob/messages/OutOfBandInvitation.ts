@@ -76,17 +76,16 @@ export class OutOfBandInvitation extends AgentMessage {
 
   public static fromUrl(invitationUrl: string) {
     const parsedUrl = parseUrl(invitationUrl).query
-    const encodedInvitation = parsedUrl['oob']
+    const encodedInvitation = parsedUrl.oob
     if (typeof encodedInvitation === 'string') {
       const invitationJson = JsonEncoder.fromBase64(encodedInvitation)
-      const invitation = this.fromJson(invitationJson)
+      const invitation = OutOfBandInvitation.fromJson(invitationJson)
 
       return invitation
-    } else {
-      throw new AriesFrameworkError(
-        'InvitationUrl is invalid. It needs to contain one, and only one, of the following parameters; `oob`'
-      )
     }
+    throw new AriesFrameworkError(
+      'InvitationUrl is invalid. It needs to contain one, and only one, of the following parameters; `oob`'
+    )
   }
 
   public static fromJson(json: Record<string, unknown>) {
@@ -151,7 +150,7 @@ export class OutOfBandInvitation extends AgentMessage {
   @OutOfBandServiceTransformer()
   @IsStringOrInstance(OutOfBandDidCommService, { each: true })
   // eslint-disable-next-line @typescript-eslint/ban-types
-  private services!: Array<OutOfBandDidCommService | string | String>
+  private services!: Array<OutOfBandDidCommService | string | string>
 
   /**
    * Custom property. It is not part of the RFC.
@@ -175,7 +174,8 @@ function OutOfBandServiceTransformer() {
         // inline didcomm service
         return JsonTransformer.fromJSON(service, OutOfBandDidCommService)
       })
-    } else if (type === TransformationType.CLASS_TO_PLAIN) {
+    }
+    if (type === TransformationType.CLASS_TO_PLAIN) {
       return value.map((service) =>
         typeof service === 'string' || service instanceof String ? service.toString() : JsonTransformer.toJSON(service)
       )

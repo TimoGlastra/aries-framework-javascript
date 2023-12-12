@@ -1,15 +1,10 @@
-import type {
-  JsonLdCredentialFormat,
-  JsonCredential,
-  JsonLdFormatDataCredentialDetail,
-  JsonLdFormatDataVerifiableCredential,
-} from './JsonLdCredentialFormat'
 import type { AgentContext } from '../../../../agent'
 import type { CredentialFormatService } from '../CredentialFormatService'
 import type {
   CredentialFormatAcceptOfferOptions,
   CredentialFormatAcceptProposalOptions,
   CredentialFormatAcceptRequestOptions,
+  CredentialFormatAutoRespondCredentialOptions,
   CredentialFormatAutoRespondOfferOptions,
   CredentialFormatAutoRespondProposalOptions,
   CredentialFormatAutoRespondRequestOptions,
@@ -21,8 +16,13 @@ import type {
   CredentialFormatCreateReturn,
   CredentialFormatProcessCredentialOptions,
   CredentialFormatProcessOptions,
-  CredentialFormatAutoRespondCredentialOptions,
 } from '../CredentialFormatServiceOptions'
+import type {
+  JsonCredential,
+  JsonLdCredentialFormat,
+  JsonLdFormatDataCredentialDetail,
+  JsonLdFormatDataVerifiableCredential,
+} from './JsonLdCredentialFormat'
 
 import { Attachment, AttachmentData } from '../../../../decorators/attachment/Attachment'
 import { AriesFrameworkError } from '../../../../error'
@@ -337,7 +337,7 @@ export class JsonLdCredentialFormatService implements CredentialFormatService<Js
     request: JsonLdFormatDataCredentialDetail
   ): void {
     const jsonCredential = JsonTransformer.toJSON(credential)
-    delete jsonCredential.proof
+    jsonCredential.proof = undefined
 
     if (Array.isArray(credential.proof)) {
       throw new AriesFrameworkError('Credential proof arrays are not supported')

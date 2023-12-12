@@ -1,40 +1,40 @@
+import type { AutoAcceptProof, ConnectionRecord } from '@aries-framework/core'
 import type { EventReplaySubject } from '../../core/tests'
 import type {
+  AnonCredsOfferCredentialFormat,
   AnonCredsRegisterCredentialDefinitionOptions,
   AnonCredsRequestedAttribute,
   AnonCredsRequestedPredicate,
-  AnonCredsOfferCredentialFormat,
   AnonCredsSchema,
   RegisterCredentialDefinitionReturnStateFinished,
   RegisterSchemaReturnStateFinished,
 } from '../src'
-import type { AutoAcceptProof, ConnectionRecord } from '@aries-framework/core'
 
+import { randomUUID } from 'crypto'
 import {
-  TypedArrayEncoder,
-  CacheModule,
-  InMemoryLruCache,
   Agent,
   AriesFrameworkError,
   AutoAcceptCredential,
+  CacheModule,
   CredentialEventTypes,
-  CredentialsModule,
   CredentialState,
+  CredentialsModule,
+  DidsModule,
+  InMemoryLruCache,
   ProofEventTypes,
-  ProofsModule,
   ProofState,
+  ProofsModule,
+  TypedArrayEncoder,
   V2CredentialProtocol,
   V2ProofProtocol,
-  DidsModule,
 } from '@aries-framework/core'
-import { randomUUID } from 'crypto'
 
 import { AnonCredsRsModule } from '../../anoncreds-rs/src'
 import { anoncreds } from '../../anoncreds-rs/tests/helpers'
 import { AskarModule } from '../../askar/src'
 import { askarModuleConfig } from '../../askar/tests/helpers'
 import { sleep } from '../../core/src/utils/sleep'
-import { setupSubjectTransports, setupEventReplaySubjects } from '../../core/tests'
+import { setupEventReplaySubjects, setupSubjectTransports } from '../../core/tests'
 import {
   getAgentOptions,
   importExistingIndyDidFromPrivateKey,
@@ -54,22 +54,22 @@ import {
 import { getIndySdkModuleConfig } from '../../indy-sdk/tests/setupIndySdkModule'
 import {
   IndyVdrAnonCredsRegistry,
-  IndyVdrSovDidResolver,
-  IndyVdrModule,
-  IndyVdrIndyDidResolver,
   IndyVdrIndyDidRegistrar,
+  IndyVdrIndyDidResolver,
+  IndyVdrModule,
+  IndyVdrSovDidResolver,
 } from '../../indy-vdr/src'
 import { indyVdrModuleConfig } from '../../indy-vdr/tests/helpers'
 import {
+  AnonCredsModule,
+  LegacyIndyCredentialFormatService,
+  LegacyIndyProofFormatService,
+  V1CredentialProtocol,
+  V1ProofProtocol,
   getUnqualifiedCredentialDefinitionId,
   getUnqualifiedSchemaId,
   parseIndyCredentialDefinitionId,
   parseIndySchemaId,
-  V1CredentialProtocol,
-  V1ProofProtocol,
-  AnonCredsModule,
-  LegacyIndyCredentialFormatService,
-  LegacyIndyProofFormatService,
 } from '../src'
 
 // Helper type to get the type of the agents (with the custom modules) for the credential tests

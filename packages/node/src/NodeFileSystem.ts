@@ -1,12 +1,12 @@
 import type { DownloadToFileOptions, FileSystem } from '@aries-framework/core'
 
-import { AriesFrameworkError, TypedArrayEncoder } from '@aries-framework/core'
 import { createHash } from 'crypto'
 import fs, { promises } from 'fs'
 import http from 'http'
 import https from 'https'
-import { tmpdir, homedir } from 'os'
+import { homedir, tmpdir } from 'os'
 import { dirname } from 'path'
+import { AriesFrameworkError, TypedArrayEncoder } from '@aries-framework/core'
 
 const { access, readFile, writeFile, mkdir, rm, unlink, copyFile } = promises
 

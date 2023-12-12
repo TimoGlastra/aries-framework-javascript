@@ -5,9 +5,9 @@ import type {
 } from '@aries-framework/anoncreds'
 
 import {
-  unqualifiedRevocationRegistryIdRegex,
   unqualifiedCredentialDefinitionIdRegex,
   unqualifiedIndyDidRegex,
+  unqualifiedRevocationRegistryIdRegex,
   unqualifiedSchemaIdRegex,
 } from '@aries-framework/anoncreds'
 import { AriesFrameworkError } from '@aries-framework/core'

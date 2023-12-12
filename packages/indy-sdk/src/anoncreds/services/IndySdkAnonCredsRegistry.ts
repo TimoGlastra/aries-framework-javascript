@@ -1,20 +1,20 @@
-import type { IndySdkPool } from '../../ledger'
-import type { IndySdk } from '../../types'
 import type {
   AnonCredsRegistry,
   GetCredentialDefinitionReturn,
-  GetRevocationStatusListReturn,
   GetRevocationRegistryDefinitionReturn,
+  GetRevocationStatusListReturn,
   GetSchemaReturn,
   RegisterCredentialDefinitionOptions,
   RegisterCredentialDefinitionReturn,
-  RegisterSchemaOptions,
-  RegisterSchemaReturn,
   RegisterRevocationRegistryDefinitionReturn,
   RegisterRevocationStatusListReturn,
+  RegisterSchemaOptions,
+  RegisterSchemaReturn,
 } from '@aries-framework/anoncreds'
 import type { AgentContext } from '@aries-framework/core'
 import type { Schema as IndySdkSchema } from 'indy-sdk'
+import type { IndySdkPool } from '../../ledger'
+import type { IndySdk } from '../../types'
 
 import {
   getUnqualifiedCredentialDefinitionId,
@@ -263,7 +263,7 @@ export class IndySdkAnonCredsRegistry implements AnonCredsRegistry {
         credentialDefinitionMetadata: {},
         resolutionMetadata: {
           error: 'notFound',
-          message: `unable to resolve credential definition`,
+          message: 'unable to resolve credential definition',
         },
       }
     } catch (error) {

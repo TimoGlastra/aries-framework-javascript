@@ -1,6 +1,6 @@
 import type { IndySdkIndyDidCreateOptions } from '../src'
 
-import { Agent, TypedArrayEncoder, convertPublicKeyToX25519, JsonTransformer } from '@aries-framework/core'
+import { Agent, JsonTransformer, TypedArrayEncoder, convertPublicKeyToX25519 } from '@aries-framework/core'
 import { generateKeyPairFromSeed } from '@stablelib/ed25519'
 
 import { getAgentOptions, importExistingIndyDidFromPrivateKey, publicDidSeed } from '../../core/tests'
@@ -32,7 +32,7 @@ describe('Indy SDK Indy Did Registrar', () => {
     // but still check if the created output document is as expected.
     const privateKey = TypedArrayEncoder.fromString(
       Array(32 + 1)
-        .join((Math.random().toString(36) + '00000000000000000').slice(2, 18))
+        .join(`${Math.random().toString(36)}00000000000000000`.slice(2, 18))
         .slice(0, 32)
     )
 

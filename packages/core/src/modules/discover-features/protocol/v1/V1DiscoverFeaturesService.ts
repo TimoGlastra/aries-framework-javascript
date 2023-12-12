@@ -23,7 +23,7 @@ import { DiscoverFeaturesModuleConfig } from '../../DiscoverFeaturesModuleConfig
 import { DiscoverFeaturesService } from '../../services'
 
 import { V1DiscloseMessageHandler, V1QueryMessageHandler } from './handlers'
-import { V1QueryMessage, V1DiscloseMessage, DiscloseProtocol } from './messages'
+import { DiscloseProtocol, V1DiscloseMessage, V1QueryMessage } from './messages'
 
 @injectable()
 export class V1DiscoverFeaturesService extends DiscoverFeaturesService {

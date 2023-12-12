@@ -1,4 +1,3 @@
-import type { ProofProtocol } from './ProofProtocol'
 import type { AgentMessage } from '../../../agent/AgentMessage'
 import type { ConnectionRecord } from '../../connections'
 import type {
@@ -10,6 +9,7 @@ import type {
 } from '../formats'
 import type { AutoAcceptProof } from '../models'
 import type { ProofExchangeRecord } from '../repository'
+import type { ProofProtocol } from './ProofProtocol'
 
 /**
  * Get the format data payload for a specific message from a list of ProofFormat interfaces and a message

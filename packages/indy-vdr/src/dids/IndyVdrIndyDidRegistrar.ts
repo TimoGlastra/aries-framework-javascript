@@ -1,5 +1,3 @@
-import type { IndyEndpointAttrib } from './didSovUtil'
-import type { IndyVdrPool } from '../pool'
 import type {
   AgentContext,
   Buffer,
@@ -13,6 +11,8 @@ import type {
   DidUpdateResult,
 } from '@aries-framework/core'
 import type { IndyVdrRequest } from '@hyperledger/indy-vdr-shared'
+import type { IndyVdrPool } from '../pool'
+import type { IndyEndpointAttrib } from './didSovUtil'
 
 import { parseIndyDid } from '@aries-framework/anoncreds'
 import {
@@ -364,7 +364,7 @@ export class IndyVdrIndyDidRegistrar implements DidRegistrar {
       didRegistrationMetadata: {},
       didState: {
         state: 'failed',
-        reason: `notImplemented: updating did:indy not implemented yet`,
+        reason: 'notImplemented: updating did:indy not implemented yet',
       },
     }
   }
@@ -375,7 +375,7 @@ export class IndyVdrIndyDidRegistrar implements DidRegistrar {
       didRegistrationMetadata: {},
       didState: {
         state: 'failed',
-        reason: `notImplemented: deactivating did:indy not implemented yet`,
+        reason: 'notImplemented: deactivating did:indy not implemented yet',
       },
     }
   }

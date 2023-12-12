@@ -1,5 +1,5 @@
-import type { AskarWalletPostgresStorageConfig } from '../wallet/AskarWalletPostgresStorageConfig'
 import type { WalletConfig } from '@aries-framework/core'
+import type { AskarWalletPostgresStorageConfig } from '../wallet/AskarWalletPostgresStorageConfig'
 
 import { KeyDerivationMethod, WalletError } from '@aries-framework/core'
 import { KdfMethod, StoreKeyMethod } from '@hyperledger/aries-askar-shared'

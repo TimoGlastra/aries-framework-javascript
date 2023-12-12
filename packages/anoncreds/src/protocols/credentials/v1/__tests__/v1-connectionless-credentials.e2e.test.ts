@@ -1,10 +1,10 @@
+import type { AcceptCredentialOfferOptions, AcceptCredentialRequestOptions } from '@aries-framework/core'
 import type { EventReplaySubject } from '../../../../../../core/tests'
 import type { AnonCredsTestsAgent } from '../../../../../tests/legacyAnonCredsSetup'
-import type { AcceptCredentialOfferOptions, AcceptCredentialRequestOptions } from '@aries-framework/core'
 
 import { AutoAcceptCredential, CredentialExchangeRecord, CredentialState } from '@aries-framework/core'
 
-import { waitForCredentialRecordSubject, testLogger } from '../../../../../../core/tests'
+import { testLogger, waitForCredentialRecordSubject } from '../../../../../../core/tests'
 import { setupAnonCredsTests } from '../../../../../tests/legacyAnonCredsSetup'
 import { V1CredentialPreview } from '../messages'
 

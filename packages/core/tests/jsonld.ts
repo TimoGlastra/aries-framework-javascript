@@ -1,18 +1,18 @@
-import type { EventReplaySubject } from './events'
 import type { AutoAcceptCredential, AutoAcceptProof, ConnectionRecord } from '../src'
+import type { EventReplaySubject } from './events'
 
 import { BbsModule } from '../../bbs-signatures/src/BbsModule'
 import { IndySdkModule } from '../../indy-sdk/src'
 import { indySdk } from '../../indy-sdk/tests/setupIndySdkModule'
 import {
+  Agent,
   CacheModule,
   CredentialEventTypes,
-  InMemoryLruCache,
-  ProofEventTypes,
-  Agent,
-  ProofsModule,
   CredentialsModule,
+  InMemoryLruCache,
   JsonLdCredentialFormatService,
+  ProofEventTypes,
+  ProofsModule,
   V2CredentialProtocol,
   W3cCredentialsModule,
 } from '../src'

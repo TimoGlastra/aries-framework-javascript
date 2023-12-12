@@ -1,16 +1,16 @@
-import type { HandshakeReusedEvent } from './domain/OutOfBandEvents'
 import type { AgentMessage } from '../../agent/AgentMessage'
 import type { AgentMessageReceivedEvent } from '../../agent/Events'
 import type { Attachment } from '../../decorators/attachment/Attachment'
 import type { Query } from '../../storage/StorageService'
 import type { PlaintextMessage } from '../../types'
 import type { ConnectionInvitationMessage, ConnectionRecord, Routing } from '../connections'
+import type { HandshakeReusedEvent } from './domain/OutOfBandEvents'
 
-import { catchError, EmptyError, first, firstValueFrom, map, of, timeout } from 'rxjs'
+import { EmptyError, catchError, first, firstValueFrom, map, of, timeout } from 'rxjs'
 
 import { AgentContext } from '../../agent'
 import { EventEmitter } from '../../agent/EventEmitter'
-import { filterContextCorrelationId, AgentEventTypes } from '../../agent/Events'
+import { AgentEventTypes, filterContextCorrelationId } from '../../agent/Events'
 import { MessageHandlerRegistry } from '../../agent/MessageHandlerRegistry'
 import { MessageSender } from '../../agent/MessageSender'
 import { OutboundMessageContext } from '../../agent/models'
@@ -610,7 +610,8 @@ export class OutOfBandApi {
         }
       }
       return { outOfBandRecord, connectionRecord }
-    } else if (messages) {
+    }
+    if (messages) {
       this.logger.debug('Out of band message contains only request messages.')
       if (existingConnection) {
         this.logger.debug('Connection already exists.', { connectionId: existingConnection.id })
@@ -748,7 +749,8 @@ export class OutOfBandApi {
       if (connections.length === 1) {
         const [firstConnection] = connections
         return firstConnection
-      } else if (connections.length > 1) {
+      }
+      if (connections.length > 1) {
         this.logger.warn(
           `There is more than one connection created from invitationDid ${invitationDid}. Taking the first one.`
         )
@@ -795,7 +797,7 @@ export class OutOfBandApi {
     messages: PlaintextMessage[]
   ) {
     if (!services || services.length === 0) {
-      throw new AriesFrameworkError(`There are no services. We can not emit messages`)
+      throw new AriesFrameworkError('There are no services. We can not emit messages')
     }
 
     const supportedMessageTypes = this.messageHandlerRegistry.supportedMessageTypes

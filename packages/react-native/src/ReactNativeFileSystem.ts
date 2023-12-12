@@ -1,6 +1,6 @@
-import type { FileSystem, DownloadToFileOptions } from '@aries-framework/core'
+import type { DownloadToFileOptions, FileSystem } from '@aries-framework/core'
 
-import { TypedArrayEncoder, AriesFrameworkError, getDirFromFilePath, Buffer } from '@aries-framework/core'
+import { AriesFrameworkError, Buffer, TypedArrayEncoder, getDirFromFilePath } from '@aries-framework/core'
 import { Platform } from 'react-native'
 import * as RNFS from 'react-native-fs'
 

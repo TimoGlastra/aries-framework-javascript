@@ -1,33 +1,33 @@
 import type {
   EncryptedMessage,
-  WalletConfig,
-  WalletCreateKeyOptions,
-  WalletSignOptions,
-  UnpackedMessageContext,
-  WalletVerifyOptions,
-  Wallet,
-  WalletConfigRekey,
   KeyPair,
-  WalletExportImportConfig,
   Logger,
   SigningProviderRegistry,
+  UnpackedMessageContext,
+  Wallet,
+  WalletConfig,
+  WalletConfigRekey,
+  WalletCreateKeyOptions,
+  WalletExportImportConfig,
+  WalletSignOptions,
+  WalletVerifyOptions,
 } from '@aries-framework/core'
 import type { KeyEntryObject, Session } from '@hyperledger/aries-askar-shared'
 
 import {
-  WalletKeyExistsError,
-  isValidSeed,
-  isValidPrivateKey,
-  JsonTransformer,
-  JsonEncoder,
-  KeyType,
-  Buffer,
   AriesFrameworkError,
-  WalletError,
+  Buffer,
+  JsonEncoder,
+  JsonTransformer,
   Key,
+  KeyType,
   TypedArrayEncoder,
+  WalletError,
+  WalletKeyExistsError,
+  isValidPrivateKey,
+  isValidSeed,
 } from '@aries-framework/core'
-import { KeyAlgs, CryptoBox, Store, Key as AskarKey, keyAlgFromString } from '@hyperledger/aries-askar-shared'
+import { CryptoBox, Key as AskarKey, KeyAlgs, Store, keyAlgFromString } from '@hyperledger/aries-askar-shared'
 // eslint-disable-next-line import/order
 import BigNumber from 'bn.js'
 
@@ -158,7 +158,7 @@ export abstract class AskarBaseWallet implements Wallet {
     try {
       if (isKeyTypeSupportedByAskar(key.keyType)) {
         if (!TypedArrayEncoder.isTypedArray(data)) {
-          throw new WalletError(`Currently not supporting signing of multiple messages`)
+          throw new WalletError('Currently not supporting signing of multiple messages')
         }
         keyEntry = await this.session.fetchKey({ name: key.publicKeyBase58 })
 
@@ -171,22 +171,21 @@ export abstract class AskarBaseWallet implements Wallet {
         keyEntry.key.handle.free()
 
         return Buffer.from(signed)
-      } else {
-        // Check if there is a signing key provider for the specified key type.
-        if (this.signingKeyProviderRegistry.hasProviderForKeyType(key.keyType)) {
-          const signingKeyProvider = this.signingKeyProviderRegistry.getProviderForKeyType(key.keyType)
-
-          const keyPair = await this.retrieveKeyPair(key.publicKeyBase58)
-          const signed = await signingKeyProvider.sign({
-            data,
-            privateKeyBase58: keyPair.privateKeyBase58,
-            publicKeyBase58: key.publicKeyBase58,
-          })
-
-          return signed
-        }
-        throw new WalletError(`Unsupported keyType: ${key.keyType}`)
       }
+      // Check if there is a signing key provider for the specified key type.
+      if (this.signingKeyProviderRegistry.hasProviderForKeyType(key.keyType)) {
+        const signingKeyProvider = this.signingKeyProviderRegistry.getProviderForKeyType(key.keyType)
+
+        const keyPair = await this.retrieveKeyPair(key.publicKeyBase58)
+        const signed = await signingKeyProvider.sign({
+          data,
+          privateKeyBase58: keyPair.privateKeyBase58,
+          publicKeyBase58: key.publicKeyBase58,
+        })
+
+        return signed
+      }
+      throw new WalletError(`Unsupported keyType: ${key.keyType}`)
     } catch (error) {
       keyEntry?.key.handle.free()
       if (!isError(error)) {
@@ -213,7 +212,7 @@ export abstract class AskarBaseWallet implements Wallet {
     try {
       if (isKeyTypeSupportedByAskar(key.keyType)) {
         if (!TypedArrayEncoder.isTypedArray(data)) {
-          throw new WalletError(`Currently not supporting verification of multiple messages`)
+          throw new WalletError('Currently not supporting verification of multiple messages')
         }
 
         const askarKey = AskarKey.fromPublicBytes({
@@ -223,21 +222,20 @@ export abstract class AskarBaseWallet implements Wallet {
         const verified = askarKey.verifySignature({ message: data as Buffer, signature })
         askarKey.handle.free()
         return verified
-      } else {
-        // Check if there is a signing key provider for the specified key type.
-        if (this.signingKeyProviderRegistry.hasProviderForKeyType(key.keyType)) {
-          const signingKeyProvider = this.signingKeyProviderRegistry.getProviderForKeyType(key.keyType)
-
-          const signed = await signingKeyProvider.verify({
-            data,
-            signature,
-            publicKeyBase58: key.publicKeyBase58,
-          })
-
-          return signed
-        }
-        throw new WalletError(`Unsupported keyType: ${key.keyType}`)
       }
+      // Check if there is a signing key provider for the specified key type.
+      if (this.signingKeyProviderRegistry.hasProviderForKeyType(key.keyType)) {
+        const signingKeyProvider = this.signingKeyProviderRegistry.getProviderForKeyType(key.keyType)
+
+        const signed = await signingKeyProvider.verify({
+          data,
+          signature,
+          publicKeyBase58: key.publicKeyBase58,
+        })
+
+        return signed
+      }
+      throw new WalletError(`Unsupported keyType: ${key.keyType}`)
     } catch (error) {
       askarKey?.handle.free()
       if (!isError(error)) {
@@ -380,7 +378,8 @@ export abstract class AskarBaseWallet implements Wallet {
       const iv = recip.header.iv ? TypedArrayEncoder.fromBase64(recip.header.iv) : undefined
       if (sender && !iv) {
         throw new WalletError('Missing IV')
-      } else if (!sender && iv) {
+      }
+      if (!sender && iv) {
         throw new WalletError('Unexpected IV')
       }
       recipients.push({
@@ -391,7 +390,9 @@ export abstract class AskarBaseWallet implements Wallet {
       })
     }
 
-    let payloadKey, senderKey, recipientKey
+    let payloadKey
+    let senderKey
+    let recipientKey
 
     for (const recipient of recipients) {
       let recipientKeyEntry: KeyEntryObject | null | undefined
@@ -487,9 +488,8 @@ export abstract class AskarBaseWallet implements Wallet {
 
       if (entryObject?.value) {
         return JsonEncoder.fromString(entryObject?.value as string) as KeyPair
-      } else {
-        throw new WalletError(`No content found for record with public key: ${publicKeyBase58}`)
       }
+      throw new WalletError(`No content found for record with public key: ${publicKeyBase58}`)
     } catch (error) {
       throw new WalletError('Error retrieving KeyPair record', { cause: error })
     }

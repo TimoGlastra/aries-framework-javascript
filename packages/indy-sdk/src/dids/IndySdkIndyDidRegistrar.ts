@@ -1,6 +1,3 @@
-import type { IndyEndpointAttrib } from './didSovUtil'
-import type { IndySdkPool } from '../ledger'
-import type { IndySdk } from '../types'
 import type {
   AgentContext,
   Buffer,
@@ -11,9 +8,12 @@ import type {
   DidUpdateResult,
 } from '@aries-framework/core'
 import type { NymRole } from 'indy-sdk'
+import type { IndySdkPool } from '../ledger'
+import type { IndySdk } from '../types'
+import type { IndyEndpointAttrib } from './didSovUtil'
 
 import { parseIndyDid } from '@aries-framework/anoncreds'
-import { DidDocumentRole, DidRecord, DidRepository, KeyType, Key } from '@aries-framework/core'
+import { DidDocumentRole, DidRecord, DidRepository, Key, KeyType } from '@aries-framework/core'
 
 import { IndySdkError } from '../error'
 import { isIndyError } from '../error/indyError'
@@ -81,7 +81,7 @@ export class IndySdkIndyDidRegistrar implements DidRegistrar {
             didRegistrationMetadata: {},
             didState: {
               state: 'failed',
-              reason: `Did must be first 16 bytes of the the verkey base58 encoded.`,
+              reason: 'Did must be first 16 bytes of the the verkey base58 encoded.',
             },
           }
         }
@@ -186,7 +186,7 @@ export class IndySdkIndyDidRegistrar implements DidRegistrar {
       didRegistrationMetadata: {},
       didState: {
         state: 'failed',
-        reason: `notImplemented: updating did:indy not implemented yet`,
+        reason: 'notImplemented: updating did:indy not implemented yet',
       },
     }
   }
@@ -197,7 +197,7 @@ export class IndySdkIndyDidRegistrar implements DidRegistrar {
       didRegistrationMetadata: {},
       didState: {
         state: 'failed',
-        reason: `notImplemented: deactivating did:indy not implemented yet`,
+        reason: 'notImplemented: deactivating did:indy not implemented yet',
       },
     }
   }

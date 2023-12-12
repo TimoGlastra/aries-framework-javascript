@@ -2,15 +2,15 @@ import type { IndyVdrDidCreateOptions, IndyVdrDidCreateResult } from '../src/did
 
 import { didIndyRegex } from '@aries-framework/anoncreds'
 import {
-  Key,
-  JsonTransformer,
-  KeyType,
-  TypedArrayEncoder,
+  Agent,
   DidCommV1Service,
   DidCommV2Service,
   DidDocumentService,
-  Agent,
   DidsModule,
+  JsonTransformer,
+  Key,
+  KeyType,
+  TypedArrayEncoder,
 } from '@aries-framework/core'
 import { indyVdr } from '@hyperledger/indy-vdr-nodejs'
 import { convertPublicKeyToX25519, generateKeyPairFromSeed } from '@stablelib/ed25519'
@@ -172,7 +172,7 @@ describe('Indy VDR Indy Did Registrar', () => {
     // Generate a seed and the indy did. This allows us to create a new did every time
     // but still check if the created output document is as expected.
     const seed = Array(32 + 1)
-      .join((Math.random().toString(36) + '00000000000000000').slice(2, 18))
+      .join(`${Math.random().toString(36)}00000000000000000`.slice(2, 18))
       .slice(0, 32)
 
     const keyPair = generateKeyPairFromSeed(TypedArrayEncoder.fromString(seed))
@@ -271,7 +271,7 @@ describe('Indy VDR Indy Did Registrar', () => {
     // Generate a seed and the indy did. This allows us to create a new did every time
     // but still check if the created output document is as expected.
     const seed = Array(32 + 1)
-      .join((Math.random().toString(36) + '00000000000000000').slice(2, 18))
+      .join(`${Math.random().toString(36)}00000000000000000`.slice(2, 18))
       .slice(0, 32)
 
     const keyPair = generateKeyPairFromSeed(TypedArrayEncoder.fromString(seed))
@@ -352,7 +352,7 @@ describe('Indy VDR Indy Did Registrar', () => {
     // but still check if the created output document is as expected.
     const privateKey = TypedArrayEncoder.fromString(
       Array(32 + 1)
-        .join((Math.random().toString(36) + '00000000000000000').slice(2, 18))
+        .join(`${Math.random().toString(36)}00000000000000000`.slice(2, 18))
         .slice(0, 32)
     )
 
@@ -476,7 +476,7 @@ describe('Indy VDR Indy Did Registrar', () => {
     // but still check if the created output document is as expected.
     const privateKey = TypedArrayEncoder.fromString(
       Array(32 + 1)
-        .join((Math.random().toString(36) + '00000000000000000').slice(2, 18))
+        .join(`${Math.random().toString(36)}00000000000000000`.slice(2, 18))
         .slice(0, 32)
     )
 

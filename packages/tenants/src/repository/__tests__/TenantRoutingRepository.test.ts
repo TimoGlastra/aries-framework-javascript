@@ -1,4 +1,4 @@
-import type { StorageService, EventEmitter } from '@aries-framework/core'
+import type { EventEmitter, StorageService } from '@aries-framework/core'
 
 import { Key } from '@aries-framework/core'
 

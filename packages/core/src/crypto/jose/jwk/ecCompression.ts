@@ -14,7 +14,10 @@ const curveToPointLength = {
 }
 
 function getConstantsForCurve(curve: 'P-256' | 'P-384' | 'P-521') {
-  let two, prime, b, pIdent
+  let two
+  let prime
+  let b
+  let pIdent
 
   if (curve === 'P-256') {
     two = bigInt(2)
@@ -64,9 +67,9 @@ function compressECPoint(x: Uint8Array, y: Uint8Array): Uint8Array {
 }
 
 function padWithZeroes(number: number | string, length: number) {
-  let value = '' + number
+  let value = `${number}`
   while (value.length < length) {
-    value = '0' + value
+    value = `0${value}`
   }
   return value
 }

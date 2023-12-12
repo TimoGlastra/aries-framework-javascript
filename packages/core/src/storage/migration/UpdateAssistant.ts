@@ -1,7 +1,7 @@
-import type { Update, UpdateConfig, UpdateToVersion } from './updates'
 import type { BaseAgent } from '../../agent/BaseAgent'
 import type { Module } from '../../plugins'
 import type { FileSystem } from '../FileSystem'
+import type { Update, UpdateConfig, UpdateToVersion } from './updates'
 
 import { InjectionSymbols } from '../../constants'
 import { AriesFrameworkError } from '../../error'
@@ -13,7 +13,7 @@ import { StorageUpdateService } from './StorageUpdateService'
 import { StorageUpdateError } from './error/StorageUpdateError'
 import { CURRENT_FRAMEWORK_STORAGE_VERSION, supportedUpdates } from './updates'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny:
 export class UpdateAssistant<Agent extends BaseAgent<any> = BaseAgent> {
   private agent: Agent
   private storageUpdateService: StorageUpdateService

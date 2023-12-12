@@ -1,7 +1,7 @@
-import type { AnonCredsRevocationRegistryState } from './AnonCredsRevocationRegistryDefinitionPrivateRecord'
 import type { AgentContext } from '@aries-framework/core'
+import type { AnonCredsRevocationRegistryState } from './AnonCredsRevocationRegistryDefinitionPrivateRecord'
 
-import { Repository, InjectionSymbols, StorageService, EventEmitter, injectable, inject } from '@aries-framework/core'
+import { EventEmitter, InjectionSymbols, Repository, StorageService, inject, injectable } from '@aries-framework/core'
 
 import { AnonCredsRevocationRegistryDefinitionPrivateRecord } from './AnonCredsRevocationRegistryDefinitionPrivateRecord'
 

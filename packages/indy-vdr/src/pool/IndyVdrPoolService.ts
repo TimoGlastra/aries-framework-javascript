@@ -2,11 +2,11 @@ import type { AgentContext } from '@aries-framework/core'
 import type { GetNymResponse } from '@hyperledger/indy-vdr-shared'
 
 import { didIndyRegex } from '@aries-framework/anoncreds'
-import { Logger, InjectionSymbols, injectable, inject, CacheModuleConfig } from '@aries-framework/core'
+import { CacheModuleConfig, InjectionSymbols, Logger, inject, injectable } from '@aries-framework/core'
 import { GetNymRequest } from '@hyperledger/indy-vdr-shared'
 
 import { IndyVdrModuleConfig } from '../IndyVdrModuleConfig'
-import { IndyVdrError, IndyVdrNotFoundError, IndyVdrNotConfiguredError } from '../error'
+import { IndyVdrError, IndyVdrNotConfiguredError, IndyVdrNotFoundError } from '../error'
 import { isSelfCertifiedDid } from '../utils/did'
 import { allSettled, onlyFulfilled, onlyRejected } from '../utils/promises'
 
@@ -57,9 +57,8 @@ export class IndyVdrPoolService {
       if (pool) return { pool }
 
       throw new IndyVdrError(`Pool for indy namespace '${namespace}' not found`)
-    } else {
-      return await this.getPoolForLegacyDid(agentContext, did)
     }
+    return await this.getPoolForLegacyDid(agentContext, did)
   }
 
   private async getPoolForLegacyDid(

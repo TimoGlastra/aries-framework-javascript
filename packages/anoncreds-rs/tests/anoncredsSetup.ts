@@ -1,46 +1,46 @@
+import type { AutoAcceptProof, ConnectionRecord } from '@aries-framework/core'
 import type {
+  AnonCredsOfferCredentialFormat,
   AnonCredsRegisterCredentialDefinitionOptions,
+  AnonCredsRegisterRevocationRegistryDefinitionOptions,
+  AnonCredsRegisterRevocationStatusListOptions,
+  AnonCredsRegistry,
   AnonCredsRequestedAttribute,
   AnonCredsRequestedPredicate,
-  AnonCredsOfferCredentialFormat,
   AnonCredsSchema,
   RegisterCredentialDefinitionReturnStateFinished,
-  RegisterSchemaReturnStateFinished,
-  AnonCredsRegistry,
-  AnonCredsRegisterRevocationRegistryDefinitionOptions,
   RegisterRevocationRegistryDefinitionReturnStateFinished,
-  AnonCredsRegisterRevocationStatusListOptions,
   RegisterRevocationStatusListReturnStateFinished,
+  RegisterSchemaReturnStateFinished,
 } from '../../anoncreds/src'
 import type { EventReplaySubject } from '../../core/tests'
-import type { AutoAcceptProof, ConnectionRecord } from '@aries-framework/core'
 
+import { randomUUID } from 'crypto'
 import {
-  DidDocumentBuilder,
-  CacheModule,
-  InMemoryLruCache,
   Agent,
   AriesFrameworkError,
   AutoAcceptCredential,
+  CacheModule,
   CredentialEventTypes,
-  CredentialsModule,
   CredentialState,
+  CredentialsModule,
+  DidDocumentBuilder,
+  DidsModule,
+  InMemoryLruCache,
   ProofEventTypes,
-  ProofsModule,
   ProofState,
+  ProofsModule,
   V2CredentialProtocol,
   V2ProofProtocol,
-  DidsModule,
 } from '@aries-framework/core'
 import { anoncreds } from '@hyperledger/anoncreds-nodejs'
-import { randomUUID } from 'crypto'
 
-import { AnonCredsCredentialFormatService, AnonCredsProofFormatService, AnonCredsModule } from '../../anoncreds/src'
+import { AnonCredsCredentialFormatService, AnonCredsModule, AnonCredsProofFormatService } from '../../anoncreds/src'
 import { InMemoryAnonCredsRegistry } from '../../anoncreds/tests/InMemoryAnonCredsRegistry'
 import { AskarModule } from '../../askar/src'
 import { askarModuleConfig } from '../../askar/tests/helpers'
 import { sleep } from '../../core/src/utils/sleep'
-import { setupSubjectTransports, setupEventReplaySubjects } from '../../core/tests'
+import { setupEventReplaySubjects, setupSubjectTransports } from '../../core/tests'
 import {
   getAgentOptions,
   makeConnection,

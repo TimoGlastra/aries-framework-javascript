@@ -1,16 +1,16 @@
 import type { CredentialProtocolOptions, CredentialStateChangedEvent } from '@aries-framework/core'
 
 import {
-  EventEmitter,
-  DidExchangeState,
   Attachment,
   AttachmentData,
-  CredentialState,
-  CredentialFormatSpec,
-  CredentialExchangeRecord,
   CredentialEventTypes,
-  JsonTransformer,
+  CredentialExchangeRecord,
+  CredentialFormatSpec,
+  CredentialState,
+  DidExchangeState,
+  EventEmitter,
   InboundMessageContext,
+  JsonTransformer,
 } from '@aries-framework/core'
 import { Subject } from 'rxjs'
 
@@ -20,7 +20,7 @@ import { DidCommMessageRepository } from '../../../../../../core/src/storage/did
 import { getAgentConfig, getAgentContext, getMockConnection, mockFunction } from '../../../../../../core/tests/helpers'
 import { LegacyIndyCredentialFormatService } from '../../../../formats/LegacyIndyCredentialFormatService'
 import { V1CredentialProtocol } from '../V1CredentialProtocol'
-import { V1CredentialPreview, INDY_CREDENTIAL_OFFER_ATTACHMENT_ID, V1OfferCredentialMessage } from '../messages'
+import { INDY_CREDENTIAL_OFFER_ATTACHMENT_ID, V1CredentialPreview, V1OfferCredentialMessage } from '../messages'
 
 // Mock classes
 jest.mock('../../../../../../core/src/modules/credentials/repository/CredentialRepository')

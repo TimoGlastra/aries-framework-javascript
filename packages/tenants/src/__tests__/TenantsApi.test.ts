@@ -1,6 +1,6 @@
 import { Agent, AgentContext, InjectionSymbols } from '@aries-framework/core'
 
-import { indySdk, getAgentContext, getAgentOptions, mockFunction } from '../../../core/tests'
+import { getAgentContext, getAgentOptions, indySdk, mockFunction } from '../../../core/tests'
 import { IndySdkModule } from '../../../indy-sdk/src'
 import { TenantAgent } from '../TenantAgent'
 import { TenantsApi } from '../TenantsApi'

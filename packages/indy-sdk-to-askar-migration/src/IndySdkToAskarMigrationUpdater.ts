@@ -4,8 +4,8 @@ import type { EntryObject } from '@hyperledger/aries-askar-shared'
 
 import { AnonCredsCredentialRecord, AnonCredsLinkSecretRecord } from '@aries-framework/anoncreds'
 import { AskarWallet } from '@aries-framework/askar'
-import { InjectionSymbols, KeyDerivationMethod, JsonTransformer, TypedArrayEncoder } from '@aries-framework/core'
-import { Migration, Key, KeyAlgs, Store } from '@hyperledger/aries-askar-shared'
+import { InjectionSymbols, JsonTransformer, KeyDerivationMethod, TypedArrayEncoder } from '@aries-framework/core'
+import { Key, KeyAlgs, Migration, Store } from '@hyperledger/aries-askar-shared'
 
 import { IndySdkToAskarMigrationError } from './errors/IndySdkToAskarMigrationError'
 import { keyDerivationMethodToStoreKeyMethod, transformFromRecordTagValues } from './utils'
@@ -298,11 +298,10 @@ export class IndySdkToAskarMigrationUpdater {
       if (!keys || keys.length === 0) {
         await txn.close()
         break
-      } else {
-        // This will be entered if there are credential definitions in the wallet
-        await txn.close()
-        throw new IndySdkToAskarMigrationError('Migration of Credential Definitions is not yet supported')
       }
+      // This will be entered if there are credential definitions in the wallet
+      await txn.close()
+      throw new IndySdkToAskarMigrationError('Migration of Credential Definitions is not yet supported')
     }
   }
 

@@ -1,11 +1,11 @@
 import {
-  TypedArrayEncoder,
-  DidDocumentService,
-  DidDocumentBuilder,
+  AriesFrameworkError,
   DidCommV1Service,
   DidCommV2Service,
+  DidDocumentBuilder,
+  DidDocumentService,
+  TypedArrayEncoder,
   convertPublicKeyToX25519,
-  AriesFrameworkError,
 } from '@aries-framework/core'
 
 export type CommEndpointType = 'endpoint' | 'did-communication' | 'DIDComm'

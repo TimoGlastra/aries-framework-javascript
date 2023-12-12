@@ -1,59 +1,59 @@
-import type { LegacyIndyCredentialFormatService } from '../../../formats'
 import type {
   AgentContext,
   AgentMessage,
-  DependencyManager,
-  FeatureRegistry,
+  CredentialProtocol,
   CredentialProtocolOptions,
+  DependencyManager,
+  ExtractCredentialFormats,
+  FeatureRegistry,
   InboundMessageContext,
   ProblemReportMessage,
-  ExtractCredentialFormats,
-  CredentialProtocol,
 } from '@aries-framework/core'
+import type { LegacyIndyCredentialFormatService } from '../../../formats'
 
 import {
-  Protocol,
-  CredentialRepository,
+  AckStatus,
   AriesFrameworkError,
-  CredentialExchangeRecord,
-  CredentialState,
-  JsonTransformer,
-  ConnectionService,
   Attachment,
   AttachmentData,
-  AckStatus,
-  CredentialProblemReportReason,
-  CredentialsModuleConfig,
   AutoAcceptCredential,
-  utils,
+  BaseCredentialProtocol,
+  ConnectionService,
+  CredentialExchangeRecord,
+  CredentialProblemReportReason,
+  CredentialRepository,
+  CredentialState,
+  CredentialsModuleConfig,
   DidCommMessageRepository,
   DidCommMessageRole,
-  BaseCredentialProtocol,
+  JsonTransformer,
+  Protocol,
   isLinkedAttachment,
+  utils,
 } from '@aries-framework/core'
 
 import { AnonCredsCredentialProposal } from '../../../models/AnonCredsCredentialProposal'
-import { composeCredentialAutoAccept, areCredentialPreviewAttributesEqual } from '../../../utils'
+import { areCredentialPreviewAttributesEqual, composeCredentialAutoAccept } from '../../../utils'
 
 import {
-  V1ProposeCredentialHandler,
-  V1OfferCredentialHandler,
-  V1RequestCredentialHandler,
-  V1IssueCredentialHandler,
   V1CredentialAckHandler,
   V1CredentialProblemReportHandler,
+  V1IssueCredentialHandler,
+  V1OfferCredentialHandler,
+  V1ProposeCredentialHandler,
+  V1RequestCredentialHandler,
 } from './handlers'
 import {
-  V1CredentialPreview,
-  V1ProposeCredentialMessage,
-  V1OfferCredentialMessage,
-  INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
-  V1RequestCredentialMessage,
-  INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
-  V1IssueCredentialMessage,
   INDY_CREDENTIAL_ATTACHMENT_ID,
+  INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
+  INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
   V1CredentialAckMessage,
+  V1CredentialPreview,
   V1CredentialProblemReportMessage,
+  V1IssueCredentialMessage,
+  V1OfferCredentialMessage,
+  V1ProposeCredentialMessage,
+  V1RequestCredentialMessage,
 } from './messages'
 
 export interface V1CredentialProtocolConfig {
@@ -536,35 +536,34 @@ export class V1CredentialProtocol
       await this.updateState(messageContext.agentContext, credentialRecord, CredentialState.OfferReceived)
 
       return credentialRecord
-    } else {
-      // No credential record exists with thread id
-      credentialRecord = new CredentialExchangeRecord({
-        connectionId: connection?.id,
-        threadId: offerMessage.threadId,
-        parentThreadId: offerMessage.thread?.parentThreadId,
-        state: CredentialState.OfferReceived,
-        protocolVersion: 'v1',
-      })
-
-      // Assert
-      await connectionService.assertConnectionOrOutOfBandExchange(messageContext)
-
-      await this.indyCredentialFormat.processOffer(messageContext.agentContext, {
-        credentialRecord,
-        attachment: offerAttachment,
-      })
-
-      // Save in repository
-      await didCommMessageRepository.saveAgentMessage(messageContext.agentContext, {
-        agentMessage: offerMessage,
-        role: DidCommMessageRole.Receiver,
-        associatedRecordId: credentialRecord.id,
-      })
-      await credentialRepository.save(messageContext.agentContext, credentialRecord)
-      this.emitStateChangedEvent(messageContext.agentContext, credentialRecord, null)
-
-      return credentialRecord
     }
+    // No credential record exists with thread id
+    credentialRecord = new CredentialExchangeRecord({
+      connectionId: connection?.id,
+      threadId: offerMessage.threadId,
+      parentThreadId: offerMessage.thread?.parentThreadId,
+      state: CredentialState.OfferReceived,
+      protocolVersion: 'v1',
+    })
+
+    // Assert
+    await connectionService.assertConnectionOrOutOfBandExchange(messageContext)
+
+    await this.indyCredentialFormat.processOffer(messageContext.agentContext, {
+      credentialRecord,
+      attachment: offerAttachment,
+    })
+
+    // Save in repository
+    await didCommMessageRepository.saveAgentMessage(messageContext.agentContext, {
+      agentMessage: offerMessage,
+      role: DidCommMessageRole.Receiver,
+      associatedRecordId: credentialRecord.id,
+    })
+    await credentialRepository.save(messageContext.agentContext, credentialRecord)
+    this.emitStateChangedEvent(messageContext.agentContext, credentialRecord, null)
+
+    return credentialRecord
   }
 
   /**

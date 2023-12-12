@@ -1,24 +1,24 @@
 import type {
-  SigningProvider,
-  WalletConfig,
   CreateKeyPairOptions,
   KeyPair,
   SignOptions,
+  SigningProvider,
   VerifyOptions,
+  WalletConfig,
 } from '@aries-framework/core'
 
 import {
-  WalletKeyExistsError,
+  Buffer,
   Key,
-  WalletError,
-  WalletDuplicateError,
-  WalletNotFoundError,
-  WalletInvalidKeyError,
+  KeyDerivationMethod,
   KeyType,
   SigningProviderRegistry,
   TypedArrayEncoder,
-  KeyDerivationMethod,
-  Buffer,
+  WalletDuplicateError,
+  WalletError,
+  WalletInvalidKeyError,
+  WalletKeyExistsError,
+  WalletNotFoundError,
 } from '@aries-framework/core'
 import { Store } from '@hyperledger/aries-askar-shared'
 

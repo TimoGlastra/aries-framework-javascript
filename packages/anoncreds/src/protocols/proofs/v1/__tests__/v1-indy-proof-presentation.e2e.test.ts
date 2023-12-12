@@ -1,7 +1,7 @@
 import type { EventReplaySubject } from '../../../../../../core/tests'
 import type { AnonCredsTestsAgent } from '../../../../../tests/legacyAnonCredsSetup'
 
-import { ProofState, ProofExchangeRecord } from '../../../../../../core/src'
+import { ProofExchangeRecord, ProofState } from '../../../../../../core/src'
 import { testLogger, waitForProofExchangeRecord } from '../../../../../../core/tests'
 import { issueLegacyAnonCredsCredential, setupAnonCredsTests } from '../../../../../tests/legacyAnonCredsSetup'
 
@@ -60,7 +60,7 @@ describe('Present Proof', () => {
     await aliceAgent.wallet.delete()
   })
 
-  test(`Alice Creates and sends Proof Proposal to Faber`, async () => {
+  test('Alice Creates and sends Proof Proposal to Faber', async () => {
     testLogger.test('Alice sends proof proposal to Faber')
 
     let faberProofExchangeRecordPromise = waitForProofExchangeRecord(faberAgent, {

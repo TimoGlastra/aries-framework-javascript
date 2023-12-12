@@ -1,14 +1,14 @@
+import type { AgentContext, InboundMessageContext, Query } from '@aries-framework/core'
 import type { QuestionAnswerStateChangedEvent } from '../QuestionAnswerEvents'
 import type { ValidResponse } from '../models'
-import type { AgentContext, InboundMessageContext, Query } from '@aries-framework/core'
 
-import { AriesFrameworkError, EventEmitter, inject, injectable, InjectionSymbols, Logger } from '@aries-framework/core'
+import { AriesFrameworkError, EventEmitter, InjectionSymbols, Logger, inject, injectable } from '@aries-framework/core'
 
 import { QuestionAnswerEventTypes } from '../QuestionAnswerEvents'
 import { QuestionAnswerRole } from '../QuestionAnswerRole'
 import { AnswerMessage, QuestionMessage } from '../messages'
 import { QuestionAnswerState } from '../models'
-import { QuestionAnswerRepository, QuestionAnswerRecord } from '../repository'
+import { QuestionAnswerRecord, QuestionAnswerRepository } from '../repository'
 
 @injectable()
 export class QuestionAnswerService {
@@ -131,7 +131,7 @@ export class QuestionAnswerService {
     if (questionAnswerRecord.validResponses.some((e) => e.text === response)) {
       await this.updateState(agentContext, questionAnswerRecord, QuestionAnswerState.AnswerSent)
     } else {
-      throw new AriesFrameworkError(`Response does not match valid responses`)
+      throw new AriesFrameworkError('Response does not match valid responses')
     }
     return { answerMessage, questionAnswerRecord }
   }

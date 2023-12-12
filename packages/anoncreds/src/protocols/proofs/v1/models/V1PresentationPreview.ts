@@ -1,4 +1,4 @@
-import { JsonTransformer, IsValidMessageType, replaceLegacyDidSovPrefix, parseMessageType } from '@aries-framework/core'
+import { IsValidMessageType, JsonTransformer, parseMessageType, replaceLegacyDidSovPrefix } from '@aries-framework/core'
 import { Expose, Transform, Type } from 'class-transformer'
 import {
   IsIn,
@@ -12,7 +12,7 @@ import {
   ValidateNested,
 } from 'class-validator'
 
-import { anonCredsPredicateType, AnonCredsPredicateType } from '../../../../models'
+import { AnonCredsPredicateType, anonCredsPredicateType } from '../../../../models'
 import { unqualifiedCredentialDefinitionIdRegex } from '../../../../utils'
 
 export interface V1PresentationPreviewAttributeOptions {

@@ -1,8 +1,8 @@
-import type { ActionMenuStateChangedEvent, ActionMenuRole, ActionMenuState } from '@aries-framework/action-menu'
+import type { ActionMenuRole, ActionMenuState, ActionMenuStateChangedEvent } from '@aries-framework/action-menu'
 import type { Agent } from '@aries-framework/core'
 import type { Observable } from 'rxjs'
 
-import { catchError, filter, firstValueFrom, map, ReplaySubject, timeout } from 'rxjs'
+import { ReplaySubject, catchError, filter, firstValueFrom, map, timeout } from 'rxjs'
 
 import { ActionMenuEventTypes } from '@aries-framework/action-menu'
 

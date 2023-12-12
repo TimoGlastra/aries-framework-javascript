@@ -1,10 +1,10 @@
+import type { ConnectionRecord } from '../modules/connections'
+import type { InboundTransport } from '../transport'
+import type { EncryptedMessage, PlaintextMessage } from '../types'
 import type { AgentMessage } from './AgentMessage'
 import type { DecryptedMessageContext } from './EnvelopeService'
 import type { TransportSession } from './TransportService'
 import type { AgentContext } from './context'
-import type { ConnectionRecord } from '../modules/connections'
-import type { InboundTransport } from '../transport'
-import type { EncryptedMessage, PlaintextMessage } from '../types'
 
 import { InjectionSymbols } from '../constants'
 import { AriesFrameworkError } from '../error'
@@ -84,7 +84,7 @@ export class MessageReceiver {
       contextCorrelationId,
     }: { session?: TransportSession; connection?: ConnectionRecord; contextCorrelationId?: string } = {}
   ) {
-    this.logger.debug(`Agent received message`)
+    this.logger.debug('Agent received message')
 
     // Find agent context for the inbound message
     const agentContext = await this.agentContextProvider.getContextForInboundMessage(inboundMessage, {

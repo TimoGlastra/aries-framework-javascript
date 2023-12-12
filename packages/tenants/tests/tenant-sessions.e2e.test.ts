@@ -1,9 +1,9 @@
 import type { InitConfig } from '@aries-framework/core'
 
-import { ConnectionsModule, Agent } from '@aries-framework/core'
+import { Agent, ConnectionsModule } from '@aries-framework/core'
 import { agentDependencies } from '@aries-framework/node'
 
-import { testLogger, indySdk } from '../../core/tests'
+import { indySdk, testLogger } from '../../core/tests'
 import { IndySdkModule } from '../../indy-sdk/src'
 
 import { TenantsModule } from '@aries-framework/tenants'

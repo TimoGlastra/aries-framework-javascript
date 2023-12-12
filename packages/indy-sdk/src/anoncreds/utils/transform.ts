@@ -1,10 +1,10 @@
 import type {
   AnonCredsCredentialDefinition,
-  AnonCredsRevocationStatusList,
-  AnonCredsRevocationRegistryDefinition,
-  AnonCredsSchema,
   AnonCredsCredentialRequestMetadata,
   AnonCredsLinkSecretBlindingData,
+  AnonCredsRevocationRegistryDefinition,
+  AnonCredsRevocationStatusList,
+  AnonCredsSchema,
 } from '@aries-framework/anoncreds'
 import type { CredDef, CredReqMetadata, RevocReg, RevocRegDef, RevocRegDelta, Schema } from 'indy-sdk'
 

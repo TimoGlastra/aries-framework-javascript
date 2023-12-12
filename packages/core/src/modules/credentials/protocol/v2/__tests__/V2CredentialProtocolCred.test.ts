@@ -19,7 +19,7 @@ import { getAgentConfig, getAgentContext, getMockConnection, mockFunction } from
 import { EventEmitter } from '../../../../../agent/EventEmitter'
 import { InboundMessageContext } from '../../../../../agent/models/InboundMessageContext'
 import { Attachment, AttachmentData } from '../../../../../decorators/attachment/Attachment'
-import { DidCommMessageRecord, DidCommMessageRole, DidCommMessageRepository } from '../../../../../storage'
+import { DidCommMessageRecord, DidCommMessageRepository, DidCommMessageRole } from '../../../../../storage'
 import { JsonTransformer } from '../../../../../utils'
 import { JsonEncoder } from '../../../../../utils/JsonEncoder'
 import { AckStatus } from '../../../../common/messages/AckMessage'
@@ -159,7 +159,7 @@ const didCommMessageRecord = new DidCommMessageRecord({
   role: DidCommMessageRole.Receiver,
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny:
 const getAgentMessageMock = async (agentContext: AgentContext, options: GetAgentMessageOptions<any>) => {
   if (options.messageClass === V2ProposeCredentialMessage) {
     return credentialProposalMessage
@@ -319,7 +319,7 @@ describe('credentialProtocol', () => {
 
     const validState = CredentialState.OfferReceived
     const invalidCredentialStates = Object.values(CredentialState).filter((state) => state !== validState)
-    test(`throws an error when state transition is invalid`, async () => {
+    test('throws an error when state transition is invalid', async () => {
       await Promise.all(
         invalidCredentialStates.map(async (state) => {
           await expect(
@@ -376,7 +376,7 @@ describe('credentialProtocol', () => {
 
     const validState = CredentialState.OfferSent
     const invalidCredentialStates = Object.values(CredentialState).filter((state) => state !== validState)
-    test(`throws an error when state transition is invalid`, async () => {
+    test('throws an error when state transition is invalid', async () => {
       const messageContext = new InboundMessageContext(credentialRequestMessage, {
         connection,
         agentContext,
@@ -573,7 +573,7 @@ describe('credentialProtocol', () => {
 
     const validState = CredentialState.CredentialReceived
     const invalidCredentialStates = Object.values(CredentialState).filter((state) => state !== validState)
-    test(`throws an error when state transition is invalid`, async () => {
+    test('throws an error when state transition is invalid', async () => {
       await Promise.all(
         invalidCredentialStates.map(async (state) => {
           await expect(
@@ -663,7 +663,7 @@ describe('credentialProtocol', () => {
       agentContext,
     })
 
-    test(`updates problem report error message and returns credential record`, async () => {
+    test('updates problem report error message and returns credential record', async () => {
       const credentialRecord = mockCredentialRecord({
         state: CredentialState.OfferReceived,
       })

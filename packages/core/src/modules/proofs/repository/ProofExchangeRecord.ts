@@ -93,9 +93,10 @@ export class ProofExchangeRecord extends BaseRecord<DefaultProofTags, CustomProo
   public assertConnection(currentConnectionId: string) {
     if (!this.connectionId) {
       throw new AriesFrameworkError(
-        `Proof record is not associated with any connection. This is often the case with connection-less presentation exchange`
+        'Proof record is not associated with any connection. This is often the case with connection-less presentation exchange'
       )
-    } else if (this.connectionId !== currentConnectionId) {
+    }
+    if (this.connectionId !== currentConnectionId) {
       throw new AriesFrameworkError(
         `Proof record is associated with connection '${this.connectionId}'. Current connection is '${currentConnectionId}'`
       )

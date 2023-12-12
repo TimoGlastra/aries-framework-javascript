@@ -12,7 +12,7 @@ describe('TransportService', () => {
       transportService = new TransportService()
     })
 
-    test(`remove session saved for a given connection`, () => {
+    test('remove session saved for a given connection', () => {
       const connection = getMockConnection({ id: 'test-123', role: DidExchangeRole.Responder })
       const session = new DummyTransportSession('dummy-session-123')
       session.connectionId = connection.id

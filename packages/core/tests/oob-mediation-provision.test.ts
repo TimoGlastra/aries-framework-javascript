@@ -5,10 +5,10 @@ import { getIndySdkModules } from '../../indy-sdk/tests/setupIndySdkModule'
 import { Agent } from '../src/agent/Agent'
 import { DidExchangeState, HandshakeProtocol } from '../src/modules/connections'
 import {
+  MediationRecipientModule,
   MediationState,
   MediatorModule,
   MediatorPickupStrategy,
-  MediationRecipientModule,
 } from '../src/modules/routing'
 
 import { getAgentOptions, waitForBasicMessage } from './helpers'
@@ -73,7 +73,7 @@ describe('out of band with mediation set up with provision method', () => {
     mediatorOutOfBandInvitation = mediationOutOfBandRecord.outOfBandInvitation
 
     let { connectionRecord } = await aliceAgent.oob.receiveInvitation(mediatorOutOfBandInvitation)
-    connectionRecord = await aliceAgent.connections.returnWhenIsConnected(connectionRecord!.id)
+    connectionRecord = await aliceAgent.connections.returnWhenIsConnected(connectionRecord?.id)
     await aliceAgent.mediationRecipient.provision(connectionRecord!)
     await aliceAgent.mediationRecipient.initialize()
   })
@@ -100,11 +100,11 @@ describe('out of band with mediation set up with provision method', () => {
 
     let { connectionRecord: aliceFaberConnection } = await aliceAgent.oob.receiveInvitationFromUrl(urlMessage)
 
-    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection!.id)
+    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection?.id)
     expect(aliceFaberConnection.state).toBe(DidExchangeState.Completed)
 
     let [faberAliceConnection] = await faberAgent.connections.findAllByOutOfBandId(outOfBandRecord.id)
-    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection!.id)
+    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection?.id)
     expect(faberAliceConnection.state).toBe(DidExchangeState.Completed)
 
     expect(aliceFaberConnection).toBeConnectedWith(faberAliceConnection)

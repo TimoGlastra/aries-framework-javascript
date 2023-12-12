@@ -1,8 +1,8 @@
 import type { AnonCredsProof, AnonCredsProofRequest } from '../models/exchange'
 import type {
   AnonCredsCredentialDefinition,
-  AnonCredsRevocationStatusList,
   AnonCredsRevocationRegistryDefinition,
+  AnonCredsRevocationStatusList,
   AnonCredsSchema,
 } from '../models/registry'
 

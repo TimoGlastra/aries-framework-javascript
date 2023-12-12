@@ -1,4 +1,4 @@
-import type { ProblemReportErrorOptions, PresentationProblemReportReason } from '@aries-framework/core'
+import type { PresentationProblemReportReason, ProblemReportErrorOptions } from '@aries-framework/core'
 
 import { ProblemReportError } from '@aries-framework/core'
 

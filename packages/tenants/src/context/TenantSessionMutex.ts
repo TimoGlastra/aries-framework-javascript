@@ -2,7 +2,7 @@ import type { Logger } from '@aries-framework/core'
 import type { MutexInterface } from 'async-mutex'
 
 import { AriesFrameworkError } from '@aries-framework/core'
-import { withTimeout, Mutex } from 'async-mutex'
+import { Mutex, withTimeout } from 'async-mutex'
 
 /**
  * Keep track of the total number of tenant sessions currently active. This doesn't actually manage the tenant sessions itself, or have anything to do with
@@ -15,7 +15,7 @@ export class TenantSessionMutex {
   private sessionMutex: MutexInterface
   private logger: Logger
 
-  public constructor(logger: Logger, maxSessions = Infinity, sessionAcquireTimeout: number) {
+  public constructor(logger: Logger, maxSessions, sessionAcquireTimeout: number) {
     this.logger = logger
 
     this.maxSessions = maxSessions

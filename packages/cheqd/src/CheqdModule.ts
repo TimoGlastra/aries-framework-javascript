@@ -1,5 +1,5 @@
-import type { CheqdModuleConfigOptions } from './CheqdModuleConfig'
 import type { AgentContext, DependencyManager, Module } from '@aries-framework/core'
+import type { CheqdModuleConfigOptions } from './CheqdModuleConfig'
 
 import { AgentConfig, Buffer } from '@aries-framework/core'
 

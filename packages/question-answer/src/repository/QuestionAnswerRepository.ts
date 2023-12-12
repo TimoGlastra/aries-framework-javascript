@@ -1,4 +1,4 @@
-import { EventEmitter, inject, injectable, InjectionSymbols, Repository, StorageService } from '@aries-framework/core'
+import { EventEmitter, InjectionSymbols, Repository, StorageService, inject, injectable } from '@aries-framework/core'
 
 import { QuestionAnswerRecord } from './QuestionAnswerRecord'
 

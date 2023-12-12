@@ -1,9 +1,9 @@
-import type { MessagePickupModuleConfigOptions } from './MessagePickupModuleConfig'
-import type { MessagePickupProtocol } from './protocol/MessagePickupProtocol'
 import type { FeatureRegistry } from '../../agent/FeatureRegistry'
 import type { ApiModule, DependencyManager } from '../../plugins'
 import type { Optional } from '../../utils'
 import type { Constructor } from '../../utils/mixins'
+import type { MessagePickupModuleConfigOptions } from './MessagePickupModuleConfig'
+import type { MessagePickupProtocol } from './protocol/MessagePickupProtocol'
 
 import { InjectionSymbols } from '../../constants'
 

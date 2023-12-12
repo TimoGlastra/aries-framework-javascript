@@ -5,7 +5,7 @@ import { getIndySdkModules } from '../../indy-sdk/tests/setupIndySdkModule'
 import { Agent } from '../src/agent/Agent'
 import { HandshakeProtocol } from '../src/modules/connections'
 
-import { waitForBasicMessage, getAgentOptions } from './helpers'
+import { getAgentOptions, waitForBasicMessage } from './helpers'
 import { setupSubjectTransports } from './transport'
 
 const aliceAgentOptions = getAgentOptions(
@@ -52,10 +52,10 @@ describe('agents', () => {
     const { connectionRecord: bobConnectionAtBobAlice } = await bobAgent.oob.receiveInvitation(
       aliceBobOutOfBandRecord.outOfBandInvitation
     )
-    bobConnection = await bobAgent.connections.returnWhenIsConnected(bobConnectionAtBobAlice!.id)
+    bobConnection = await bobAgent.connections.returnWhenIsConnected(bobConnectionAtBobAlice?.id)
 
     const [aliceConnectionAtAliceBob] = await aliceAgent.connections.findAllByOutOfBandId(aliceBobOutOfBandRecord.id)
-    aliceConnection = await aliceAgent.connections.returnWhenIsConnected(aliceConnectionAtAliceBob!.id)
+    aliceConnection = await aliceAgent.connections.returnWhenIsConnected(aliceConnectionAtAliceBob?.id)
 
     expect(aliceConnection).toBeConnectedWith(bobConnection)
     expect(bobConnection).toBeConnectedWith(aliceConnection)

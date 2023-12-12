@@ -4,7 +4,7 @@ import type { Constructable } from '../../../utils/mixins'
 import { BaseRecord } from '../../../storage/BaseRecord'
 import { JsonTransformer } from '../../../utils'
 import { uuid } from '../../../utils/uuid'
-import { W3cVerifiableCredential, W3cVerifiableCredentialTransformer, ClaimFormat } from '../models'
+import { ClaimFormat, W3cVerifiableCredential, W3cVerifiableCredentialTransformer } from '../models'
 
 export interface W3cCredentialRecordOptions {
   id?: string

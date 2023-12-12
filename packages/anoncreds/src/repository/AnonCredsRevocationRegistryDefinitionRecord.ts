@@ -1,6 +1,6 @@
-import type { AnonCredsRevocationRegistryDefinitionRecordMetadata } from './anonCredsRevocationRegistryDefinitionRecordMetadataTypes'
-import type { AnonCredsRevocationRegistryDefinition } from '../models'
 import type { TagsBase } from '@aries-framework/core'
+import type { AnonCredsRevocationRegistryDefinition } from '../models'
+import type { AnonCredsRevocationRegistryDefinitionRecordMetadata } from './anonCredsRevocationRegistryDefinitionRecordMetadataTypes'
 
 import { BaseRecord, utils } from '@aries-framework/core'
 

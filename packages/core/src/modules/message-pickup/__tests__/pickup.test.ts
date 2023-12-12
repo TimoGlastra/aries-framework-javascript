@@ -63,12 +63,12 @@ describe('E2E Pick Up protocol', () => {
     )
 
     recipientMediatorConnection = await recipientAgent.connections.returnWhenIsConnected(
-      recipientMediatorConnection!.id
+      recipientMediatorConnection?.id
     )
 
     let [mediatorRecipientConnection] = await mediatorAgent.connections.findAllByOutOfBandId(mediatorOutOfBandRecord.id)
 
-    mediatorRecipientConnection = await mediatorAgent.connections.returnWhenIsConnected(mediatorRecipientConnection!.id)
+    mediatorRecipientConnection = await mediatorAgent.connections.returnWhenIsConnected(mediatorRecipientConnection?.id)
 
     // Now they are connected, reinitialize recipient agent in order to lose the session (as with SubjectTransport it remains open)
     await recipientAgent.shutdown()
@@ -129,12 +129,12 @@ describe('E2E Pick Up protocol', () => {
     )
 
     recipientMediatorConnection = await recipientAgent.connections.returnWhenIsConnected(
-      recipientMediatorConnection!.id
+      recipientMediatorConnection?.id
     )
 
     let [mediatorRecipientConnection] = await mediatorAgent.connections.findAllByOutOfBandId(mediatorOutOfBandRecord.id)
 
-    mediatorRecipientConnection = await mediatorAgent.connections.returnWhenIsConnected(mediatorRecipientConnection!.id)
+    mediatorRecipientConnection = await mediatorAgent.connections.returnWhenIsConnected(mediatorRecipientConnection?.id)
 
     const message = 'hello pickup V2'
 

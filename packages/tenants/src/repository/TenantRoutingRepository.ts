@@ -1,6 +1,6 @@
 import type { AgentContext, Key } from '@aries-framework/core'
 
-import { Repository, StorageService, InjectionSymbols, EventEmitter, inject, injectable } from '@aries-framework/core'
+import { EventEmitter, InjectionSymbols, Repository, StorageService, inject, injectable } from '@aries-framework/core'
 
 import { TenantRoutingRecord } from './TenantRoutingRecord'
 

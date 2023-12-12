@@ -48,9 +48,8 @@ export class MediationRecord
   @Transform(({ value }) => {
     if (value === 'Explicit') {
       return MediatorPickupStrategy.PickUpV1
-    } else {
-      return value
     }
+    return value
   })
   public pickupStrategy?: MediatorPickupStrategy
 

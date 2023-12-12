@@ -1,36 +1,36 @@
 import type {
-  AgentContext,
-  CustomCredentialTags,
-  CredentialPreviewAttribute,
   AgentConfig,
+  AgentContext,
+  CredentialPreviewAttribute,
   CredentialStateChangedEvent,
+  CustomCredentialTags,
 } from '@aries-framework/core'
 
 import {
-  EventEmitter,
-  DidExchangeState,
+  AckStatus,
+  AriesFrameworkError,
   Attachment,
   AttachmentData,
-  JsonEncoder,
-  DidCommMessageRecord,
-  DidCommMessageRole,
-  AriesFrameworkError,
-  CredentialState,
+  AutoAcceptCredential,
+  CredentialEventTypes,
   CredentialExchangeRecord,
   CredentialFormatSpec,
-  AutoAcceptCredential,
-  JsonTransformer,
-  InboundMessageContext,
-  CredentialEventTypes,
-  AckStatus,
   CredentialProblemReportReason,
+  CredentialState,
+  DidCommMessageRecord,
+  DidCommMessageRole,
+  DidExchangeState,
+  EventEmitter,
+  InboundMessageContext,
+  JsonEncoder,
+  JsonTransformer,
 } from '@aries-framework/core'
 import { Subject } from 'rxjs'
 
 import { ConnectionService } from '../../../../../../core/src/modules/connections/services/ConnectionService'
 import { CredentialRepository } from '../../../../../../core/src/modules/credentials/repository/CredentialRepository'
 import { DidCommMessageRepository } from '../../../../../../core/src/storage/didcomm/DidCommMessageRepository'
-import { getMockConnection, getAgentConfig, getAgentContext, mockFunction } from '../../../../../../core/tests/helpers'
+import { getAgentConfig, getAgentContext, getMockConnection, mockFunction } from '../../../../../../core/tests/helpers'
 import { LegacyIndyCredentialFormatService } from '../../../../formats/LegacyIndyCredentialFormatService'
 import { convertAttributesToCredentialValues } from '../../../../utils/credential'
 import { V1CredentialProtocol } from '../V1CredentialProtocol'
@@ -39,12 +39,12 @@ import {
   INDY_CREDENTIAL_OFFER_ATTACHMENT_ID,
   INDY_CREDENTIAL_REQUEST_ATTACHMENT_ID,
   V1CredentialAckMessage,
+  V1CredentialPreview,
   V1CredentialProblemReportMessage,
   V1IssueCredentialMessage,
   V1OfferCredentialMessage,
   V1ProposeCredentialMessage,
   V1RequestCredentialMessage,
-  V1CredentialPreview,
 } from '../messages'
 
 // Mock classes
@@ -130,7 +130,7 @@ const didCommMessageRecord = new DidCommMessageRecord({
   role: DidCommMessageRole.Receiver,
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny:
 const getAgentMessageMock = async (agentContext: AgentContext, options: { messageClass: any }) => {
   if (options.messageClass === V1ProposeCredentialMessage) {
     return credentialProposalMessage
@@ -303,7 +303,7 @@ describe('V1CredentialProtocol', () => {
 
     const validState = CredentialState.OfferReceived
     const invalidCredentialStates = Object.values(CredentialState).filter((state) => state !== validState)
-    test(`throws an error when state transition is invalid`, async () => {
+    test('throws an error when state transition is invalid', async () => {
       await Promise.all(
         invalidCredentialStates.map(async (state) => {
           await expect(
@@ -365,7 +365,7 @@ describe('V1CredentialProtocol', () => {
 
     const validState = CredentialState.OfferSent
     const invalidCredentialStates = Object.values(CredentialState).filter((state) => state !== validState)
-    test(`throws an error when state transition is invalid`, async () => {
+    test('throws an error when state transition is invalid', async () => {
       await Promise.all(
         invalidCredentialStates.map(async (state) => {
           mockFunction(credentialRepository.getSingleByQuery).mockReturnValue(
@@ -598,7 +598,7 @@ describe('V1CredentialProtocol', () => {
 
     const validState = CredentialState.CredentialReceived
     const invalidCredentialStates = Object.values(CredentialState).filter((state) => state !== validState)
-    test(`throws an error when state transition is invalid`, async () => {
+    test('throws an error when state transition is invalid', async () => {
       await Promise.all(
         invalidCredentialStates.map(async (state) => {
           await expect(
@@ -712,7 +712,7 @@ describe('V1CredentialProtocol', () => {
       messageContext = new InboundMessageContext(credentialProblemReportMessage, { agentContext, connection })
     })
 
-    test(`updates problem report error message and returns credential record`, async () => {
+    test('updates problem report error message and returns credential record', async () => {
       const repositoryUpdateSpy = jest.spyOn(credentialRepository, 'update')
 
       // given

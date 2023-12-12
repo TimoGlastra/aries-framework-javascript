@@ -1,13 +1,13 @@
+import type { ValidationOptions } from 'class-validator'
 import type { Constructor } from './mixins'
 import type { SingleOrArray } from './type'
-import type { ValidationOptions } from 'class-validator'
 
-import { isString, ValidateBy, isInstance, buildMessage } from 'class-validator'
+import { ValidateBy, buildMessage, isInstance, isString } from 'class-validator'
 
 import { asArray } from './array'
 
 export interface IsInstanceOrArrayOfInstancesValidationOptions extends ValidationOptions {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny:
   classType: SingleOrArray<new (...args: any[]) => any>
 
   /**
@@ -30,9 +30,8 @@ export function IsStringOrInstance(targetType: Constructor, validationOptions?: 
         defaultMessage: buildMessage((eachPrefix, args) => {
           if (args?.constraints[0]) {
             return eachPrefix + `$property must be of type string or instance of ${args.constraints[0].name as string}`
-          } else {
-            return eachPrefix + `IsStringOrInstance decorator expects an object as value, but got falsy value.`
           }
+          return `${eachPrefix}IsStringOrInstance decorator expects an object as value, but got falsy value.`
         }, validationOptions),
       },
     },
@@ -74,7 +73,7 @@ export function IsInstanceOrArrayOfInstances(
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny:
 export function isStringArray(value: any): value is string[] {
   return Array.isArray(value) && value.every((v) => typeof v === 'string')
 }

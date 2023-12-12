@@ -1,14 +1,14 @@
-import type { GetRoutingOptions, RemoveRoutingOptions } from './RoutingService'
 import type { AgentContext } from '../../../agent'
 import type { AgentMessage } from '../../../agent/AgentMessage'
 import type { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
 import type { Query } from '../../../storage/StorageService'
 import type { ConnectionRecord } from '../../connections'
 import type { Routing } from '../../connections/services/ConnectionService'
-import type { MediationStateChangedEvent, KeylistUpdatedEvent } from '../RoutingEvents'
+import type { KeylistUpdatedEvent, MediationStateChangedEvent } from '../RoutingEvents'
 import type { MediationDenyMessage } from '../messages'
+import type { GetRoutingOptions, RemoveRoutingOptions } from './RoutingService'
 
-import { firstValueFrom, ReplaySubject } from 'rxjs'
+import { ReplaySubject, firstValueFrom } from 'rxjs'
 import { filter, first, timeout } from 'rxjs/operators'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
@@ -27,8 +27,8 @@ import { RoutingEventTypes } from '../RoutingEvents'
 import {
   KeylistUpdateAction,
   KeylistUpdateResponseMessage,
-  MediationRequestMessage,
   MediationGrantMessage,
+  MediationRequestMessage,
 } from '../messages'
 import { KeylistUpdate, KeylistUpdateMessage } from '../messages/KeylistUpdateMessage'
 import { MediationRole, MediationState } from '../models'

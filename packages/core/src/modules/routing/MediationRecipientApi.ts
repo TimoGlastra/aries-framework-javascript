@@ -1,10 +1,10 @@
+import type { OutboundWebSocketClosedEvent, OutboundWebSocketOpenedEvent } from '../../transport'
+import type { ConnectionRecord } from '../connections'
 import type { MediationStateChangedEvent } from './RoutingEvents'
 import type { MediationRecord } from './repository'
 import type { GetRoutingOptions } from './services/RoutingService'
-import type { OutboundWebSocketClosedEvent, OutboundWebSocketOpenedEvent } from '../../transport'
-import type { ConnectionRecord } from '../connections'
 
-import { firstValueFrom, interval, merge, ReplaySubject, Subject, timer } from 'rxjs'
+import { ReplaySubject, Subject, firstValueFrom, interval, merge, timer } from 'rxjs'
 import { delayWhen, filter, first, takeUntil, tap, throttleTime, timeout } from 'rxjs/operators'
 
 import { AgentContext } from '../../agent'
@@ -126,8 +126,8 @@ export class MediationRecipientApi {
 
     const websocketSchemes = ['ws', 'wss']
     const didDocument = connectionRecord.theirDid && (await this.dids.resolveDidDocument(connectionRecord.theirDid))
-    const services = didDocument && didDocument?.didCommServices
-    const hasWebSocketTransport = services && services.some((s) => websocketSchemes.includes(s.protocolScheme))
+    const services = didDocument?.didCommServices
+    const hasWebSocketTransport = services?.some((s) => websocketSchemes.includes(s.protocolScheme))
 
     if (!hasWebSocketTransport) {
       throw new AriesFrameworkError('Cannot open websocket to connection without websocket service endpoint')

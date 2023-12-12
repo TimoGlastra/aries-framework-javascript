@@ -1,14 +1,14 @@
-import type { JwkJson } from './Jwk'
 import type { JwaEncryptionAlgorithm } from '../jwa/alg'
+import type { JwkJson } from './Jwk'
 
-import { TypedArrayEncoder, Buffer } from '../../../utils'
+import { Buffer, TypedArrayEncoder } from '../../../utils'
 import { KeyType } from '../../KeyType'
 import { JwaCurve, JwaKeyType } from '../jwa'
 import { JwaSignatureAlgorithm } from '../jwa/alg'
 
 import { Jwk } from './Jwk'
 import { compress, expand } from './ecCompression'
-import { hasKty, hasCrv, hasX, hasY, hasValidUse } from './validate'
+import { hasCrv, hasKty, hasValidUse, hasX, hasY } from './validate'
 
 export class P384Jwk extends Jwk {
   public static readonly supportedEncryptionAlgorithms: JwaEncryptionAlgorithm[] = []

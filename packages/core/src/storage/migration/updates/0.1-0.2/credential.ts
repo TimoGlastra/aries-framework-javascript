@@ -5,7 +5,7 @@ import type { JsonObject, PlaintextMessage } from '../../../../types'
 import { CredentialState } from '../../../../modules/credentials/models/CredentialState'
 import { CredentialRepository } from '../../../../modules/credentials/repository/CredentialRepository'
 import { Metadata } from '../../../Metadata'
-import { DidCommMessageRepository, DidCommMessageRecord, DidCommMessageRole } from '../../../didcomm'
+import { DidCommMessageRecord, DidCommMessageRepository, DidCommMessageRole } from '../../../didcomm'
 
 /**
  * Migrates the {@link CredentialRecord} to 0.2 compatible format. It fetches all records from storage
@@ -19,7 +19,7 @@ export async function migrateCredentialRecordToV0_2<Agent extends BaseAgent>(age
   agent.config.logger.info('Migrating credential records to storage version 0.2')
   const credentialRepository = agent.dependencyManager.resolve(CredentialRepository)
 
-  agent.config.logger.debug(`Fetching all credential records from storage`)
+  agent.config.logger.debug('Fetching all credential records from storage')
   const allCredentials = await credentialRepository.getAll(agent.context)
 
   agent.config.logger.debug(`Found a total of ${allCredentials.length} credential records to update.`)
@@ -39,8 +39,8 @@ export async function migrateCredentialRecordToV0_2<Agent extends BaseAgent>(age
 }
 
 export enum CredentialRole {
-  Issuer,
-  Holder,
+  Issuer = 0,
+  Holder = 1,
 }
 
 const holderCredentialStates = [
@@ -73,12 +73,10 @@ export function getCredentialRole(credentialRecord: CredentialExchangeRecord) {
   if (credentialRecord.credentials.length > 0) {
     return CredentialRole.Holder
   }
-  // If credentialRecord.credentials doesn't have any values, and we're also not in state done it means we're the issuer.
-  else if (credentialRecord.state === CredentialState.Done) {
+  if (credentialRecord.state === CredentialState.Done) {
     return CredentialRole.Issuer
   }
-  // For these states we know for certain that we're the holder
-  else if (holderCredentialStates.includes(credentialRecord.state)) {
+  if (holderCredentialStates.includes(credentialRecord.state)) {
     return CredentialRole.Holder
   }
 
@@ -118,7 +116,7 @@ export async function updateIndyMetadata<Agent extends BaseAgent>(
   agent: Agent,
   credentialRecord: CredentialExchangeRecord
 ) {
-  agent.config.logger.debug(`Updating indy metadata to use the generic metadata api available to records.`)
+  agent.config.logger.debug('Updating indy metadata to use the generic metadata api available to records.')
 
   const { requestMetadata, schemaId, credentialDefinitionId, ...rest } = credentialRecord.metadata.data
   const metadata = new Metadata<Record<string, unknown>>(rest)
@@ -182,7 +180,7 @@ export async function migrateInternalCredentialRecordProperties<Agent extends Ba
   )
 
   if (!credentialRecord.protocolVersion) {
-    agent.config.logger.debug(`Setting protocolVersion to v1`)
+    agent.config.logger.debug('Setting protocolVersion to v1')
     credentialRecord.protocolVersion = 'v1'
   }
 
@@ -197,7 +195,7 @@ export async function migrateInternalCredentialRecordProperties<Agent extends Ba
       },
     ]
 
-    delete untypedCredentialRecord.credentialId
+    untypedCredentialRecord.credentialId = undefined
   }
 
   agent.config.logger.debug(

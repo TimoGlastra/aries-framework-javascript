@@ -1,4 +1,4 @@
-import { Type, Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 import { IsString, ValidateNested } from 'class-validator'
 
 import { AgentMessage } from '../../../agent/AgentMessage'

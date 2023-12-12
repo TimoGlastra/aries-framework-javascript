@@ -1,6 +1,6 @@
 import type { AgentContext } from '@aries-framework/core'
 
-import { Repository, InjectionSymbols, StorageService, EventEmitter, injectable, inject } from '@aries-framework/core'
+import { EventEmitter, InjectionSymbols, Repository, StorageService, inject, injectable } from '@aries-framework/core'
 
 import { AnonCredsLinkSecretRecord } from './AnonCredsLinkSecretRecord'
 

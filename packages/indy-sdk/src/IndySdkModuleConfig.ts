@@ -1,5 +1,5 @@
-import type { IndySdkPoolConfig } from './ledger'
 import type * as IndySdk from 'indy-sdk'
+import type { IndySdkPoolConfig } from './ledger'
 
 /**
  * IndySdkModuleConfigOptions defines the interface for the options of the IndySdkModuleConfig class.

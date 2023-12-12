@@ -1,5 +1,5 @@
-import type { AnonCredsRegistry } from '.'
 import type { AgentContext } from '@aries-framework/core'
+import type { AnonCredsRegistry } from '.'
 
 import { injectable } from '@aries-framework/core'
 

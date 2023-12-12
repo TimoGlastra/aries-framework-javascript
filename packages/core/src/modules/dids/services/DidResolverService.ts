@@ -5,7 +5,7 @@ import type { DidResolutionOptions, DidResolutionResult, ParsedDid } from '../ty
 import { InjectionSymbols } from '../../../constants'
 import { AriesFrameworkError } from '../../../error'
 import { Logger } from '../../../logger'
-import { injectable, inject } from '../../../plugins'
+import { inject, injectable } from '../../../plugins'
 import { DidsModuleConfig } from '../DidsModuleConfig'
 import { parseDid } from '../domain/parse'
 

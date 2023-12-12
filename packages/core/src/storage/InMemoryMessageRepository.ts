@@ -1,9 +1,9 @@
-import type { MessageRepository } from './MessageRepository'
 import type { EncryptedMessage } from '../types'
+import type { MessageRepository } from './MessageRepository'
 
 import { InjectionSymbols } from '../constants'
 import { Logger } from '../logger'
-import { injectable, inject } from '../plugins'
+import { inject, injectable } from '../plugins'
 
 @injectable()
 export class InMemoryMessageRepository implements MessageRepository {

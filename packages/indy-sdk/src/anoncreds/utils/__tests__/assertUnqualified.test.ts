@@ -126,7 +126,7 @@ describe('assertUnqualified', () => {
             },
           },
           requested_predicates: {},
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // biome-ignore lint/suspicious/noExplicitAny:
         } as any)
       ).toThrowError('Credential definition id')
     })
@@ -144,7 +144,7 @@ describe('assertUnqualified', () => {
             },
           },
           requested_predicates: {},
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // biome-ignore lint/suspicious/noExplicitAny:
         } as any)
       ).not.toThrow()
     })

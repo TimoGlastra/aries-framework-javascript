@@ -1,5 +1,5 @@
-import type { IndyVdrModuleConfigOptions } from './IndyVdrModuleConfig'
 import type { AgentContext, DependencyManager, Module } from '@aries-framework/core'
+import type { IndyVdrModuleConfigOptions } from './IndyVdrModuleConfig'
 
 import { AgentConfig } from '@aries-framework/core'
 

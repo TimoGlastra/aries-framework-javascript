@@ -1,5 +1,5 @@
-import type { CheqdDidCreateOptions } from '../src'
 import type { DidDocument } from '@aries-framework/core'
+import type { CheqdDidCreateOptions } from '../src'
 
 import { Agent, TypedArrayEncoder } from '@aries-framework/core'
 import { generateKeyPairFromSeed } from '@stablelib/ed25519'
@@ -29,7 +29,7 @@ describe('Cheqd DID registrar', () => {
     // but still check if the created output document is as expected.
     const privateKey = TypedArrayEncoder.fromString(
       Array(32 + 1)
-        .join((Math.random().toString(36) + '00000000000000000').slice(2, 18))
+        .join(`${Math.random().toString(36)}00000000000000000`.slice(2, 18))
         .slice(0, 32)
     )
     const publicKeyEd25519 = generateKeyPairFromSeed(privateKey).publicKey

@@ -1,6 +1,6 @@
-import type { MediationRecipientModuleConfigOptions } from './MediationRecipientModuleConfig'
 import type { FeatureRegistry } from '../../agent/FeatureRegistry'
 import type { DependencyManager, Module } from '../../plugins'
+import type { MediationRecipientModuleConfigOptions } from './MediationRecipientModuleConfig'
 
 import { Protocol } from '../../agent/models'
 

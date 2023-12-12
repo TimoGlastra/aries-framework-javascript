@@ -1,12 +1,12 @@
 import type { WalletConfig } from '@aries-framework/core'
 
 import {
-  WalletDuplicateError,
-  WalletNotFoundError,
   InjectionSymbols,
   Logger,
   SigningProviderRegistry,
+  WalletDuplicateError,
   WalletError,
+  WalletNotFoundError,
 } from '@aries-framework/core'
 import { Store } from '@hyperledger/aries-askar-shared'
 import { inject, injectable } from 'tsyringe'

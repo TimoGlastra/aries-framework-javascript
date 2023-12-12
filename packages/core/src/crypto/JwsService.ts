@@ -1,13 +1,13 @@
+import type { AgentContext } from '../agent'
+import type { Buffer } from '../utils'
 import type { Jws, JwsDetachedFormat, JwsGeneralFormat, JwsProtectedHeaderOptions } from './JwsTypes'
 import type { Key } from './Key'
 import type { Jwk } from './jose/jwk'
 import type { JwkJson } from './jose/jwk/Jwk'
-import type { AgentContext } from '../agent'
-import type { Buffer } from '../utils'
 
 import { AriesFrameworkError } from '../error'
 import { injectable } from '../plugins'
-import { isJsonObject, JsonEncoder, TypedArrayEncoder } from '../utils'
+import { JsonEncoder, TypedArrayEncoder, isJsonObject } from '../utils'
 import { WalletError } from '../wallet/error'
 
 import { JWS_COMPACT_FORMAT_MATCHER } from './JwsTypes'
@@ -22,7 +22,7 @@ export class JwsService {
 
     // Make sure the options.key and jwk from protectedHeader are the same.
     if (jwk && (jwk.key.keyType !== options.key.keyType || !jwk.key.publicKey.equals(options.key.publicKey))) {
-      throw new AriesFrameworkError(`Protected header JWK does not match key for signing.`)
+      throw new AriesFrameworkError('Protected header JWK does not match key for signing.')
     }
 
     // Validate the options.key used for signing against the jws options

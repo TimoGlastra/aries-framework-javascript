@@ -3,7 +3,7 @@ import type { SubjectMessage } from '../../../tests/transport/SubjectInboundTran
 import type { AgentMessageProcessedEvent } from '../src/agent/Events'
 import type { OutOfBandDidCommService } from '../src/modules/oob'
 
-import { filter, firstValueFrom, map, Subject, timeout } from 'rxjs'
+import { Subject, filter, firstValueFrom, map, timeout } from 'rxjs'
 
 import { SubjectInboundTransport } from '../../../tests/transport/SubjectInboundTransport'
 import { SubjectOutboundTransport } from '../../../tests/transport/SubjectOutboundTransport'
@@ -14,12 +14,12 @@ import { DidExchangeState, HandshakeProtocol } from '../src/modules/connections'
 import { ConnectionType } from '../src/modules/connections/models/ConnectionType'
 import { didKeyToVerkey } from '../src/modules/dids/helpers'
 import {
-  KeylistUpdateMessage,
   KeylistUpdateAction,
-  MediationState,
-  MediatorPickupStrategy,
+  KeylistUpdateMessage,
   MediationRecipientModule,
+  MediationState,
   MediatorModule,
+  MediatorPickupStrategy,
 } from '../src/modules/routing'
 
 import { getAgentOptions, waitForBasicMessage } from './helpers'
@@ -99,14 +99,14 @@ describe('out of band with mediation', () => {
     let { connectionRecord: aliceMediatorConnection } =
       await aliceAgent.oob.receiveInvitationFromUrl(mediatorUrlMessage)
 
-    aliceMediatorConnection = await aliceAgent.connections.returnWhenIsConnected(aliceMediatorConnection!.id)
+    aliceMediatorConnection = await aliceAgent.connections.returnWhenIsConnected(aliceMediatorConnection?.id)
     expect(aliceMediatorConnection.state).toBe(DidExchangeState.Completed)
 
     // Tag the connection with an initial type
     aliceMediatorConnection = await aliceAgent.connections.addConnectionType(aliceMediatorConnection.id, 'initial-type')
 
     let [mediatorAliceConnection] = await mediatorAgent.connections.findAllByOutOfBandId(mediationOutOfBandRecord.id)
-    mediatorAliceConnection = await mediatorAgent.connections.returnWhenIsConnected(mediatorAliceConnection!.id)
+    mediatorAliceConnection = await mediatorAgent.connections.returnWhenIsConnected(mediatorAliceConnection?.id)
     expect(mediatorAliceConnection.state).toBe(DidExchangeState.Completed)
 
     // ========== Set mediation between Alice and Mediator agents ==========
@@ -145,11 +145,11 @@ describe('out of band with mediation', () => {
 
     let { connectionRecord: aliceFaberConnection } = await aliceAgent.oob.receiveInvitationFromUrl(urlMessage)
 
-    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection!.id)
+    aliceFaberConnection = await aliceAgent.connections.returnWhenIsConnected(aliceFaberConnection?.id)
     expect(aliceFaberConnection.state).toBe(DidExchangeState.Completed)
 
     let [faberAliceConnection] = await faberAgent.connections.findAllByOutOfBandId(outOfBandRecord.id)
-    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection!.id)
+    faberAliceConnection = await faberAgent.connections.returnWhenIsConnected(faberAliceConnection?.id)
     expect(faberAliceConnection.state).toBe(DidExchangeState.Completed)
 
     expect(aliceFaberConnection).toBeConnectedWith(faberAliceConnection)
@@ -161,7 +161,7 @@ describe('out of band with mediation', () => {
     expect(basicMessage.content).toBe('hello')
   })
 
-  test(`create and delete OOB invitation when using mediation`, async () => {
+  test('create and delete OOB invitation when using mediation', async () => {
     // Alice creates an invitation: the key is notified to her mediator
 
     const keyAddMessagePromise = firstValueFrom(

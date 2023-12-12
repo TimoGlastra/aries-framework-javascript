@@ -1,5 +1,5 @@
-import type { AnonCredsCredential } from '../models'
 import type { Tags } from '@aries-framework/core'
+import type { AnonCredsCredential } from '../models'
 
 import { BaseRecord, utils } from '@aries-framework/core'
 

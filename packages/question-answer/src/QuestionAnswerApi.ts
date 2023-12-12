@@ -1,12 +1,12 @@
-import type { QuestionAnswerRecord } from './repository'
 import type { Query } from '@aries-framework/core'
+import type { QuestionAnswerRecord } from './repository'
 
 import {
-  getOutboundMessageContext,
   AgentContext,
   ConnectionService,
-  injectable,
   MessageSender,
+  getOutboundMessageContext,
+  injectable,
 } from '@aries-framework/core'
 
 import { AnswerMessageHandler, QuestionMessageHandler } from './handlers'

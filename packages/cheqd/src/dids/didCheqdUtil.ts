@@ -2,18 +2,18 @@ import type { CheqdNetwork, DIDDocument, MethodSpecificIdAlgo, TVerificationKey 
 import type { Metadata } from '@cheqd/ts-proto/cheqd/resource/v2'
 
 import {
-  DidDocument,
   AriesFrameworkError,
+  DidDocument,
   JsonEncoder,
-  TypedArrayEncoder,
   JsonTransformer,
+  TypedArrayEncoder,
 } from '@aries-framework/core'
 import {
+  DIDModule,
+  VerificationMethods,
   createDidPayload,
   createDidVerificationMethod,
   createVerificationKeys,
-  DIDModule,
-  VerificationMethods,
 } from '@cheqd/sdk'
 import { MsgCreateDidDocPayload, MsgDeactivateDidDocPayload } from '@cheqd/ts-proto/cheqd/did/v2'
 import { EnglishMnemonic as _ } from '@cosmjs/crypto'
@@ -120,7 +120,7 @@ export interface IDidDocOptions {
 }
 
 export function getClosestResourceVersion(resources: Metadata[], date: Date) {
-  const result = resources.sort(function (a, b) {
+  const result = resources.sort((a, b) => {
     if (!a.created || !b.created) throw new AriesFrameworkError("Missing required property 'created' on resource")
     const distancea = Math.abs(date.getTime() - a.created.getTime())
     const distanceb = Math.abs(date.getTime() - b.created.getTime())
@@ -130,17 +130,17 @@ export function getClosestResourceVersion(resources: Metadata[], date: Date) {
 }
 
 export function filterResourcesByNameAndType(resources: Metadata[], name: string, type: string) {
-  return resources.filter((resource) => resource.name == name && resource.resourceType == type)
+  return resources.filter((resource) => resource.name === name && resource.resourceType === type)
 }
 
 export async function renderResourceData(data: Uint8Array, mimeType: string) {
-  if (mimeType == 'application/json') {
+  if (mimeType === 'application/json') {
     return await JsonEncoder.fromBuffer(data)
-  } else if (mimeType == 'text/plain') {
-    return TypedArrayEncoder.toUtf8String(data)
-  } else {
-    return TypedArrayEncoder.toBase64URL(data)
   }
+  if (mimeType === 'text/plain') {
+    return TypedArrayEncoder.toUtf8String(data)
+  }
+  return TypedArrayEncoder.toBase64URL(data)
 }
 
 export class EnglishMnemonic extends _ {

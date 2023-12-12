@@ -1,6 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny:
 export function areObjectsEqual(a: any, b: any): boolean {
-  if (typeof a == 'object' && a != null && typeof b == 'object' && b != null) {
+  if (typeof a === 'object' && a != null && typeof b === 'object' && b != null) {
     if (Object.keys(a).length !== Object.keys(b).length) return false
     for (const key in a) {
       if (!(key in b) || !areObjectsEqual(a[key], b[key])) {
@@ -13,7 +13,6 @@ export function areObjectsEqual(a: any, b: any): boolean {
       }
     }
     return true
-  } else {
-    return a === b
   }
+  return a === b
 }

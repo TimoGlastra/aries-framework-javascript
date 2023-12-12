@@ -30,7 +30,7 @@ import inspect from 'object-inspect'
 /**
  * @internal
  */
-export const SEPARATOR_TEXT = `\n\nThe following exception was the direct cause of the above exception:\n\n`
+export const SEPARATOR_TEXT = '\n\nThe following exception was the direct cause of the above exception:\n\n'
 
 /**
  * Create a new error instance of `cause` property support.

@@ -1,11 +1,11 @@
+import type { AnonCredsRevocationStatusList } from '../../models/registry'
 import type {
-  AnonCredsOperationStateWait,
   AnonCredsOperationStateFailed,
   AnonCredsOperationStateFinished,
+  AnonCredsOperationStateWait,
   AnonCredsResolutionMetadata,
   Extensible,
 } from './base'
-import type { AnonCredsRevocationStatusList } from '../../models/registry'
 
 export interface GetRevocationStatusListReturn {
   revocationStatusList?: AnonCredsRevocationStatusList

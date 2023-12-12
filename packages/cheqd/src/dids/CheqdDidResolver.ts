@@ -1,8 +1,8 @@
-import type { ParsedCheqdDid } from '../anoncreds/utils/identifiers'
 import type { AgentContext, DidResolutionResult, DidResolver, ParsedDid } from '@aries-framework/core'
 import type { Metadata } from '@cheqd/ts-proto/cheqd/resource/v2'
+import type { ParsedCheqdDid } from '../anoncreds/utils/identifiers'
 
-import { DidDocument, AriesFrameworkError, utils, JsonTransformer } from '@aries-framework/core'
+import { AriesFrameworkError, DidDocument, JsonTransformer, utils } from '@aries-framework/core'
 
 import {
   cheqdDidMetadataRegex,
@@ -76,16 +76,16 @@ export class CheqdDidResolver implements DidResolver {
       let resourceId: string
       if (did.match(cheqdResourceRegex)?.input) {
         resourceId = did.split('/')[2]
-      } else if (params && params.resourceName && params.resourceType) {
+      } else if (params?.resourceName && params.resourceType) {
         let resources = (await cheqdLedgerService.resolveCollectionResources(parsedDid.did, id)).resources
         resources = filterResourcesByNameAndType(resources, params.resourceName, params.resourceType)
         if (!resources.length) {
-          throw new Error(`No resources found`)
+          throw new Error('No resources found')
         }
 
         let resource: Metadata | undefined
         if (params.version) {
-          resource = resources.find((resource) => resource.version == params.version)
+          resource = resources.find((resource) => resource.version === params.version)
         } else {
           const date = params.resourceVersionTime ? new Date(Number(params.resourceVersionTime) * 1000) : new Date()
           // find the resourceId closest to the created time
@@ -93,7 +93,7 @@ export class CheqdDidResolver implements DidResolver {
         }
 
         if (!resource) {
-          throw new Error(`No resources found`)
+          throw new Error('No resources found')
         }
 
         resourceId = resource.id

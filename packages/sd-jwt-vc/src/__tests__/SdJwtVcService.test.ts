@@ -2,15 +2,15 @@ import type { Key, Logger } from '@aries-framework/core'
 
 import { AskarModule } from '@aries-framework/askar'
 import {
-  getJwkFromKey,
+  Agent,
   DidKey,
   DidsModule,
   KeyDidRegistrar,
   KeyDidResolver,
-  utils,
   KeyType,
-  Agent,
   TypedArrayEncoder,
+  getJwkFromKey,
+  utils,
 } from '@aries-framework/core'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 

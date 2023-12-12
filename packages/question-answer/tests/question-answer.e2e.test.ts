@@ -2,7 +2,7 @@ import type { ConnectionRecord } from '@aries-framework/core'
 
 import { Agent } from '@aries-framework/core'
 
-import { indySdk, setupSubjectTransports, testLogger, getAgentOptions, makeConnection } from '../../core/tests'
+import { getAgentOptions, indySdk, makeConnection, setupSubjectTransports, testLogger } from '../../core/tests'
 import { IndySdkModule } from '../../indy-sdk/src'
 
 import { waitForQuestionAnswerRecord } from './helpers'

@@ -1,11 +1,11 @@
 import type { AgentContext, Key } from '@aries-framework/core'
-import type { IndyVdrRequest, RequestResponseType, IndyVdrPool as indyVdrPool } from '@hyperledger/indy-vdr-shared'
+import type { IndyVdrPool as indyVdrPool, IndyVdrRequest, RequestResponseType } from '@hyperledger/indy-vdr-shared'
 
 import { parseIndyDid } from '@aries-framework/anoncreds'
 import { TypedArrayEncoder } from '@aries-framework/core'
 import {
-  GetTransactionAuthorAgreementRequest,
   GetAcceptanceMechanismsRequest,
+  GetTransactionAuthorAgreementRequest,
   PoolCreate,
   indyVdr,
 } from '@hyperledger/indy-vdr-shared'

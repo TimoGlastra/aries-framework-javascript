@@ -11,7 +11,7 @@ import {
 } from '../../../../tests/helpers'
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
-import { KeyType, Key } from '../../../crypto'
+import { Key, KeyType } from '../../../crypto'
 import { AriesFrameworkError } from '../../../error'
 import { DidExchangeState } from '../../connections/models'
 import { OutOfBandService } from '../OutOfBandService'
@@ -363,7 +363,7 @@ describe('OutOfBandService', () => {
       mockFunction(outOfBandRepository.findSingleByQuery).mockResolvedValue(mockOob)
 
       await expect(outOfBandService.processHandshakeReuseAccepted(messageContext)).rejects.toThrowError(
-        new AriesFrameworkError(`handshake-reuse-accepted is not in response to a handshake-reuse message.`)
+        new AriesFrameworkError('handshake-reuse-accepted is not in response to a handshake-reuse message.')
       )
     })
 

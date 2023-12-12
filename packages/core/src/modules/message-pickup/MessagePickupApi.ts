@@ -1,3 +1,4 @@
+import type { MessageRepository } from '../../storage/MessageRepository'
 import type {
   PickupMessagesOptions,
   PickupMessagesReturnType,
@@ -6,7 +7,6 @@ import type {
 } from './MessagePickupApiOptions'
 import type { V1MessagePickupProtocol, V2MessagePickupProtocol } from './protocol'
 import type { MessagePickupProtocol } from './protocol/MessagePickupProtocol'
-import type { MessageRepository } from '../../storage/MessageRepository'
 
 import { AgentContext } from '../../agent'
 import { MessageSender } from '../../agent/MessageSender'

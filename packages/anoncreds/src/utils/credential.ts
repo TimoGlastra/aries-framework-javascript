@@ -1,7 +1,7 @@
-import type { AnonCredsSchema, AnonCredsCredentialValues } from '../models'
 import type { CredentialPreviewAttributeOptions, LinkedAttachment } from '@aries-framework/core'
+import type { AnonCredsCredentialValues, AnonCredsSchema } from '../models'
 
-import { AriesFrameworkError, Hasher, encodeAttachment, Buffer } from '@aries-framework/core'
+import { AriesFrameworkError, Buffer, Hasher, encodeAttachment } from '@aries-framework/core'
 import BigNumber from 'bn.js'
 
 const isString = (value: unknown): value is string => typeof value === 'string'
@@ -137,7 +137,13 @@ export function encodeCredentialValue(value: unknown) {
   }
 
   // If value is an int32 number string return as number string
-  if (isString(value) && !isEmpty(value) && !isNaN(Number(value)) && isNumeric(value) && isInt32(Number(value))) {
+  if (
+    isString(value) &&
+    !isEmpty(value) &&
+    !Number.isNaN(Number(value)) &&
+    isNumeric(value) &&
+    isInt32(Number(value))
+  ) {
     return Number(value).toString()
   }
 
@@ -186,13 +192,12 @@ export function createAndLinkAttachmentsToPreview(
   attachments.forEach((linkedAttachment) => {
     if (credentialPreviewAttributeNames.includes(linkedAttachment.attributeName)) {
       throw new AriesFrameworkError(`linkedAttachment ${linkedAttachment.attributeName} already exists in the preview`)
-    } else {
-      newPreviewAttributes.push({
-        name: linkedAttachment.attributeName,
-        mimeType: linkedAttachment.attachment.mimeType,
-        value: encodeAttachment(linkedAttachment.attachment),
-      })
     }
+    newPreviewAttributes.push({
+      name: linkedAttachment.attributeName,
+      mimeType: linkedAttachment.attachment.mimeType,
+      value: encodeAttachment(linkedAttachment.attachment),
+    })
   })
 
   return newPreviewAttributes

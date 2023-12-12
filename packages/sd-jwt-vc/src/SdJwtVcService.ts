@@ -1,31 +1,31 @@
+import type { AgentContext, JwkJson, Query } from '@aries-framework/core'
+import type { HasherAndAlgorithm, SdJwtVcVerificationResult, Signer, Verifier } from 'jwt-sd'
 import type {
   SdJwtVcCreateOptions,
   SdJwtVcPresentOptions,
   SdJwtVcReceiveOptions,
   SdJwtVcVerifyOptions,
 } from './SdJwtVcOptions'
-import type { AgentContext, JwkJson, Query } from '@aries-framework/core'
-import type { Signer, SdJwtVcVerificationResult, Verifier, HasherAndAlgorithm } from 'jwt-sd'
 
 import {
-  parseDid,
+  Buffer,
   DidResolverService,
-  getKeyFromVerificationMethod,
-  getJwkFromJson,
-  Key,
-  getJwkFromKey,
   Hasher,
-  inject,
-  injectable,
   InjectionSymbols,
+  Key,
   Logger,
   TypedArrayEncoder,
-  Buffer,
+  getJwkFromJson,
+  getJwkFromKey,
+  getKeyFromVerificationMethod,
+  inject,
+  injectable,
+  parseDid,
 } from '@aries-framework/core'
-import { KeyBinding, SdJwtVc, HasherAlgorithm, Disclosure } from 'jwt-sd'
+import { Disclosure, HasherAlgorithm, KeyBinding, SdJwtVc } from 'jwt-sd'
 
 import { SdJwtVcError } from './SdJwtVcError'
-import { SdJwtVcRepository, SdJwtVcRecord } from './repository'
+import { SdJwtVcRecord, SdJwtVcRepository } from './repository'
 
 export { SdJwtVcVerificationResult }
 

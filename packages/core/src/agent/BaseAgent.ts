@@ -1,11 +1,11 @@
-import type { AgentConfig } from './AgentConfig'
-import type { AgentApi, CustomOrDefaultApi, EmptyModuleMap, ModulesMap, WithoutDefaultModules } from './AgentModules'
-import type { TransportSession } from './TransportService'
 import type { Logger } from '../logger'
 import type { CredentialsModule } from '../modules/credentials'
 import type { MessagePickupModule } from '../modules/message-pickup'
 import type { ProofsModule } from '../modules/proofs'
 import type { DependencyManager } from '../plugins'
+import type { AgentConfig } from './AgentConfig'
+import type { AgentApi, CustomOrDefaultApi, EmptyModuleMap, ModulesMap, WithoutDefaultModules } from './AgentModules'
+import type { TransportSession } from './TransportService'
 
 import { AriesFrameworkError } from '../error'
 import { BasicMessagesApi } from '../modules/basic-messages'
@@ -17,7 +17,7 @@ import { GenericRecordsApi } from '../modules/generic-records'
 import { MessagePickupApi } from '../modules/message-pickup/MessagePickupApi'
 import { OutOfBandApi } from '../modules/oob'
 import { ProofsApi } from '../modules/proofs'
-import { MediatorApi, MediationRecipientApi } from '../modules/routing'
+import { MediationRecipientApi, MediatorApi } from '../modules/routing'
 import { W3cCredentialsApi } from '../modules/vc/W3cCredentialsApi'
 import { StorageUpdateService } from '../storage'
 import { UpdateAssistant } from '../storage/migration/UpdateAssistant'
@@ -166,10 +166,7 @@ export abstract class BaseAgent<AgentModules extends ModulesMap = EmptyModuleMap
       await this.wallet.close()
       throw new AriesFrameworkError(
         // TODO: add link to where documentation on how to update can be found.
-        `Current agent storage is not up to date. ` +
-          `To prevent the framework state from getting corrupted the agent initialization is aborted. ` +
-          `Make sure to update the agent storage (currently at ${currentVersion}) to the latest version (${UpdateAssistant.frameworkStorageVersion}). ` +
-          `You can also downgrade your version of Aries Framework JavaScript.`
+        `Current agent storage is not up to date. To prevent the framework state from getting corrupted the agent initialization is aborted. Make sure to update the agent storage (currently at ${currentVersion}) to the latest version (${UpdateAssistant.frameworkStorageVersion}). You can also downgrade your version of Aries Framework JavaScript.`
       )
     }
   }

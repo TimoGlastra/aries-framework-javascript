@@ -4,7 +4,7 @@ import type { VerificationMethod } from '../verificationMethod'
 import { KeyType } from '../../../../crypto/KeyType'
 import { getJwkFromJson } from '../../../../crypto/jose/jwk'
 import { AriesFrameworkError } from '../../../../error'
-import { isJsonWebKey2020, VERIFICATION_METHOD_TYPE_JSON_WEB_KEY_2020 } from '../verificationMethod/JsonWebKey2020'
+import { VERIFICATION_METHOD_TYPE_JSON_WEB_KEY_2020, isJsonWebKey2020 } from '../verificationMethod/JsonWebKey2020'
 
 import { keyDidBls12381g1 } from './bls12381g1'
 import { keyDidBls12381g1g2 } from './bls12381g1g2'

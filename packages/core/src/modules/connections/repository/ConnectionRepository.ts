@@ -3,7 +3,7 @@ import type { DidExchangeRole } from '../models'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { InjectionSymbols } from '../../../constants'
-import { injectable, inject } from '../../../plugins'
+import { inject, injectable } from '../../../plugins'
 import { Repository } from '../../../storage/Repository'
 import { StorageService } from '../../../storage/StorageService'
 

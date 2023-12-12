@@ -1,8 +1,8 @@
-import type { InboundTransport, Agent, TransportSession, EncryptedMessage, AgentContext } from '@aries-framework/core'
-import type { Express, Request, Response } from 'express'
 import type { Server } from 'http'
+import type { Agent, AgentContext, EncryptedMessage, InboundTransport, TransportSession } from '@aries-framework/core'
+import type { Express, Request, Response } from 'express'
 
-import { DidCommMimeType, AriesFrameworkError, TransportService, utils, MessageReceiver } from '@aries-framework/core'
+import { AriesFrameworkError, DidCommMimeType, MessageReceiver, TransportService, utils } from '@aries-framework/core'
 import express, { text } from 'express'
 
 const supportedContentTypes: string[] = [DidCommMimeType.V0, DidCommMimeType.V1]
@@ -31,7 +31,7 @@ export class HttpInboundTransport implements InboundTransport {
     const transportService = agent.dependencyManager.resolve(TransportService)
     const messageReceiver = agent.dependencyManager.resolve(MessageReceiver)
 
-    agent.config.logger.debug(`Starting HTTP inbound transport`, {
+    agent.config.logger.debug('Starting HTTP inbound transport', {
       port: this.port,
     })
 
@@ -41,7 +41,7 @@ export class HttpInboundTransport implements InboundTransport {
       if (!contentType || !supportedContentTypes.includes(contentType)) {
         return res
           .status(415)
-          .send('Unsupported content-type. Supported content-types are: ' + supportedContentTypes.join(', '))
+          .send(`Unsupported content-type. Supported content-types are: ${supportedContentTypes.join(', ')}`)
       }
 
       const session = new HttpTransportSession(utils.uuid(), req, res)

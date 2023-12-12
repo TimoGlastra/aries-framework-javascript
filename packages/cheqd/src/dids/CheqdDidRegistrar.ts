@@ -1,27 +1,27 @@
 import type {
   AgentContext,
-  DidRegistrar,
   DidCreateOptions,
   DidCreateResult,
   DidDeactivateResult,
+  DidRegistrar,
   DidUpdateResult,
 } from '@aries-framework/core'
 import type { CheqdNetwork, DIDDocument, DidStdFee, TVerificationKey, VerificationMethods } from '@cheqd/sdk'
 import type { SignInfo } from '@cheqd/ts-proto/cheqd/did/v2'
 
 import {
+  Buffer,
   DidDocument,
   DidDocumentRole,
   DidRecord,
   DidRepository,
+  JsonTransformer,
   KeyType,
-  Buffer,
+  TypedArrayEncoder,
+  VerificationMethod,
+  getKeyFromVerificationMethod,
   isValidPrivateKey,
   utils,
-  TypedArrayEncoder,
-  getKeyFromVerificationMethod,
-  JsonTransformer,
-  VerificationMethod,
 } from '@aries-framework/core'
 import { MethodSpecificIdAlgo, createDidVerificationMethod } from '@cheqd/sdk'
 import { MsgCreateResourcePayload } from '@cheqd/ts-proto/cheqd/resource/v2'
@@ -30,9 +30,9 @@ import { CheqdLedgerService } from '../ledger'
 
 import {
   createMsgCreateDidDocPayloadToSign,
+  createMsgDeactivateDidDocPayloadToSign,
   generateDidDoc,
   validateSpecCompliantPayload,
-  createMsgDeactivateDidDocPayloadToSign,
 } from './didCheqdUtil'
 
 export class CheqdDidRegistrar implements DidRegistrar {
@@ -126,7 +126,7 @@ export class CheqdDidRegistrar implements DidRegistrar {
         },
       }
     } catch (error) {
-      agentContext.config.logger.error(`Error registering DID`, error)
+      agentContext.config.logger.error('Error registering DID', error)
       return {
         didDocumentMetadata: {},
         didRegistrationMetadata: {},
@@ -232,7 +232,7 @@ export class CheqdDidRegistrar implements DidRegistrar {
         },
       }
     } catch (error) {
-      agentContext.config.logger.error(`Error updating DID`, error)
+      agentContext.config.logger.error('Error updating DID', error)
       return {
         didDocumentMetadata: {},
         didRegistrationMetadata: {},
@@ -289,7 +289,7 @@ export class CheqdDidRegistrar implements DidRegistrar {
         },
       }
     } catch (error) {
-      agentContext.config.logger.error(`Error deactivating DID`, error)
+      agentContext.config.logger.error('Error deactivating DID', error)
       return {
         didDocumentMetadata: {},
         didRegistrationMetadata: {},
@@ -321,7 +321,7 @@ export class CheqdDidRegistrar implements DidRegistrar {
       let data: Uint8Array
       if (typeof resource.data === 'string') {
         data = TypedArrayEncoder.fromBase64(resource.data)
-      } else if (typeof resource.data == 'object') {
+      } else if (typeof resource.data === 'object') {
         data = TypedArrayEncoder.fromString(JSON.stringify(resource.data))
       } else {
         data = resource.data

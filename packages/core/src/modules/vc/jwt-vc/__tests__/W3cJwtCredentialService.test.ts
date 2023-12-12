@@ -114,7 +114,7 @@ describe('W3cJwtCredentialService', () => {
       // Throw when verificationMethod id does not exist in did document
       await expect(
         w3cJwtCredentialService.signCredential(agentContext, {
-          verificationMethod: issuerDidJwk.verificationMethodId + 'extra',
+          verificationMethod: `${issuerDidJwk.verificationMethodId}extra`,
           alg: JwaSignatureAlgorithm.ES256,
           credential: JsonTransformer.fromJSON(credentialJson, W3cCredential),
           format: ClaimFormat.JwtVc,
@@ -201,7 +201,7 @@ describe('W3cJwtCredentialService', () => {
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      delete jwtVc.credential.issuer
+      jwtVc.credential.issuer = undefined
 
       const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
         credential: jwtVc,
@@ -245,7 +245,7 @@ describe('W3cJwtCredentialService', () => {
     })
 
     test('returns invalid result when signature is not valid', async () => {
-      const jwtVc = W3cJwtVerifiableCredential.fromSerializedJwt(AfjEs256DidJwkJwtVc + 'a')
+      const jwtVc = W3cJwtVerifiableCredential.fromSerializedJwt(`${AfjEs256DidJwkJwtVc}a`)
 
       const result = await w3cJwtCredentialService.verifyCredential(agentContext, {
         credential: jwtVc,

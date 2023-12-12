@@ -30,19 +30,15 @@ import {
   V2StatusRequestHandler,
 } from './handlers'
 import {
-  V2MessageDeliveryMessage,
-  V2StatusMessage,
   V2DeliveryRequestMessage,
+  V2MessageDeliveryMessage,
   V2MessagesReceivedMessage,
+  V2StatusMessage,
   V2StatusRequestMessage,
 } from './messages'
 
 @injectable()
 export class V2MessagePickupProtocol extends BaseMessagePickupProtocol {
-  public constructor() {
-    super()
-  }
-
   /**
    * The version of the message pickup protocol this class supports
    */

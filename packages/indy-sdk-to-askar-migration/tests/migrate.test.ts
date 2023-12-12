@@ -1,13 +1,13 @@
 import type { InitConfig } from '@aries-framework/core'
 
+import { homedir } from 'os'
 import { AskarModule } from '@aries-framework/askar'
-import { utils, KeyDerivationMethod, Agent } from '@aries-framework/core'
+import { Agent, KeyDerivationMethod, utils } from '@aries-framework/core'
 import { IndySdkModule } from '@aries-framework/indy-sdk'
 import { agentDependencies } from '@aries-framework/node'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 import { registerAriesAskar } from '@hyperledger/aries-askar-shared'
 import indy from 'indy-sdk'
-import { homedir } from 'os'
 
 import { IndySdkToAskarMigrationUpdater } from '../src'
 import { IndySdkToAskarMigrationError } from '../src/errors/IndySdkToAskarMigrationError'
@@ -95,7 +95,7 @@ describe('Indy SDK To Askar Migration', () => {
     await indySdkAgent.shutdown()
 
     const askarAgent = new Agent({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // biome-ignore lint/style/noNonNullAssertion:
       config: { ...indySdkAndAskarConfig, walletConfig: { ...indySdkAndAskarConfig.walletConfig!, key: 'wrong-key' } },
       modules: {
         askar: new AskarModule({

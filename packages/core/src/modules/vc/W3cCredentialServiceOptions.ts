@@ -1,3 +1,5 @@
+import type { JwaSignatureAlgorithm } from '../../crypto/jose/jwa'
+import type { SingleOrArray } from '../../utils/type'
 import type { ProofPurpose, W3cJsonLdVerifiablePresentation } from './data-integrity'
 import type { W3cJsonLdVerifiableCredential } from './data-integrity/models/W3cJsonLdVerifiableCredential'
 import type { W3cJwtVerifiableCredential } from './jwt-vc/W3cJwtVerifiableCredential'
@@ -5,8 +7,6 @@ import type { W3cJwtVerifiablePresentation } from './jwt-vc/W3cJwtVerifiablePres
 import type { ClaimFormat, W3cVerifiableCredential } from './models'
 import type { W3cCredential } from './models/credential/W3cCredential'
 import type { W3cPresentation } from './models/presentation/W3cPresentation'
-import type { JwaSignatureAlgorithm } from '../../crypto/jose/jwa'
-import type { SingleOrArray } from '../../utils/type'
 
 export type W3cSignCredentialOptions = W3cJwtSignCredentialOptions | W3cJsonLdSignCredentialOptions
 export type W3cVerifyCredentialOptions = W3cJwtVerifyCredentialOptions | W3cJsonLdVerifyCredentialOptions

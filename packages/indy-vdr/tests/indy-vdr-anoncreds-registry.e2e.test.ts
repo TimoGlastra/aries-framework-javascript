@@ -1,5 +1,5 @@
-import type { IndyVdrDidCreateOptions, IndyVdrDidCreateResult } from '../src/dids/IndyVdrIndyDidRegistrar'
 import type { RevocationRegistryEntryResponse } from '@hyperledger/indy-vdr-shared'
+import type { IndyVdrDidCreateOptions, IndyVdrDidCreateResult } from '../src/dids/IndyVdrIndyDidRegistrar'
 
 import { parseIndyDid } from '@aries-framework/anoncreds'
 import { Agent, DidsModule, TypedArrayEncoder } from '@aries-framework/core'

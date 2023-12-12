@@ -99,7 +99,7 @@ export class CredentialExchangeRecord extends BaseRecord<DefaultCredentialTags, 
   }
 
   public assertProtocolVersion(version: string) {
-    if (this.protocolVersion != version) {
+    if (this.protocolVersion !== version) {
       throw new AriesFrameworkError(
         `Credential record has invalid protocol version ${this.protocolVersion}. Expected version ${version}`
       )
@@ -121,9 +121,10 @@ export class CredentialExchangeRecord extends BaseRecord<DefaultCredentialTags, 
   public assertConnection(currentConnectionId: string) {
     if (!this.connectionId) {
       throw new AriesFrameworkError(
-        `Credential record is not associated with any connection. This is often the case with connection-less credential exchange`
+        'Credential record is not associated with any connection. This is often the case with connection-less credential exchange'
       )
-    } else if (this.connectionId !== currentConnectionId) {
+    }
+    if (this.connectionId !== currentConnectionId) {
       throw new AriesFrameworkError(
         `Credential record is associated with connection '${this.connectionId}'. Current connection is '${currentConnectionId}'`
       )

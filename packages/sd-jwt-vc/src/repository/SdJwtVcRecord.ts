@@ -1,7 +1,7 @@
-import type { TagsBase, Constructable } from '@aries-framework/core'
+import type { Constructable, TagsBase } from '@aries-framework/core'
 import type { DisclosureItem, HasherAndAlgorithm } from 'jwt-sd'
 
-import { JsonTransformer, Hasher, TypedArrayEncoder, BaseRecord, utils } from '@aries-framework/core'
+import { BaseRecord, Hasher, JsonTransformer, TypedArrayEncoder, utils } from '@aries-framework/core'
 import { Disclosure, HasherAlgorithm, SdJwtVc } from 'jwt-sd'
 
 export type SdJwtVcRecordTags = TagsBase & {

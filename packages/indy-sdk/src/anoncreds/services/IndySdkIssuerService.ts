@@ -1,21 +1,21 @@
-import type { CreateCredentialDefinitionMetadata } from './IndySdkIssuerServiceMetadata'
 import type {
+  AnonCredsCredentialOffer,
   AnonCredsIssuerService,
+  AnonCredsRevocationStatusList,
+  AnonCredsSchema,
   CreateCredentialDefinitionOptions,
+  CreateCredentialDefinitionReturn,
   CreateCredentialOfferOptions,
   CreateCredentialOptions,
   CreateCredentialReturn,
-  CreateSchemaOptions,
-  AnonCredsCredentialOffer,
-  AnonCredsSchema,
-  CreateCredentialDefinitionReturn,
   CreateRevocationRegistryDefinitionReturn,
-  AnonCredsRevocationStatusList,
+  CreateSchemaOptions,
 } from '@aries-framework/anoncreds'
 import type { AgentContext } from '@aries-framework/core'
+import type { CreateCredentialDefinitionMetadata } from './IndySdkIssuerServiceMetadata'
 
-import { parseIndyDid, getUnqualifiedSchemaId, generateLegacyProverDidLikeString } from '@aries-framework/anoncreds'
-import { injectable, AriesFrameworkError, inject } from '@aries-framework/core'
+import { generateLegacyProverDidLikeString, getUnqualifiedSchemaId, parseIndyDid } from '@aries-framework/anoncreds'
+import { AriesFrameworkError, inject, injectable } from '@aries-framework/core'
 
 import { IndySdkError, isIndyError } from '../../error'
 import { IndySdk, IndySdkSymbol } from '../../types'

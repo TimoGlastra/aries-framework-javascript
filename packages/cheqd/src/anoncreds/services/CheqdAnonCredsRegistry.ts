@@ -1,22 +1,22 @@
-import type { CheqdCreateResourceOptions } from '../../dids'
 import type {
   AnonCredsRegistry,
   GetCredentialDefinitionReturn,
-  GetRevocationStatusListReturn,
   GetRevocationRegistryDefinitionReturn,
+  GetRevocationStatusListReturn,
   GetSchemaReturn,
   RegisterCredentialDefinitionOptions,
   RegisterCredentialDefinitionReturn,
-  RegisterSchemaReturn,
-  RegisterSchemaOptions,
   RegisterRevocationRegistryDefinitionReturn,
   RegisterRevocationStatusListReturn,
+  RegisterSchemaOptions,
+  RegisterSchemaReturn,
 } from '@aries-framework/anoncreds'
 import type { AgentContext } from '@aries-framework/core'
+import type { CheqdCreateResourceOptions } from '../../dids'
 
 import { AriesFrameworkError, Buffer, Hasher, JsonTransformer, TypedArrayEncoder, utils } from '@aries-framework/core'
 
-import { CheqdDidResolver, CheqdDidRegistrar } from '../../dids'
+import { CheqdDidRegistrar, CheqdDidResolver } from '../../dids'
 import { cheqdSdkAnonCredsRegistryIdentifierRegex, parseCheqdDid } from '../utils/identifiers'
 import {
   CheqdCredentialDefinition,

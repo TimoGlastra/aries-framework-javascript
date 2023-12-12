@@ -1,14 +1,14 @@
 import type { KeyDidCreateOptions } from '@aries-framework/core'
 
 import {
-  ClaimFormat,
-  JwaSignatureAlgorithm,
   Agent,
+  ClaimFormat,
+  DidKey,
+  JwaSignatureAlgorithm,
   KeyType,
   TypedArrayEncoder,
   W3cCredentialRecord,
   W3cCredentialsModule,
-  DidKey,
 } from '@aries-framework/core'
 import nock, { cleanAll, enableNetConnect } from 'nock'
 

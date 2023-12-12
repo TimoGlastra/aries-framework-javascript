@@ -1,5 +1,5 @@
-import type { MessagePickupProtocol } from './protocol/MessagePickupProtocol'
 import type { EncryptedMessage } from '../../types'
+import type { MessagePickupProtocol } from './protocol/MessagePickupProtocol'
 
 /**
  * Get the supported protocol versions based on the provided discover features services.

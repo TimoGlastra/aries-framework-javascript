@@ -18,8 +18,6 @@ import type { OpenWalletCredentials, WalletConfig as IndySdkWalletConfig, Wallet
 import {
   AriesFrameworkError,
   InjectionSymbols,
-  isValidPrivateKey,
-  isValidSeed,
   JsonEncoder,
   Key,
   KeyType,
@@ -33,6 +31,8 @@ import {
   WalletInvalidKeyError,
   WalletKeyExistsError,
   WalletNotFoundError,
+  isValidPrivateKey,
+  isValidSeed,
 } from '@aries-framework/core'
 
 const isError = (error: unknown): error is Error => error instanceof Error
@@ -160,18 +160,17 @@ export class IndySdkWallet implements Wallet {
           walletType: 'IndySdkWallet',
           cause: error,
         })
-      } else {
-        if (!isError(error)) {
-          throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
-        }
-        const errorMessage = `Error creating wallet '${walletConfig.id}'`
-        this.logger.error(errorMessage, {
-          error,
-          errorMessage: error.message,
-        })
-
-        throw new WalletError(errorMessage, { cause: error })
       }
+      if (!isError(error)) {
+        throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
+      }
+      const errorMessage = `Error creating wallet '${walletConfig.id}'`
+      this.logger.error(errorMessage, {
+        error,
+        errorMessage: error.message,
+      })
+
+      throw new WalletError(errorMessage, { cause: error })
     }
 
     this.logger.debug(`Successfully created wallet '${walletConfig.id}'`)
@@ -238,25 +237,25 @@ export class IndySdkWallet implements Wallet {
           walletType: 'IndySdkWallet',
           cause: error,
         })
-      } else if (isIndyError(error, 'WalletAccessFailed')) {
+      }
+      if (isIndyError(error, 'WalletAccessFailed')) {
         const errorMessage = `Incorrect key for wallet '${walletConfig.id}'`
         this.logger.debug(errorMessage)
         throw new WalletInvalidKeyError(errorMessage, {
           walletType: 'IndySdkWallet',
           cause: error,
         })
-      } else {
-        if (!isError(error)) {
-          throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
-        }
-        const errorMessage = `Error opening wallet '${walletConfig.id}': ${error.message}`
-        this.logger.error(errorMessage, {
-          error,
-          errorMessage: error.message,
-        })
-
-        throw new WalletError(errorMessage, { cause: error })
       }
+      if (!isError(error)) {
+        throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
+      }
+      const errorMessage = `Error opening wallet '${walletConfig.id}': ${error.message}`
+      this.logger.error(errorMessage, {
+        error,
+        errorMessage: error.message,
+      })
+
+      throw new WalletError(errorMessage, { cause: error })
     }
 
     this.logger.debug(`Wallet '${walletConfig.id}' opened with handle '${this.handle}'`)
@@ -293,18 +292,17 @@ export class IndySdkWallet implements Wallet {
           walletType: 'IndySdkWallet',
           cause: error,
         })
-      } else {
-        if (!isError(error)) {
-          throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
-        }
-        const errorMessage = `Error deleting wallet '${this.walletConfig.id}': ${error.message}`
-        this.logger.error(errorMessage, {
-          error,
-          errorMessage: error.message,
-        })
-
-        throw new WalletError(errorMessage, { cause: error })
       }
+      if (!isError(error)) {
+        throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
+      }
+      const errorMessage = `Error deleting wallet '${this.walletConfig.id}': ${error.message}`
+      this.logger.error(errorMessage, {
+        error,
+        errorMessage: error.message,
+      })
+
+      throw new WalletError(errorMessage, { cause: error })
     }
   }
 
@@ -369,24 +367,23 @@ export class IndySdkWallet implements Wallet {
       this.walletHandle = undefined
     } catch (error) {
       if (isIndyError(error, 'WalletInvalidHandle')) {
-        const errorMessage = `Error closing wallet: wallet already closed`
+        const errorMessage = 'Error closing wallet: wallet already closed'
         this.logger.debug(errorMessage)
 
         throw new WalletError(errorMessage, {
           cause: error,
         })
-      } else {
-        if (!isError(error)) {
-          throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
-        }
-        const errorMessage = `Error closing wallet': ${error.message}`
-        this.logger.error(errorMessage, {
-          error,
-          errorMessage: error.message,
-        })
-
-        throw new WalletError(errorMessage, { cause: error })
       }
+      if (!isError(error)) {
+        throw new AriesFrameworkError('Attempted to throw error, but it was not of type Error', { cause: error })
+      }
+      const errorMessage = `Error closing wallet': ${error.message}`
+      this.logger.error(errorMessage, {
+        error,
+        errorMessage: error.message,
+      })
+
+      throw new WalletError(errorMessage, { cause: error })
     }
   }
 
@@ -602,9 +599,8 @@ export class IndySdkWallet implements Wallet {
       const { value } = await this.indySdk.getWalletRecord(this.handle, 'KeyPairRecord', `key-${publicKeyBase58}`, {})
       if (value) {
         return JsonEncoder.fromString(value) as KeyPair
-      } else {
-        throw new WalletError(`No content found for record with public key: ${publicKeyBase58}`)
       }
+      throw new WalletError(`No content found for record with public key: ${publicKeyBase58}`)
     } catch (error) {
       if (isIndyError(error, 'WalletItemNotFound')) {
         throw new RecordNotFoundError(`KeyPairRecord not found for public key: ${publicKeyBase58}.`, {

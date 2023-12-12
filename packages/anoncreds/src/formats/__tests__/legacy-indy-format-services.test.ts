@@ -1,14 +1,14 @@
 import type { AnonCredsCredentialRequest } from '../../models'
 
 import {
-  CredentialState,
   CredentialExchangeRecord,
-  SigningProviderRegistry,
-  KeyType,
   CredentialPreviewAttribute,
+  CredentialState,
+  EventEmitter,
+  KeyType,
   ProofExchangeRecord,
   ProofState,
-  EventEmitter,
+  SigningProviderRegistry,
 } from '@aries-framework/core'
 import * as indySdk from 'indy-sdk'
 import { Subject } from 'rxjs'

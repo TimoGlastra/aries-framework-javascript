@@ -1,3 +1,4 @@
+import type { Query } from '@aries-framework/core'
 import type {
   SdJwtVcCreateOptions,
   SdJwtVcPresentOptions,
@@ -6,7 +7,6 @@ import type {
 } from './SdJwtVcOptions'
 import type { SdJwtVcVerificationResult } from './SdJwtVcService'
 import type { SdJwtVcRecord } from './repository'
-import type { Query } from '@aries-framework/core'
 
 import { AgentContext, injectable } from '@aries-framework/core'
 

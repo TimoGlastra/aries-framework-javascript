@@ -3,7 +3,7 @@ import path from 'path'
 
 import { getIndySdkModules } from '../../indy-sdk/tests/setupIndySdkModule'
 import { Agent } from '../src/agent/Agent'
-import { BasicMessageRepository, BasicMessageRecord, BasicMessageRole } from '../src/modules/basic-messages'
+import { BasicMessageRecord, BasicMessageRepository, BasicMessageRole } from '../src/modules/basic-messages'
 import { KeyDerivationMethod } from '../src/types'
 import { uuid } from '../src/utils/uuid'
 import { WalletInvalidKeyError } from '../src/wallet/error'
@@ -141,7 +141,7 @@ describe('wallet', () => {
 
     // Initialize the wallet again and assert record does not exist
     // This should create a new wallet
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // biome-ignore lint/style/noNonNullAssertion:
     await bobAgent.wallet.initialize(bobAgentOptions.config.walletConfig!)
     expect(await bobBasicMessageRepository.findById(bobAgent.context, basicMessageRecord.id)).toBeNull()
     await bobAgent.wallet.delete()

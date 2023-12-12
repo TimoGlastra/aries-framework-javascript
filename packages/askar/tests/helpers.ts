@@ -1,10 +1,10 @@
-import type { AskarWalletPostgresStorageConfig } from '../src/wallet'
 import type { Agent, InitConfig } from '@aries-framework/core'
+import type { AskarWalletPostgresStorageConfig } from '../src/wallet'
 
+import path from 'path'
 import { ConnectionsModule, HandshakeProtocol, LogLevel, utils } from '@aries-framework/core'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 import { registerAriesAskar } from '@hyperledger/aries-askar-shared'
-import path from 'path'
 
 import { waitForBasicMessage } from '../../core/tests/helpers'
 import { TestLogger } from '../../core/tests/logger'

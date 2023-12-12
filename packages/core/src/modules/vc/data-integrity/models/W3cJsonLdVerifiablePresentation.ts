@@ -1,7 +1,7 @@
-import type { LinkedDataProofOptions } from './LinkedDataProof'
 import type { W3cPresentationOptions } from '../../models/presentation/W3cPresentation'
+import type { LinkedDataProofOptions } from './LinkedDataProof'
 
-import { SingleOrArray, IsInstanceOrArrayOfInstances, JsonTransformer, asArray } from '../../../../utils'
+import { IsInstanceOrArrayOfInstances, JsonTransformer, SingleOrArray, asArray } from '../../../../utils'
 import { ClaimFormat } from '../../models'
 import { W3cPresentation } from '../../models/presentation/W3cPresentation'
 

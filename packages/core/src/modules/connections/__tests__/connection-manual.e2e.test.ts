@@ -121,22 +121,22 @@ describe('Manual Connection Flow', () => {
     let faberAliceConnectionRecord = await waitForAliceRequest
     let faberBobConnectionRecord = await waitForBobRequest
 
-    const waitForAliceResponse = waitForResponse(aliceAgent, aliceConnectionRecord!.id)
-    const waitForBobResponse = waitForResponse(bobAgent, bobConnectionRecord!.id)
+    const waitForAliceResponse = waitForResponse(aliceAgent, aliceConnectionRecord?.id)
+    const waitForBobResponse = waitForResponse(bobAgent, bobConnectionRecord?.id)
 
     await faberAgent.connections.acceptRequest(faberAliceConnectionRecord.id)
     await faberAgent.connections.acceptRequest(faberBobConnectionRecord.id)
 
     aliceConnectionRecord = await waitForAliceResponse
-    await aliceAgent.connections.acceptResponse(aliceConnectionRecord!.id)
+    await aliceAgent.connections.acceptResponse(aliceConnectionRecord?.id)
 
     bobConnectionRecord = await waitForBobResponse
-    await bobAgent.connections.acceptResponse(bobConnectionRecord!.id)
+    await bobAgent.connections.acceptResponse(bobConnectionRecord?.id)
 
-    aliceConnectionRecord = await aliceAgent.connections.returnWhenIsConnected(aliceConnectionRecord!.id)
-    bobConnectionRecord = await bobAgent.connections.returnWhenIsConnected(bobConnectionRecord!.id)
-    faberAliceConnectionRecord = await faberAgent.connections.returnWhenIsConnected(faberAliceConnectionRecord!.id)
-    faberBobConnectionRecord = await faberAgent.connections.returnWhenIsConnected(faberBobConnectionRecord!.id)
+    aliceConnectionRecord = await aliceAgent.connections.returnWhenIsConnected(aliceConnectionRecord?.id)
+    bobConnectionRecord = await bobAgent.connections.returnWhenIsConnected(bobConnectionRecord?.id)
+    faberAliceConnectionRecord = await faberAgent.connections.returnWhenIsConnected(faberAliceConnectionRecord?.id)
+    faberBobConnectionRecord = await faberAgent.connections.returnWhenIsConnected(faberBobConnectionRecord?.id)
 
     expect(aliceConnectionRecord).toBeConnectedWith(faberAliceConnectionRecord)
     expect(bobConnectionRecord).toBeConnectedWith(faberBobConnectionRecord)

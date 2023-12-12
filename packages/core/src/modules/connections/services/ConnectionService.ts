@@ -10,7 +10,7 @@ import type { ConnectionProblemReportMessage } from '../messages'
 import type { ConnectionType } from '../models'
 import type { ConnectionRecordProps } from '../repository/ConnectionRecord'
 
-import { firstValueFrom, ReplaySubject } from 'rxjs'
+import { ReplaySubject, firstValueFrom } from 'rxjs'
 import { first, map, timeout } from 'rxjs/operators'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
@@ -39,7 +39,6 @@ import { ConnectionEventTypes } from '../ConnectionEvents'
 import { ConnectionProblemReportError, ConnectionProblemReportReason } from '../errors'
 import { ConnectionRequestMessage, ConnectionResponseMessage, TrustPingMessage } from '../messages'
 import {
-  authenticationTypes,
   Connection,
   DidDoc,
   DidExchangeRole,
@@ -47,6 +46,7 @@ import {
   Ed25119Sig2018,
   HandshakeProtocol,
   ReferencedAuthentication,
+  authenticationTypes,
 } from '../models'
 import { ConnectionRecord } from '../repository/ConnectionRecord'
 import { ConnectionRepository } from '../repository/ConnectionRepository'
@@ -469,8 +469,8 @@ export class ConnectionService {
         type: message.type,
       })
 
-      const recipientKey = messageContext.recipientKey && messageContext.recipientKey.publicKeyBase58
-      const senderKey = messageContext.senderKey && messageContext.senderKey.publicKeyBase58
+      const recipientKey = messageContext.recipientKey?.publicKeyBase58
+      const senderKey = messageContext.senderKey?.publicKeyBase58
 
       // set theirService to the value of lastReceivedMessage.service
       let theirService =
@@ -740,7 +740,7 @@ export class ConnectionService {
           ourDid: ourDidRecord.did,
           theirDid: theirDidRecord.did,
         })
-        if (connectionRecord && connectionRecord.isReady) return connectionRecord
+        if (connectionRecord?.isReady) return connectionRecord
       }
     }
 

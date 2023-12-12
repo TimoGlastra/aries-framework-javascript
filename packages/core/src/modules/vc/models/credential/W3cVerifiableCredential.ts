@@ -28,7 +28,8 @@ export function W3cVerifiableCredentialTransformer() {
   return Transform(({ value, type }: { value: SingleOrArray<unknown>; type: TransformationType }) => {
     if (type === TransformationType.PLAIN_TO_CLASS) {
       return Array.isArray(value) ? value.map(getCredential) : getCredential(value)
-    } else if (type === TransformationType.CLASS_TO_PLAIN) {
+    }
+    if (type === TransformationType.CLASS_TO_PLAIN) {
       if (Array.isArray(value)) return value.map(getEncoded)
       return getEncoded(value)
     }
