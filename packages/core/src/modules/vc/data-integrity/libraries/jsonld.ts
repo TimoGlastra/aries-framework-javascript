@@ -23,4 +23,4 @@ export interface DocumentLoaderResult {
 
 export type DocumentLoader = (url: string) => Promise<DocumentLoaderResult>
 
-export default jsonld as unknown as JsonLd
+export default (jsonld as unknown as JsonLd)

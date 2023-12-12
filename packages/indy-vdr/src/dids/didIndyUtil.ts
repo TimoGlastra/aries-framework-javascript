@@ -47,7 +47,6 @@ export function createKeyAgreementKey(verkey: string) {
 
 const deepMerge = (a: Record<string, unknown>, b: Record<string, unknown>) => {
   const output: Record<string, unknown> = {}
-
   ;[...new Set([...Object.keys(a), ...Object.keys(b)])].forEach((key) => {
     // Only an object includes a given key: just output it
     if (a[key] && !b[key]) {

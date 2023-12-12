@@ -105,8 +105,8 @@ export abstract class AskarBaseWallet implements Wallet {
           const key = privateKey
             ? AskarKey.fromSecretBytes({ secretKey: privateKey, algorithm })
             : seed
-            ? AskarKey.fromSeed({ seed, algorithm })
-            : AskarKey.generate(algorithm)
+              ? AskarKey.fromSeed({ seed, algorithm })
+              : AskarKey.generate(algorithm)
 
           const keyPublicBytes = key.publicBytes
           // Store key

@@ -39,4 +39,4 @@ export interface W3cVerifyPresentationResult {
   credentialResults: W3cVerifyCredentialResult[]
 }
 
-export default vc as unknown as VC
+export default (vc as unknown as VC)

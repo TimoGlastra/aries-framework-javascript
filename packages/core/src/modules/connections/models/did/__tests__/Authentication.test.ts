@@ -55,7 +55,7 @@ describe('Did | Authentication', () => {
 
       const [referencedAuthentication, embeddedAuthentication] = authenticationWrapper.authentication as [
         ReferencedAuthentication,
-        EmbeddedAuthentication
+        EmbeddedAuthentication,
       ]
       expect(referencedAuthentication.publicKey).toBeInstanceOf(PublicKey)
       expect(embeddedAuthentication.publicKey).toBeInstanceOf(PublicKey)

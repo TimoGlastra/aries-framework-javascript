@@ -273,7 +273,7 @@ interface SetupAnonCredsTestsReturn<VerifierName extends string | undefined, Cre
 
 export async function setupAnonCredsTests<
   VerifierName extends string | undefined = undefined,
-  CreateConnections extends boolean = true
+  CreateConnections extends boolean = true,
 >({
   issuerId,
   issuerName,

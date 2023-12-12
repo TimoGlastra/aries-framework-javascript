@@ -35,7 +35,7 @@ import type { ProofExchangeRecord } from '../repository'
  */
 export type ProofFormatDataMessagePayload<
   CFs extends ProofFormat[] = ProofFormat[],
-  M extends keyof ProofFormat['formatData'] = keyof ProofFormat['formatData']
+  M extends keyof ProofFormat['formatData'] = keyof ProofFormat['formatData'],
 > = {
   [ProofFormat in CFs[number] as ProofFormat['formatKey']]?: ProofFormat['formatData'][M]
 }

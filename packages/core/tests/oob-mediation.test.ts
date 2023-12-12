@@ -96,9 +96,8 @@ describe('out of band with mediation', () => {
     const { outOfBandInvitation: mediatorOutOfBandInvitation } = mediationOutOfBandRecord
     const mediatorUrlMessage = mediatorOutOfBandInvitation.toUrl({ domain: 'http://example.com' })
 
-    let { connectionRecord: aliceMediatorConnection } = await aliceAgent.oob.receiveInvitationFromUrl(
-      mediatorUrlMessage
-    )
+    let { connectionRecord: aliceMediatorConnection } =
+      await aliceAgent.oob.receiveInvitationFromUrl(mediatorUrlMessage)
 
     aliceMediatorConnection = await aliceAgent.connections.returnWhenIsConnected(aliceMediatorConnection!.id)
     expect(aliceMediatorConnection.state).toBe(DidExchangeState.Completed)

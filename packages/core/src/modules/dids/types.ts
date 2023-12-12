@@ -59,7 +59,7 @@ export interface DidCreateOptions {
 }
 
 export interface DidCreateResult<
-  DidOperationStateAction extends DidOperationStateActionBase = DidOperationStateActionBase
+  DidOperationStateAction extends DidOperationStateActionBase = DidOperationStateActionBase,
 > {
   jobId?: string
   didState: DidOperationStateWait | DidOperationStateAction | DidOperationStateFinished | DidOperationStateFailed

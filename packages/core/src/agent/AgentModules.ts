@@ -102,14 +102,14 @@ export type AgentApi<Modules extends ModulesMap> = {
  */
 export type CustomOrDefaultApi<
   CustomModuleType,
-  DefaultModuleType extends ApiModule
+  DefaultModuleType extends ApiModule,
 > = IsAny<CustomModuleType> extends true
   ? InstanceType<DefaultModuleType['api']>
   : CustomModuleType extends ApiModule
-  ? InstanceType<CustomModuleType['api']>
-  : CustomModuleType extends Module
-  ? never
-  : InstanceType<DefaultModuleType['api']>
+    ? InstanceType<CustomModuleType['api']>
+    : CustomModuleType extends Module
+      ? never
+      : InstanceType<DefaultModuleType['api']>
 
 /**
  * Method to get the default agent modules to be registered on any agent instance. It doens't configure the modules in any way,

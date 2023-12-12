@@ -10,7 +10,7 @@ export type SdJwtVcRecordTags = TagsBase & {
 
 export type SdJwt<
   Header extends Record<string, unknown> = Record<string, unknown>,
-  Payload extends Record<string, unknown> = Record<string, unknown>
+  Payload extends Record<string, unknown> = Record<string, unknown>,
 > = {
   disclosures?: Array<DisclosureItem>
   header: Header
@@ -22,7 +22,7 @@ export type SdJwt<
 
 export type SdJwtVcRecordStorageProps<
   Header extends Record<string, unknown> = Record<string, unknown>,
-  Payload extends Record<string, unknown> = Record<string, unknown>
+  Payload extends Record<string, unknown> = Record<string, unknown>,
 > = {
   id?: string
   createdAt?: Date
@@ -32,7 +32,7 @@ export type SdJwtVcRecordStorageProps<
 
 export class SdJwtVcRecord<
   Header extends Record<string, unknown> = Record<string, unknown>,
-  Payload extends Record<string, unknown> = Record<string, unknown>
+  Payload extends Record<string, unknown> = Record<string, unknown>,
 > extends BaseRecord<SdJwtVcRecordTags> {
   public static readonly type = 'SdJwtVcRecord'
   public readonly type = SdJwtVcRecord.type

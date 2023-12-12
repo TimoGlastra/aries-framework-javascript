@@ -129,7 +129,7 @@ const getIndyJsonLdModules = () =>
     w3cCredentials: new W3cCredentialsModule({
       documentLoader: customDocumentLoader,
     }),
-  } as const)
+  }) as const
 
 // TODO: extract these very specific tests to the jsonld format
 describe('V2 Credentials - JSON-LD - Ed25519', () => {

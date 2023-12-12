@@ -179,7 +179,7 @@ export class SdJwtVcService {
 
   public async storeCredential<
     Header extends Record<string, unknown> = Record<string, unknown>,
-    Payload extends Record<string, unknown> = Record<string, unknown>
+    Payload extends Record<string, unknown> = Record<string, unknown>,
   >(
     agentContext: AgentContext,
     sdJwtVcCompact: string,
@@ -260,7 +260,7 @@ export class SdJwtVcService {
 
   public async verify<
     Header extends Record<string, unknown> = Record<string, unknown>,
-    Payload extends Record<string, unknown> = Record<string, unknown>
+    Payload extends Record<string, unknown> = Record<string, unknown>,
   >(
     agentContext: AgentContext,
     sdJwtVcCompact: string,

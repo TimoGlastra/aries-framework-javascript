@@ -33,7 +33,7 @@ export interface DiscoverFeaturesApi<DFSs extends DiscoverFeaturesService[]> {
 }
 @injectable()
 export class DiscoverFeaturesApi<
-  DFSs extends DiscoverFeaturesService[] = [V1DiscoverFeaturesService, V2DiscoverFeaturesService]
+  DFSs extends DiscoverFeaturesService[] = [V1DiscoverFeaturesService, V2DiscoverFeaturesService],
 > implements DiscoverFeaturesApi<DFSs>
 {
   /**

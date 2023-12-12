@@ -35,7 +35,7 @@ import type { CredentialExchangeRecord } from '../repository/CredentialExchangeR
  */
 export type CredentialFormatDataMessagePayload<
   CFs extends CredentialFormat[] = CredentialFormat[],
-  M extends keyof CredentialFormat['formatData'] = keyof CredentialFormat['formatData']
+  M extends keyof CredentialFormat['formatData'] = keyof CredentialFormat['formatData'],
 > = {
   [Service in CFs[number] as Service['formatKey']]?: Service['formatData'][M]
 }

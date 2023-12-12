@@ -63,7 +63,7 @@ export class SdJwtVcApi {
    */
   public async verify<
     Header extends Record<string, unknown> = Record<string, unknown>,
-    Payload extends Record<string, unknown> = Record<string, unknown>
+    Payload extends Record<string, unknown> = Record<string, unknown>,
   >(
     sdJwtVcCompact: string,
     options: SdJwtVcVerifyOptions

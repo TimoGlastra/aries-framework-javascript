@@ -41,5 +41,5 @@ export type W3cVerifiableCredential<Format extends ClaimFormat.JwtVc | ClaimForm
   Format extends ClaimFormat.JwtVc
     ? W3cJsonLdVerifiableCredential
     : Format extends ClaimFormat.LdpVc
-    ? W3cJwtVerifiableCredential
-    : W3cJsonLdVerifiableCredential | W3cJwtVerifiableCredential
+      ? W3cJwtVerifiableCredential
+      : W3cJsonLdVerifiableCredential | W3cJwtVerifiableCredential

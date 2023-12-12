@@ -46,7 +46,7 @@ export const getJsonLdModules = ({
       indySdk,
     }),
     bbs: new BbsModule(),
-  } as const)
+  }) as const
 
 interface SetupJsonLdTestsReturn<VerifierName extends string | undefined, CreateConnections extends boolean> {
   issuerAgent: JsonLdTestsAgent
@@ -77,7 +77,7 @@ interface SetupJsonLdTestsReturn<VerifierName extends string | undefined, Create
 
 export async function setupJsonLdTests<
   VerifierName extends string | undefined = undefined,
-  CreateConnections extends boolean = true
+  CreateConnections extends boolean = true,
 >({
   issuerName,
   holderName,
