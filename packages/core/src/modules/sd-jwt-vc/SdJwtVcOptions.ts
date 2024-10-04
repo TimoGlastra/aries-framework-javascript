@@ -1,4 +1,4 @@
-import type { JwkJson, Jwk, HashName } from '../../crypto'
+import type { JwkJson, Jwk, HashName, Key } from '../../crypto'
 
 // TODO: extend with required claim names for input (e.g. vct)
 export type SdJwtVcPayload = Record<string, unknown>
@@ -118,4 +118,6 @@ export type SdJwtVcVerifyOptions = {
 
   // TODO: update to requiredClaimFrame
   requiredClaimKeys?: Array<string>
+
+  verifyHs256Callback?: (key: Key, data: Uint8Array, signatureBase64Url: string) => Promise<boolean>
 }

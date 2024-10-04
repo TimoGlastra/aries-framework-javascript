@@ -9,6 +9,7 @@ import type {
   DifPresentationExchangeSubmission,
   DifPresentationExchangeDefinitionV2,
   VerifiablePresentation,
+  Key,
 } from '@credo-ts/core'
 
 export interface OpenId4VcSiopCreateAuthorizationRequestOptions {
@@ -30,6 +31,8 @@ export interface OpenId4VcSiopCreateAuthorizationRequestOptions {
   presentationExchange?: {
     definition: DifPresentationExchangeDefinitionV2
   }
+
+  additionalPayloadClaims?: Record<string, unknown>
 }
 
 export interface OpenId4VcSiopVerifyAuthorizationResponseOptions {
@@ -37,6 +40,8 @@ export interface OpenId4VcSiopVerifyAuthorizationResponseOptions {
    * The authorization response received from the OpenID Provider (OP).
    */
   authorizationResponse: OpenId4VcSiopAuthorizationResponsePayload
+
+  verifyHs256Callback?: (key: Key, data: Uint8Array, signatureInBase64url: string) => Promise<boolean>
 }
 
 export interface OpenId4VcSiopCreateAuthorizationRequestReturn {

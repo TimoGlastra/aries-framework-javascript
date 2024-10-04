@@ -4,6 +4,7 @@ import type { Router, Response } from 'express'
 
 import { getRequestContext, sendErrorResponse } from '../../shared/router'
 import { OpenId4VcSiopVerifierService } from '../OpenId4VcSiopVerifierService'
+import { AgentContext, Jwt, Key } from '@credo-ts/core'
 
 export interface OpenId4VcSiopAuthorizationEndpointConfig {
   /**
@@ -13,6 +14,9 @@ export interface OpenId4VcSiopAuthorizationEndpointConfig {
    * @default /authorize
    */
   endpointPath: string
+
+  // for b' flow
+  getVerifyHs256Callback?: (context: AgentContext, verifierKey: Record<string, unknown>) => ((key: Key, data: Uint8Array, signatureInBase64url: string) => Promise<boolean>)
 }
 
 export function configureAuthorizationEndpoint(router: Router, config: OpenId4VcSiopAuthorizationEndpointConfig) {
@@ -41,9 +45,18 @@ export function configureAuthorizationEndpoint(router: Router, config: OpenId4Vc
         return sendErrorResponse(response, agentContext.config.logger, 404, 'invalid_request', null)
       }
 
+      let verifyHs256Callback = undefined
+      const parsedAuthorizationRequest = Jwt.fromSerializedJwt(verificationSession.authorizationRequestJwt)
+      const rpEphPub = parsedAuthorizationRequest.payload.additionalClaims.rp_eph_pub
+      if (rpEphPub) {
+        if (!config.getVerifyHs256Callback) throw new Error('Expected getVerifyHs256Callback when receiving an rp_eph_pub')
+        verifyHs256Callback = config.getVerifyHs256Callback(agentContext, rpEphPub as Record<string, unknown>)
+      }
+
       await openId4VcVerifierService.verifyAuthorizationResponse(agentContext, {
         authorizationResponse: request.body,
         verificationSession,
+        verifyHs256Callback
       })
       response.status(200).send()
     } catch (error) {

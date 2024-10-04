@@ -27,12 +27,12 @@
   },
   "dependencies": {
     "@credo-ts/core": "workspace:*",
-    "@sphereon/did-auth-siop": "0.16.1-next.3",
-    "@sphereon/oid4vc-common": "0.16.1-next.3",
-    "@sphereon/oid4vci-client": "0.16.1-next.3",
-    "@sphereon/oid4vci-common": "0.16.1-next.3",
-    "@sphereon/oid4vci-issuer": "0.16.1-next.3",
-    "@sphereon/ssi-types": "0.28.0",
+    "@sphereon/did-auth-siop": "https://gitpkg.vercel.app/animo/OID4VC/packages/siop-oid4vp?funke",
+    "@sphereon/oid4vc-common": "https://gitpkg.vercel.app/animo/OID4VC/packages/common?funke",
+    "@sphereon/oid4vci-common": "https://gitpkg.vercel.app/animo/OID4VC/packages/oid4vci-common?funke",
+    "@sphereon/oid4vci-issuer": "https://gitpkg.vercel.app/animo/OID4VC/packages/issuer?funke",
+    "@sphereon/oid4vci-client": "https://gitpkg.vercel.app/animo/OID4VC/packages/client?funke",
+    "@sphereon/ssi-types": "0.29.1-unstable.208",
     "class-transformer": "^0.5.1",
     "rxjs": "^7.8.0"
   },

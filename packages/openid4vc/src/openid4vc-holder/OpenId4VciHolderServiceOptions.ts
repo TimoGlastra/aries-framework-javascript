@@ -5,16 +5,19 @@ import type {
   OpenId4VciCredentialOfferPayload,
   OpenId4VciCredentialConfigurationsSupported,
 } from '../shared'
-import type { JwaSignatureAlgorithm, Jwk, KeyType } from '@credo-ts/core'
+import type { AgentContext, JwaSignatureAlgorithm, Jwk, KeyType } from '@credo-ts/core'
 import type { VerifiableCredential } from '@credo-ts/core/src/modules/dif-presentation-exchange/models/index'
 import type {
   AccessTokenResponse,
   CredentialOfferRequestWithBaseUrl,
   EndpointMetadataResult,
+  JWTSignerCallback,
   OpenId4VCIVersion,
 } from '@sphereon/oid4vci-common'
 
 import { OpenId4VciCredentialFormatProfile } from '../shared/models/OpenId4VciCredentialFormatProfile'
+import { CreateJwtCallback, DPoPJwtIssuerWithContext } from '@sphereon/oid4vc-common'
+import { JwtIssuerWithContext } from '@sphereon/did-auth-siop'
 
 export type OpenId4VciSupportedCredentialFormats =
   | OpenId4VciCredentialFormatProfile.JwtVcJson
@@ -98,6 +101,10 @@ export interface OpenId4VciSendNotificationOptions {
 interface OpenId4VcTokenRequestBaseOptions {
   resolvedCredentialOffer: OpenId4VciResolvedCredentialOffer
   txCode?: string
+
+  customBody?: Record<string, unknown>,
+  dPopKeyJwk?: Jwk,
+  getCreateJwtCallback?: (agentContext: AgentContext) => CreateJwtCallback<DPoPJwtIssuerWithContext | JwtIssuerWithContext>
 }
 
 export interface OpenId4VcAuthorizationCodeTokenRequestOptions extends OpenId4VcTokenRequestBaseOptions {
@@ -124,6 +131,14 @@ export interface OpenId4VciCredentialRequestOptions extends Omit<OpenId4VciAccep
    * The client id used for authorization. Only required if authorization_code flow was used.
    */
   clientId?: string
+
+  additionalCredentialRequestPayloadClaims?: Record<string, unknown>,
+  additionalProofOfPossessionPayloadClaims?: Record<string, unknown>,
+  customFormat?: string,
+  popCallback?: JWTSignerCallback
+  getCreateJwtCallback?: (agentContext: AgentContext) => CreateJwtCallback<DPoPJwtIssuerWithContext | JwtIssuerWithContext>
+  customBody?: Record<string, unknown>,
+  skipSdJwtVcValidation?: boolean
 }
 
 /**
@@ -184,6 +199,7 @@ export interface OpenId4VciAuthCodeFlowOptions {
   clientId: string
   redirectUri: string
   scope?: string[]
+  customHeaders?: Record<string, unknown>
 }
 
 export interface OpenId4VciCredentialBindingOptions {

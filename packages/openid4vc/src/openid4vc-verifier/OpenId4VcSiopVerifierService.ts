@@ -10,6 +10,7 @@ import type { OpenId4VcSiopAuthorizationResponsePayload } from '../shared'
 import type {
   AgentContext,
   DifPresentationExchangeDefinition,
+  Key,
   Query,
   QueryOptions,
   RecordSavedEvent,
@@ -80,7 +81,7 @@ export class OpenId4VcSiopVerifierService {
     private openId4VcVerifierRepository: OpenId4VcVerifierRepository,
     private config: OpenId4VcVerifierModuleConfig,
     private openId4VcVerificationSessionRepository: OpenId4VcVerificationSessionRepository
-  ) {}
+  ) { }
 
   public async createAuthorizationRequest(
     agentContext: AgentContext,
@@ -153,6 +154,7 @@ export class OpenId4VcSiopVerifierService {
       state,
       requestByReferenceURI: hostedAuthorizationRequestUri,
       jwtIssuer,
+      additionalPayloadClaims: options.additionalPayloadClaims
     })
 
     // NOTE: it's not possible to set the uri scheme when using the RP to create an auth request, only lower level
@@ -239,6 +241,7 @@ export class OpenId4VcSiopVerifierService {
         presentationVerificationCallback: this.getPresentationVerificationCallback(agentContext, {
           nonce: requestNonce,
           audience: requestClientId,
+          verifyHs256Callback: options.verifyHs256Callback
         }),
       },
     })
@@ -289,7 +292,7 @@ export class OpenId4VcSiopVerifierService {
 
       presentationExchange = {
         definition: presentationDefinitions[0].definition,
-        presentations: presentations.map(getVerifiablePresentationFromSphereonWrapped),
+        presentations: Array.isArray(presentations) ? presentations.map(getVerifiablePresentationFromSphereonWrapped) : [getVerifiablePresentationFromSphereonWrapped(presentations)],
         submission,
       }
     }
@@ -483,7 +486,11 @@ export class OpenId4VcSiopVerifierService {
 
   private getPresentationVerificationCallback(
     agentContext: AgentContext,
-    options: { nonce: string; audience: string }
+    options: {
+      nonce: string;
+      audience: string;
+      verifyHs256Callback?: (key: Key, data: Uint8Array, signatureInBase64url: string) => Promise<boolean>
+    }
   ): PresentationVerificationCallback {
     return async (encodedPresentation, presentationSubmission) => {
       try {
@@ -505,6 +512,7 @@ export class OpenId4VcSiopVerifierService {
               audience: options.audience,
               nonce: options.nonce,
             },
+            verifyHs256Callback: options.verifyHs256Callback
           })
 
           isValid = verificationResult.verification.isValid

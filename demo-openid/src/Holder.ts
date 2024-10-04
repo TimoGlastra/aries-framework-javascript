@@ -53,6 +53,9 @@ export class Holder extends BaseAgent<ReturnType<typeof getOpenIdHolderModules>>
 
     const storedCredentials = await Promise.all(
       credentialResponse.map((response) => {
+        if (typeof response === 'string') {
+          throw new Error('Funke B\' flow not supported')
+        }
         const credential = response.credential
         if (credential instanceof W3cJwtVerifiableCredential || credential instanceof W3cJsonLdVerifiableCredential) {
           return this.agent.w3cCredentials.storeCredential({ credential })

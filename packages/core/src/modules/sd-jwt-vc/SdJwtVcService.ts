@@ -170,12 +170,12 @@ export class SdJwtVcService {
     const compactDerivedSdJwtVc = await sdjwt.present(compactSdJwtVc, presentationFrame as PresentationFrame<Payload>, {
       kb: verifierMetadata
         ? {
-            payload: {
-              iat: verifierMetadata.issuedAt,
-              nonce: verifierMetadata.nonce,
-              aud: verifierMetadata.audience,
-            },
-          }
+          payload: {
+            iat: verifierMetadata.issuedAt,
+            nonce: verifierMetadata.nonce,
+            aud: verifierMetadata.audience,
+          },
+        }
         : undefined,
     })
 
@@ -196,7 +196,7 @@ export class SdJwtVcService {
 
   public async verify<Header extends SdJwtVcHeader = SdJwtVcHeader, Payload extends SdJwtVcPayload = SdJwtVcPayload>(
     agentContext: AgentContext,
-    { compactSdJwtVc, keyBinding, requiredClaimKeys }: SdJwtVcVerifyOptions
+    { compactSdJwtVc, keyBinding, requiredClaimKeys, verifyHs256Callback }: SdJwtVcVerifyOptions
   ): Promise<
     | { isValid: true; verification: VerificationResult; sdJwtVc: SdJwtVc<Header, Payload> }
     | { isValid: false; verification: VerificationResult; sdJwtVc?: SdJwtVc<Header, Payload>; error: Error }
@@ -234,7 +234,7 @@ export class SdJwtVcService {
       const holder = holderBinding ? await this.extractKeyFromHolderBinding(agentContext, holderBinding) : undefined
 
       sdjwt.config({
-        verifier: this.verifier(agentContext, issuer.key),
+        verifier: this.verifier(agentContext, issuer.key, verifyHs256Callback),
         kbVerifier: holder ? this.verifier(agentContext, holder.key) : undefined,
       })
 
@@ -375,10 +375,20 @@ export class SdJwtVcService {
   /**
    * @todo validate the JWT header (alg)
    */
-  private verifier(agentContext: AgentContext, key: Key): Verifier {
+  private verifier(agentContext: AgentContext, key: Key, verifyHs256Callback?: (key: Key, data: Uint8Array, signatureBase64Url: string) => Promise<boolean>): Verifier {
     return async (message: string, signatureBase64Url: string) => {
-      if (!key) {
-        throw new SdJwtVcError('The public key used to verify the signature is missing')
+      if (!key && !verifyHs256Callback) {
+        throw new SdJwtVcError('The public key, or verifyHs256Callback, used to verify the signature is missing')
+      }
+
+      const [header] = message.split(".")
+      if (header) {
+        const parsedHeader = TypedArrayEncoder.fromBase64(header).toString()
+        const { alg } = JSON.parse(parsedHeader)
+        if (alg === "DVS-P256-SHA256-HS256") {
+          if (!verifyHs256Callback) throw new Error('Missing required verifyHs256Callback when verifying DVS-P256-SHA256-HS256 alg')
+          return await verifyHs256Callback(key, new Uint8Array(TypedArrayEncoder.fromString(message)), signatureBase64Url)
+        }
       }
 
       return await agentContext.wallet.verify({
@@ -517,7 +527,7 @@ export class SdJwtVcService {
         didUrl,
       }
     }
-    throw new SdJwtVcError("Unsupported 'iss' value. Only did is supported at the moment.")
+    throw new SdJwtVcError("Unsupported 'iss' value. Only did and x5c are supported at the moment.")
   }
 
   private parseHolderBindingFromCredential<Header extends SdJwtVcHeader, Payload extends SdJwtVcPayload>(
@@ -610,8 +620,7 @@ export class SdJwtVcService {
       const response = await fetchWithTimeout(agentContext.config.agentDependencies.fetch, uri)
       if (!response.ok) {
         throw new CredoError(
-          `Received invalid response with status ${
-            response.status
+          `Received invalid response with status ${response.status
           } when fetching status list from ${uri}. ${await response.text()}`
         )
       }
