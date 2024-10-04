@@ -14,14 +14,10 @@ import type { VerificationMethod } from '../dids'
 import type { SdJwtVcRecord } from '../sd-jwt-vc'
 import type { W3cCredentialRecord } from '../vc'
 import type { IAnonCredsDataIntegrityService } from '../vc/data-integrity/models/IAnonCredsDataIntegrityService'
-import type {
-  PresentationSignCallBackParams,
-  SdJwtDecodedVerifiableCredentialWithKbJwtInput,
-  Validated,
-  VerifiablePresentationResult,
-} from '@sphereon/pex'
+import type { PresentationSignCallBackParams, Validated, VerifiablePresentationResult } from '@sphereon/pex'
 import type { InputDescriptorV2 } from '@sphereon/pex-models'
 import type {
+  SdJwtDecodedVerifiableCredential,
   W3CVerifiablePresentation as SphereonW3cVerifiablePresentation,
   W3CVerifiablePresentation,
 } from '@sphereon/ssi-types'
@@ -63,7 +59,7 @@ import {
 export class DifPresentationExchangeService {
   private pex = new PEX({ hasher: Hasher.hash })
 
-  public constructor(private w3cCredentialService: W3cCredentialService) {}
+  public constructor(private w3cCredentialService: W3cCredentialService) { }
 
   public async getCredentialsForRequest(
     agentContext: AgentContext,
@@ -507,7 +503,7 @@ export class DifPresentationExchangeService {
 
         return signedPresentation.encoded as W3CVerifiablePresentation
       } else if (presentationToCreate.claimFormat === ClaimFormat.SdJwtVc) {
-        const sdJwtInput = presentationInput as SdJwtDecodedVerifiableCredentialWithKbJwtInput
+        const sdJwtInput = presentationInput as SdJwtDecodedVerifiableCredential
 
         if (!domain) {
           throw new CredoError("Missing 'domain' property, unable to set required 'aud' property in SD-JWT KB-JWT")
@@ -615,8 +611,8 @@ export class DifPresentationExchangeService {
     const w3cCredentialRecords =
       w3cQuery.length > 0
         ? await w3cCredentialRepository.findByQuery(agentContext, {
-            $or: w3cQuery,
-          })
+          $or: w3cQuery,
+        })
         : await w3cCredentialRepository.getAll(agentContext)
 
     allRecords.push(...w3cCredentialRecords)
@@ -625,8 +621,8 @@ export class DifPresentationExchangeService {
     const sdJwtVcRecords =
       sdJwtVcQuery.length > 0
         ? await sdJwtVcApi.findAllByQuery({
-            $or: sdJwtVcQuery,
-          })
+          $or: sdJwtVcQuery,
+        })
         : await sdJwtVcApi.getAll()
 
     allRecords.push(...sdJwtVcRecords)

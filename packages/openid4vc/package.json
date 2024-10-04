@@ -32,7 +32,7 @@
     "@sphereon/oid4vci-common": "https://gitpkg.vercel.app/animo/OID4VC/packages/oid4vci-common?funke",
     "@sphereon/oid4vci-issuer": "https://gitpkg.vercel.app/animo/OID4VC/packages/issuer?funke",
     "@sphereon/oid4vci-client": "https://gitpkg.vercel.app/animo/OID4VC/packages/client?funke",
-    "@sphereon/ssi-types": "0.29.1-unstable.208",
+    "@sphereon/ssi-types": "0.29.1-unstable.121",
     "class-transformer": "^0.5.1",
     "rxjs": "^7.8.0"
   },
