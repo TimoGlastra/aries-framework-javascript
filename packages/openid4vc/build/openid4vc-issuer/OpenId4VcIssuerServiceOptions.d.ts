@@ -1,0 +1,114 @@
+import type { OpenId4VcIssuanceSessionRecord, OpenId4VcIssuerRecordCredentialConfigurationsSupportedProps, OpenId4VcIssuerRecordCredentialSupportedProps, OpenId4VcIssuerRecordProps } from './repository';
+import type { OpenId4VcCredentialHolderBinding, OpenId4VciCredentialConfigurationsSupported, OpenId4VciCredentialOffer, OpenId4VciCredentialRequest, OpenId4VciCredentialSupported, OpenId4VciCredentialSupportedWithId, OpenId4VciIssuerMetadataDisplay, OpenId4VciTxCode } from '../shared';
+import type { AgentContext, ClaimFormat, W3cCredential, SdJwtVcSignOptions, JwaSignatureAlgorithm } from '@credo-ts/core';
+export interface OpenId4VciPreAuthorizedCodeFlowConfig {
+    preAuthorizedCode?: string;
+    /**
+     * The user pin required flag indicates whether the user needs to enter a pin to authorize the transaction.
+     * Only compatible with v11
+     */
+    userPinRequired?: boolean;
+    /**
+     * The user pin required flag indicates whether the user needs to enter a pin to authorize the transaction.
+     * Only compatible with v13
+     */
+    txCode?: OpenId4VciTxCode;
+}
+export type OpenId4VcIssuerMetadata = {
+    issuerUrl: string;
+    credentialEndpoint: string;
+    tokenEndpoint: string;
+    authorizationServer?: string;
+    issuerDisplay?: OpenId4VciIssuerMetadataDisplay[];
+    credentialsSupported: OpenId4VciCredentialSupportedWithId[];
+    credentialConfigurationsSupported: OpenId4VciCredentialConfigurationsSupported;
+    dpopSigningAlgValuesSupported?: [JwaSignatureAlgorithm, ...JwaSignatureAlgorithm[]];
+};
+export interface OpenId4VciCreateCredentialOfferOptions {
+    offeredCredentials: string[];
+    /**
+     * baseUri for the credential offer uri. By default `openid-credential-offer://` will be used
+     * if no value is provided. If a value is provided, make sure it contains the scheme as well as `://`.
+     */
+    baseUri?: string;
+    preAuthorizedCodeFlowConfig: OpenId4VciPreAuthorizedCodeFlowConfig;
+    /**
+     * Metadata about the issuance, that will be stored in the issuance session record and
+     * passed to the credential request to credential mapper. This can be used to e.g. store an
+     * user identifier so user data can be fetched in the credential mapper, or the actual credential
+     * data.
+     */
+    issuanceMetadata?: Record<string, unknown>;
+    /**
+     * @default v1.draft11-13
+     */
+    version?: 'v1.draft11-13' | 'v1.draft13';
+}
+export interface OpenId4VciCreateCredentialResponseOptions {
+    credentialRequest: OpenId4VciCredentialRequest;
+    /**
+     * You can optionally provide a credential request to credential mapper that will be
+     * dynamically invoked to return credential data based on the credential request.
+     *
+     * If not provided, the `credentialRequestToCredentialMapper` from the agent config
+     * will be used.
+     */
+    credentialRequestToCredentialMapper?: OpenId4VciCredentialRequestToCredentialMapper;
+}
+export type OpenId4VciCredentialRequestToCredentialMapper = (options: {
+    agentContext: AgentContext;
+    /**
+     * The issuance session associated with the credential request. You can extract the
+     * issuance metadata from this record if passed in the offer creation method.
+     */
+    issuanceSession: OpenId4VcIssuanceSessionRecord;
+    /**
+     * The credential request received from the wallet
+     */
+    credentialRequest: OpenId4VciCredentialRequest;
+    /**
+     * The offer associated with the credential request
+     */
+    credentialOffer: OpenId4VciCredentialOffer;
+    /**
+     * Verified key binding material that should be included in the credential
+     *
+     * Can either be bound to did or a JWK (in case of for ex. SD-JWT)
+     */
+    holderBinding: OpenId4VcCredentialHolderBinding;
+    /**
+     * @deprecated use credentialConfigurations instead
+     *
+     * The credentials supported entries from the issuer metadata that were offered
+     * and match the incoming request
+     *
+     * NOTE: in v12 this will probably become a single entry, as it will be matched on id
+     */
+    credentialsSupported: OpenId4VciCredentialSupported[];
+    /**
+     * v13: The ids of the credential configurations that were offered and match the request
+     *
+     * NOTE: This will probably become a single entry, as it will be matched on id
+     */
+    credentialConfigurationIds: [string, ...string[]];
+}) => Promise<OpenId4VciSignCredential> | OpenId4VciSignCredential;
+export type OpenId4VciSignCredential = OpenId4VciSignSdJwtCredential | OpenId4VciSignW3cCredential;
+export interface OpenId4VciSignSdJwtCredential extends SdJwtVcSignOptions {
+    credentialSupportedId: string;
+    format: ClaimFormat.SdJwtVc | `${ClaimFormat.SdJwtVc}`;
+}
+export interface OpenId4VciSignW3cCredential {
+    credentialSupportedId: string;
+    format: ClaimFormat.JwtVc | `${ClaimFormat.JwtVc}` | ClaimFormat.LdpVc | `${ClaimFormat.LdpVc}`;
+    verificationMethod: string;
+    credential: W3cCredential;
+}
+export type OpenId4VciCreateIssuerOptions = {
+    /**
+     * Id of the issuer, not the id of the issuer record. Will be exposed publicly
+     */
+    issuerId?: string;
+    display?: OpenId4VciIssuerMetadataDisplay[];
+    dpopSigningAlgValuesSupported?: [JwaSignatureAlgorithm, ...JwaSignatureAlgorithm[]];
+} & (OpenId4VcIssuerRecordCredentialSupportedProps | OpenId4VcIssuerRecordCredentialConfigurationsSupportedProps);
+export type OpenId4VcUpdateIssuerRecordOptions = Pick<OpenId4VcIssuerRecordProps, 'issuerId' | 'display' | 'dpopSigningAlgValuesSupported'> & (OpenId4VcIssuerRecordCredentialSupportedProps | OpenId4VcIssuerRecordCredentialConfigurationsSupportedProps);

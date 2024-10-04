@@ -1,0 +1,65 @@
+import type { OpenId4VcVerificationSessionRecord } from './repository';
+import type { OpenId4VcIssuerX5c, OpenId4VcJwtIssuer, OpenId4VcSiopAuthorizationResponsePayload, OpenId4VcSiopIdTokenPayload } from '../shared';
+import type { DifPresentationExchangeDefinition, DifPresentationExchangeSubmission, DifPresentationExchangeDefinitionV2, VerifiablePresentation, Key } from '@credo-ts/core';
+export type ResponseMode = 'direct_post' | 'direct_post.jwt';
+export interface OpenId4VcSiopCreateAuthorizationRequestOptions {
+    /**
+     * Signing information for the request JWT. This will be used to sign the request JWT
+     * and to set the client_id and client_id_scheme for registration of client_metadata.
+     *
+     * For x5c signer's the issuer value can be omitted as it can be derived from the authorization response endpoint.
+     */
+    requestSigner: Exclude<OpenId4VcJwtIssuer, OpenId4VcIssuerX5c> | (Omit<OpenId4VcIssuerX5c, 'issuer'> & {
+        issuer?: string;
+    });
+    /**
+     * Whether to reuqest an ID Token. Enabled by defualt when `presentationExchange` is not provided,
+     * disabled by default when `presentationExchange` is provided.
+     */
+    idToken?: boolean;
+    /**
+     * A DIF Presentation Definition (v2) can be provided to request a Verifiable Presentation using OpenID4VP.
+     */
+    presentationExchange?: {
+        definition: DifPresentationExchangeDefinitionV2;
+    };
+    additionalPayloadClaims?: Record<string, unknown>;
+    /**
+     * The response mode to use for the authorization request.
+     * @default to `direct_post`.
+     *
+     * With response_mode `direct_post` the response will be posted directly to the `response_uri` provided in the request.
+     * With response_mode `direct_post.jwt` the response will be `signed` `encrypted` or `signed and encrypted` and then posted to the `response_uri` provided in the request.
+     */
+    responseMode?: ResponseMode;
+}
+export interface OpenId4VcSiopVerifyAuthorizationResponseOptions {
+    /**
+     * The authorization response received from the OpenID Provider (OP).
+     */
+    authorizationResponse: OpenId4VcSiopAuthorizationResponsePayload;
+    verifyHs256Callback?: (key: Key, data: Uint8Array, signatureInBase64url: string) => Promise<boolean>;
+}
+export interface OpenId4VcSiopCreateAuthorizationRequestReturn {
+    authorizationRequest: string;
+    verificationSession: OpenId4VcVerificationSessionRecord;
+}
+/**
+ * Either `idToken` and/or `presentationExchange` will be present.
+ */
+export interface OpenId4VcSiopVerifiedAuthorizationResponse {
+    idToken?: {
+        payload: OpenId4VcSiopIdTokenPayload;
+    };
+    presentationExchange?: {
+        submission: DifPresentationExchangeSubmission;
+        definition: DifPresentationExchangeDefinition;
+        presentations: Array<VerifiablePresentation>;
+    };
+}
+export interface OpenId4VcSiopCreateVerifierOptions {
+    /**
+     * Id of the verifier, not the id of the verifier record. Will be exposed publicly
+     */
+    verifierId?: string;
+}

@@ -1,0 +1,16 @@
+import type { AgentContext } from '../../../../agent';
+import type { DidResolver } from '../../domain/DidResolver';
+import type { DidResolutionResult } from '../../types';
+export declare class PeerDidResolver implements DidResolver {
+    readonly supportedMethods: string[];
+    /**
+     * No remote resolving done, did document is fetched from storage. To not pollute the cache we don't allow caching
+     */
+    readonly allowsCaching = false;
+    /**
+     * Did peer records are often server from local did doucment, but it's easier to handle it in
+     * the peer did resolver.
+     */
+    readonly allowsLocalDidRecord = false;
+    resolve(agentContext: AgentContext, did: string): Promise<DidResolutionResult>;
+}
