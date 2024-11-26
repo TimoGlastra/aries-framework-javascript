@@ -30,6 +30,11 @@ export type OpenId4VcIssuerRecordProps = {
   accessTokenPublicKeyFingerprint: string
 
   /**
+   * @default false
+   */
+  requireClientAuthentication?: boolean
+
+  /**
    * The DPoP signing algorithms supported by this issuer.
    * If not provided, dPoP is considered unsupported.
    */
@@ -57,6 +62,14 @@ export class OpenId4VcIssuerRecord extends BaseRecord<DefaultOpenId4VcIssuerReco
 
   public issuerId!: string
   public accessTokenPublicKeyFingerprint!: string
+  public authorizationServerConfigs?: OpenId4VciAuthorizationServerConfig[]
+  public dpopSigningAlgValuesSupported?: [JwaSignatureAlgorithm, ...JwaSignatureAlgorithm[]]
+  public batchCredentialIssuance?: OpenId4VciBatchCredentialIssuanceOptions
+
+  /**
+   * @default false
+   */
+  public requireClientAuthentication?: boolean
 
   /**
    * Only here for class transformation. If credentialsSupported is set we transform
@@ -94,9 +107,6 @@ export class OpenId4VcIssuerRecord extends BaseRecord<DefaultOpenId4VcIssuerReco
     return value
   })
   public display?: OpenId4VciCredentialIssuerMetadataDisplay[]
-  public authorizationServerConfigs?: OpenId4VciAuthorizationServerConfig[]
-  public dpopSigningAlgValuesSupported?: [JwaSignatureAlgorithm, ...JwaSignatureAlgorithm[]]
-  public batchCredentialIssuance?: OpenId4VciBatchCredentialIssuanceOptions
 
   public constructor(props: OpenId4VcIssuerRecordProps) {
     super()
@@ -113,6 +123,7 @@ export class OpenId4VcIssuerRecord extends BaseRecord<DefaultOpenId4VcIssuerReco
       this.display = props.display
       this.authorizationServerConfigs = props.authorizationServerConfigs
       this.batchCredentialIssuance = props.batchCredentialIssuance
+      this.requireClientAuthentication = props.requireClientAuthentication
     }
   }
 

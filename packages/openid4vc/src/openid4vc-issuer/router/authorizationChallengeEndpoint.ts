@@ -30,9 +30,12 @@ import { OpenId4VcIssuanceSessionState } from '../OpenId4VcIssuanceSessionState'
 import { OpenId4VcIssuerModuleConfig } from '../OpenId4VcIssuerModuleConfig'
 import { OpenId4VcIssuerService } from '../OpenId4VcIssuerService'
 
+import { clientAuthenticationMiddleware } from './clientAuthenticationMiddleware'
+
 export function configureAuthorizationChallengeEndpoint(router: Router, config: OpenId4VcIssuerModuleConfig) {
   router.post(
     config.authorizationChallengeEndpointPath,
+    clientAuthenticationMiddleware,
     async (request: OpenId4VcIssuanceRequest, response: Response, next: NextFunction) => {
       const requestContext = getRequestContext(request)
       const { agentContext, issuer } = requestContext
@@ -41,6 +44,7 @@ export function configureAuthorizationChallengeEndpoint(router: Router, config: 
         const openId4VcIssuerService = agentContext.dependencyManager.resolve(OpenId4VcIssuerService)
         const authorizationServer = openId4VcIssuerService.getOauth2AuthorizationServer(agentContext)
 
+        // TODO: parse dpop
         const { authorizationChallengeRequest } = authorizationServer.parseAuthorizationChallengeRequest({
           authorizationChallengeRequest: request.body,
         })
@@ -63,6 +67,7 @@ export function configureAuthorizationChallengeEndpoint(router: Router, config: 
             authorizationChallengeRequest,
             agentContext,
             issuer,
+            request,
           })
         }
       } catch (error) {
@@ -76,13 +81,12 @@ export function configureAuthorizationChallengeEndpoint(router: Router, config: 
 }
 
 async function handleAuthorizationChallengeNoAuthSession(options: {
+  request: OpenId4VcIssuanceRequest
   agentContext: AgentContext
   issuer: OpenId4VcIssuerRecord
   authorizationChallengeRequest: AuthorizationChallengeRequest
 }) {
-  const { agentContext, issuer, authorizationChallengeRequest } = options
-
-  // First call, no auth_sesion yet
+  const { agentContext, issuer, authorizationChallengeRequest, request } = options
 
   const openId4VcIssuerService = agentContext.dependencyManager.resolve(OpenId4VcIssuerService)
   const config = agentContext.dependencyManager.resolve(OpenId4VcIssuerModuleConfig)
@@ -144,6 +148,42 @@ async function handleAuthorizationChallengeNoAuthSession(options: {
             }' but expected one of ${allowedStates.join(', ')}`,
       }
     )
+  }
+
+  // TODO: i think we should make client authentication a middleware
+  // we parse all the methods (client_secret_basic, client_secret_post, )
+  // TODO: store on issuance sesseion record? But that doesn't work for dynamic requests (but we also don't support that
+  // for the credo authorization server, but if we do, i think this should be cofigured per issues maybe?)
+  const requireClientAuthentication = true
+  let clientId: string
+  if (requireClientAuthentication) {
+    // TODO: parse and verify should be separated
+    // TODO: should throw appropriate oauth2 server error (or part of other call?)
+    const { clientAttestation, clientAttestationPop } = await authorizationServer.verifyClientAttestation({
+      authorizationServer: issuerMetadata.credentialIssuer.credential_issuer,
+      headers: new Headers(request.headers as Record<string, string>),
+    })
+
+    // client_id MUST match if also provided in the body
+    if (
+      authorizationChallengeRequest.client_id &&
+      clientAttestation.payload.sub !== authorizationChallengeRequest.client_id
+    ) {
+      throw new Oauth2ServerErrorResponseError({
+        error: Oauth2ErrorCodes.InvalidRequest,
+        error_description: `The 'client_id' in authorization challenge request body does not match the 'sub' client id in the client attestation`,
+      })
+    }
+
+    clientId = clientAttestation.payload.sub
+  } else {
+    if (!authorizationChallengeRequest.client_id) {
+      throw new Oauth2ServerErrorResponseError({
+        error: Oauth2ErrorCodes.InvalidClient,
+        error_description: `Missing required 'client_id' in authorization challenge request body and no client authentication provided.`,
+      })
+    }
+    clientId = authorizationChallengeRequest.client_id
   }
 
   const offeredCredentialConfigurations = getOfferedCredentials(

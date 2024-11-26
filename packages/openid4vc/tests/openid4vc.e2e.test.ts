@@ -477,7 +477,7 @@ describe('OpenId4Vc', () => {
         },
         signJwt: async (signer, { header, payload }) => {
           const jwsService = issuer.agent.dependencyManager.resolve(JwsService)
-          return jwsService.createJwsCompact(issuer.agent.context, {
+          const jwt = await jwsService.createJwsCompact(issuer.agent.context, {
             key: authorizationServerKey,
             payload: JwtPayload.fromJson(payload),
             protectedHeaderOptions: {
@@ -487,6 +487,7 @@ describe('OpenId4Vc', () => {
               kid: 'first',
             },
           })
+          return { jwt, signerJwk: getJwkFromKey(authorizationServerKey).toJson() }
         },
       },
     })

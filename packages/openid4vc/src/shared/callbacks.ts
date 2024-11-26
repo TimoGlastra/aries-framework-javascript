@@ -16,7 +16,7 @@ export function getOid4vciJwtVerifyCallback(agentContext: AgentContext): VerifyJ
   const jwsService = agentContext.dependencyManager.resolve(JwsService)
 
   return async (signer, { compact }) => {
-    const { isValid } = await jwsService.verifyJws(agentContext, {
+    const { isValid, signerKeys } = await jwsService.verifyJws(agentContext, {
       jws: compact,
       // Only handles kid as did resolution. JWK is handled by jws service
       jwkResolver: async () => {
@@ -25,13 +25,23 @@ export function getOid4vciJwtVerifyCallback(agentContext: AgentContext): VerifyJ
         } else if (signer.method === 'did') {
           const key = await getKeyFromDid(agentContext, signer.didUrl)
           return getJwkFromKey(key)
+        } else if (signer.method === 'x5c') {
         }
 
         throw new CredoError(`Unexpected call to jwk resolver for signer method ${signer.method}`)
       },
     })
 
-    return isValid
+    if (!isValid) {
+      return {
+        verified: false,
+      }
+    }
+
+    return {
+      verified: isValid,
+      signerJwk: getJwkFromKey(signerKeys[0]).toJson(),
+    }
   }
 }
 
@@ -39,8 +49,8 @@ export function getOid4vciJwtSignCallback(agentContext: AgentContext): SignJwtCa
   const jwsService = agentContext.dependencyManager.resolve(JwsService)
 
   return async (signer, { payload, header }) => {
-    if (signer.method === 'custom' || signer.method === 'x5c') {
-      throw new CredoError(`Jwt signer method 'custom' and 'x5c' are not supported for jwt signer.`)
+    if (signer.method === 'custom' || signer.method === 'x5c' || signer.method === 'trustChain') {
+      throw new CredoError(`Jwt signer method 'custom', 'trustChain', and 'x5c' are not supported for jwt signer.`)
     }
 
     const key =
@@ -60,7 +70,10 @@ export function getOid4vciJwtSignCallback(agentContext: AgentContext): SignJwtCa
       key,
     })
 
-    return jwt
+    return {
+      jwt,
+      signerJwk: jwk.toJson(),
+    }
   }
 }
 
