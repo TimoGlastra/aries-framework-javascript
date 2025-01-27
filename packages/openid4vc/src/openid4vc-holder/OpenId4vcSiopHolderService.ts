@@ -85,7 +85,9 @@ export class OpenId4VcSiopHolderService {
     let presentationExchangeOptions: PresentationExchangeResponseOpts | undefined = undefined
 
     const wantsIdToken = await authorizationRequest.authorizationRequest.containsResponseType(ResponseType.ID_TOKEN)
-    const authorizationResponseNonce = await agentContext.wallet.generateNonce()
+    const authorizationResponseNonce = authorizationRequest.authorizationRequestPayload.response_mode?.endsWith('.jwt')
+      ? await agentContext.wallet.generateNonce()
+      : ''
 
     // Handle presentation exchange part
     if (authorizationRequest.presentationDefinitions && authorizationRequest.presentationDefinitions.length > 0) {
