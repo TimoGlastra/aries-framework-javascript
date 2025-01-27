@@ -328,7 +328,7 @@ export class OpenId4VcSiopVerifierService {
           responseUri,
           mdocGeneratedNonce: options.jarmHeader?.apu
             ? TypedArrayEncoder.toUtf8String(TypedArrayEncoder.fromBase64(options.jarmHeader.apu))
-            : undefined,
+            : '',
           verificationSessionRecordId: options.verificationSession.id,
         }),
       },
