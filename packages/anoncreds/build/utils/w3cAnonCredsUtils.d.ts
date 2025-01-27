@@ -1,0 +1,37 @@
+import type { AnonCredsCredentialInfo, AnonCredsSchema } from '../models';
+import type { AnonCredsCredentialRecord } from '../repository';
+import type { StoreCredentialOptions } from '../services';
+import type { W3cCredentialSubject } from '@credo-ts/core';
+import { W3cCredentialRecord } from '@credo-ts/core';
+export type AnonCredsCredentialTags = {
+    anonCredsLinkSecretId: string;
+    anonCredsCredentialRevocationId?: string;
+    anonCredsMethodName: string;
+    [key: `anonCredsAttr::${string}::marker`]: true | undefined;
+    [key: `anonCredsAttr::${string}::value`]: string | undefined;
+    anonCredsSchemaName: string;
+    anonCredsSchemaVersion: string;
+    anonCredsSchemaId: string;
+    anonCredsSchemaIssuerId: string;
+    anonCredsCredentialDefinitionId: string;
+    anonCredsRevocationRegistryId?: string;
+    anonCredsUnqualifiedIssuerId?: string;
+    anonCredsUnqualifiedSchemaId?: string;
+    anonCredsUnqualifiedSchemaIssuerId?: string;
+    anonCredsUnqualifiedCredentialDefinitionId?: string;
+    anonCredsUnqualifiedRevocationRegistryId?: string;
+};
+export declare function getAnoncredsCredentialInfoFromRecord(credentialRecord: W3cCredentialRecord | AnonCredsCredentialRecord, useUnqualifiedIdentifiersIfPresent?: boolean): AnonCredsCredentialInfo;
+export declare function getAnonCredsTagsFromRecord(record: W3cCredentialRecord): AnonCredsCredentialTags | undefined;
+export declare function getStoreCredentialOptions(options: StoreCredentialOptions, indyNamespace?: string): StoreCredentialOptions;
+export declare function getW3cRecordAnonCredsTags(options: {
+    credentialSubject: W3cCredentialSubject;
+    issuerId: string;
+    schemaId: string;
+    schema: Omit<AnonCredsSchema, 'attrNames'>;
+    credentialDefinitionId: string;
+    revocationRegistryId?: string;
+    credentialRevocationId?: string;
+    linkSecretId: string;
+    methodName: string;
+}): AnonCredsCredentialTags;

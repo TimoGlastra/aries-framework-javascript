@@ -1,0 +1,1 @@
+{"version":3,"file":"OpenId4VciHolderServiceOptions.js","sourceRoot":"","sources":["../../src/openid4vc-holder/OpenId4VciHolderServiceOptions.ts"],"names":[],"mappings":";;;AAQA,+CAAoF;AAI3E,4GAJqB,2BAA2B,OAIrB;AAFpC,0GAAsG;AAWzF,QAAA,oCAAoC,GAA2C;IAC1F,qEAAiC,CAAC,SAAS;IAC3C,qEAAiC,CAAC,WAAW;IAC7C,qEAAiC,CAAC,OAAO;IACzC,qEAAiC,CAAC,KAAK;IACvC,qEAAiC,CAAC,OAAO;CAC1C,CAAA"}

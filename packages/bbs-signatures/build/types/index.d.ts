@@ -1,0 +1,12 @@
+export { KeyPairOptions } from './KeyPairOptions';
+export { KeyPairSigner } from './KeyPairSigner';
+export { KeyPairVerifier } from './KeyPairVerifier';
+export { SignatureSuiteOptions } from './SignatureSuiteOptions';
+export { CreateProofOptions } from './CreateProofOptions';
+export { VerifyProofOptions } from './VerifyProofOptions';
+export { CanonizeOptions } from './CanonizeOptions';
+export { CreateVerifyDataOptions } from './CreateVerifyDataOptions';
+export { VerifySignatureOptions } from './VerifySignatureOptions';
+export { SuiteSignOptions } from './SuiteSignOptions';
+export { DeriveProofOptions } from './DeriveProofOptions';
+export { DidDocumentPublicKey } from './DidDocumentPublicKey';

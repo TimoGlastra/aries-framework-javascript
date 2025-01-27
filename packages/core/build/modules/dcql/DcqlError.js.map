@@ -1,0 +1,1 @@
+{"version":3,"file":"DcqlError.js","sourceRoot":"","sources":["../../../src/modules/dcql/DcqlError.ts"],"names":[],"mappings":";;;AAAA,uCAAwC;AAExC,MAAa,SAAU,SAAQ,kBAAU;IAGvC,YACE,OAAe,EACf,EAAE,KAAK,EAAE,kBAAkB,KAA4D,EAAE;QAEzF,KAAK,CAAC,OAAO,EAAE,EAAE,KAAK,EAAE,CAAC,CAAA;QACzB,IAAI,CAAC,kBAAkB,GAAG,kBAAkB,CAAA;IAC9C,CAAC;CACF;AAVD,8BAUC"}

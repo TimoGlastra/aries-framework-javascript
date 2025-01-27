@@ -1,0 +1,19 @@
+import type { AgentContext } from '../../../agent';
+import type { DidCreateOptions, DidCreateResult, DidDeactivateOptions, DidDeactivateResult, DidUpdateOptions, DidUpdateResult } from '../types';
+import { Logger } from '../../../logger';
+import { DidsModuleConfig } from '../DidsModuleConfig';
+import { DidResolverService } from './DidResolverService';
+export declare class DidRegistrarService {
+    private logger;
+    private didsModuleConfig;
+    private didResolverService;
+    constructor(logger: Logger, didsModuleConfig: DidsModuleConfig, didResolverService: DidResolverService);
+    create<CreateOptions extends DidCreateOptions = DidCreateOptions>(agentContext: AgentContext, options: CreateOptions): Promise<DidCreateResult>;
+    update(agentContext: AgentContext, options: DidUpdateOptions): Promise<DidUpdateResult>;
+    deactivate(agentContext: AgentContext, options: DidDeactivateOptions): Promise<DidDeactivateResult>;
+    private findRegistrarForMethod;
+    /**
+     * Get all supported did methods for the did registrar.
+     */
+    get supportedMethods(): string[];
+}
